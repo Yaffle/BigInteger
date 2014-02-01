@@ -5,6 +5,8 @@ Yet another BigInteger in javascript
 
 The API is a subset of the java.math.BigInteger:
 
+```javascript
+/*
 constructor:
 BigInteger(string: s, radix: number = 10)
 
@@ -22,14 +24,15 @@ constants:
 BigInteger.ZERO;
 BigInteger.ONE;
 
-```javascript
-  function factorial(n) {
-    var result = BigInteger.ONE;
-    var i = 0;
-    while (++i <= n) {
-      result = result.multiply(new BigInteger(String(i)));
-    }
-    return result;
+*/
+
+function factorial(n) {
+  var result = BigInteger.ONE;
+  var i = 0;
+  while (++i <= n) {
+    result = result.multiply(new BigInteger(String(i)));
   }
-  console.log(factorial(30).toString());
+  return result;
+}
+console.log(factorial(30).toString());
 ```

@@ -339,6 +339,7 @@
     var remainderData = createArray(aMagnitude.length + 1); // +1 to avoid some `index < remainderData.length`
     copyArray(aMagnitude, remainderData);
     var resultSign = a.signum * b.signum;
+    var bLength = bMagnitude.length;
     var i = shift;
     while (--i >= 0) {
       x = remainderData[aMagnitude.length - (shift - i) + 1] * base + remainderData[aMagnitude.length - (shift - i)];
@@ -347,55 +348,53 @@
         q = base - 1;
       }
 
-      if (q > 0) {
-        var ax = 0;
-        var bx = 0;
-        var j = -1;
-        while (++j < bMagnitude.length) {
-          bx += q * bMagnitude[j];
-          var qbx = floor(bx / base);
-          ax += remainderData[j + i] - (bx - qbx * base);
-          if (ax < 0) {
-            remainderData[j + i] = base + ax;
-            ax = -1;
-          } else {
-            remainderData[j + i] = ax;
-            ax = 0;
-          }
-          bx = qbx;
-        }
-        ax += remainderData[bMagnitude.length + i] - bx;
+      var ax = 0;
+      var bx = 0;
+      var j = -1;
+      while (++j < bLength) {
+        bx += q * bMagnitude[j];
+        var qbx = floor(bx / base);
+        ax += remainderData[j + i] - (bx - qbx * base);
         if (ax < 0) {
-          remainderData[bMagnitude.length + i] = base + ax;
+          remainderData[j + i] = base + ax;
           ax = -1;
         } else {
-          remainderData[bMagnitude.length + i] = ax;
+          remainderData[j + i] = ax;
           ax = 0;
         }
-        while (ax !== 0) {
-          --q;
-          j = -1;
-          var c = 0;
-          while (++j < bMagnitude.length) {
-            c += remainderData[j + i] + bMagnitude[j];
-            if (c < base) {
-              remainderData[j + i] = c;
-              c = 0;
-            } else {
-              remainderData[j + i] = c - base;
-              c = 1;
-            }
-          }
-          c += remainderData[bMagnitude.length + i];
+        bx = qbx;
+      }
+      ax += remainderData[bLength + i] - bx;
+      if (ax < 0) {
+        remainderData[bLength + i] = base + ax;
+        ax = -1;
+      } else {
+        remainderData[bLength + i] = ax;
+        ax = 0;
+      }
+      while (ax !== 0) {
+        --q;
+        var c = 0;
+        var k = -1;
+        while (++k < bLength) {
+          c += remainderData[k + i] + bMagnitude[k];
           if (c < base) {
-            remainderData[bMagnitude.length + i] = c;
+            remainderData[k + i] = c;
             c = 0;
           } else {
-            remainderData[bMagnitude.length + i] = c - base;
+            remainderData[k + i] = c - base;
             c = 1;
           }
-          ax += c;
         }
+        c += remainderData[bLength + i];
+        if (c < base) {
+          remainderData[bLength + i] = c;
+          c = 0;
+        } else {
+          remainderData[bLength + i] = c - base;
+          c = 1;
+        }
+        ax += c;
       }
       if (which === 0) {
         div[i] = q;

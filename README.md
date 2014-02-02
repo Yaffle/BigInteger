@@ -1,7 +1,7 @@
 BigInteger
 ==========
 
-Yet another BigInteger in javascript
+Yet another BigInteger class in JavaScript
 
 The API is a subset of the java.math.BigInteger:
 
@@ -21,9 +21,8 @@ BigInteger.ptototype.remainder
 BigInteger.prototype.toString
 
 constants:
-BigInteger.ZERO;
-BigInteger.ONE;
-
+BigInteger.ZERO
+BigInteger.ONE
 */
 
 function factorial(n) {
@@ -37,3 +36,8 @@ function factorial(n) {
 console.log(factorial(30).toString());
 
 ```
+
+Other implementations with Java-like API:
+http://www-cs-students.stanford.edu/~tjw/jsbn/
+https://github.com/iriscouch/bigdecimal.js
+

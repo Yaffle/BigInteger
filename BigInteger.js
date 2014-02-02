@@ -69,14 +69,12 @@
     return x;
   };
 
-  var copyArray = function (y) {
+  var copyArray = function (y, x) {
     var length = y.length;
-    var x = createArray(length);
     var i = -1;
     while (++i < length) {
       x[i] = y[i];
     }
-    return x;
   };
 
   var trimArray = function (a) {
@@ -338,11 +336,12 @@
     var shift = aMagnitude.length - bMagnitude.length + 1;
     var div = which === 0 ? createArray(shift > 0 ? shift : 0) : null; // ZERO
 
-    var remainderData = copyArray(aMagnitude);
+    var remainderData = createArray(aMagnitude.length + 1); // +1 to avoid some `index < remainderData.length`
+    copyArray(aMagnitude, remainderData);
     var resultSign = a.signum * b.signum;
     var i = shift;
     while (--i >= 0) {
-      x = (shift - 1 === i ? 0 : remainderData[remainderData.length - (shift - i) + 1] * base) + remainderData[remainderData.length - (shift - i)];
+      x = remainderData[aMagnitude.length - (shift - i) + 1] * base + remainderData[aMagnitude.length - (shift - i)];
       q = floor(x / top);
       if (q > base - 1) {
         q = base - 1;
@@ -365,18 +364,15 @@
           }
           bx = qbx;
         }
-        if (bMagnitude.length + i < remainderData.length) {
-          ax += remainderData[bMagnitude.length + i] - bx;
-          if (ax < 0) {
-            remainderData[bMagnitude.length + i] = base + ax;
-            ax = -1;
-          } else {
-            remainderData[bMagnitude.length + i] = ax;
-            ax = 0;
-          }
-          bx = 0;
+        ax += remainderData[bMagnitude.length + i] - bx;
+        if (ax < 0) {
+          remainderData[bMagnitude.length + i] = base + ax;
+          ax = -1;
+        } else {
+          remainderData[bMagnitude.length + i] = ax;
+          ax = 0;
         }
-        while (ax !== 0 || bx !== 0) {
+        while (ax !== 0) {
           --q;
           j = -1;
           var c = 0;
@@ -390,21 +386,15 @@
               c = 1;
             }
           }
-          if (bMagnitude.length + i < remainderData.length) {
-            c += remainderData[bMagnitude.length + i];
-            if (c < base) {
-              remainderData[bMagnitude.length + i] = c;
-              c = 0;
-            } else {
-              remainderData[bMagnitude.length + i] = c - base;
-              c = 1;
-            }
-          }
-          if (ax !== 0) {
-            ax += c;
+          c += remainderData[bMagnitude.length + i];
+          if (c < base) {
+            remainderData[bMagnitude.length + i] = c;
             c = 0;
+          } else {
+            remainderData[bMagnitude.length + i] = c - base;
+            c = 1;
           }
-          bx -= c;
+          ax += c;
         }
       }
       if (which === 0) {
@@ -415,6 +405,7 @@
     if (which === 1 && lambda > 1) {
       divideBySmall(remainderData, remainderData.length, lambda);
     }
+
     return which === 0 ? createBigInteger(resultSign, trimArray(div)) : createBigInteger(resultSign, trimArray(remainderData));
   };
 
@@ -457,7 +448,8 @@
 
       var groupLength = floor(log(base) / log(radix));
       var wr = pow(radix, groupLength, 1);
-      var remainderMagnitude = copyArray(magnitude);
+      var remainderMagnitude = createArray(magnitude.length);
+      copyArray(magnitude, remainderMagnitude);
       var remainderMagnitudeLength = remainderMagnitude.length;
 
       while (remainderMagnitudeLength !== 0) {

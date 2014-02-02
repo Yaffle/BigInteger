@@ -8,7 +8,7 @@ The API is a subset of the java.math.BigInteger:
 ```javascript
 /*
 constructor:
-BigInteger(string: s, radix: number = 10)
+BigInteger(s:string, radix:number = 10)
 
 methods:
 BigInteger.ptototype.compareTo

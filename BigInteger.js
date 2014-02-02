@@ -227,8 +227,8 @@
     while (++i < bMagnitudeLength) {
       c += bMagnitude[i] + (i < aMagnitudeLength ? (subtract ? -aMagnitude[i] : aMagnitude[i]) : 0);
       if (c < 0) {
-        c = -1;
         result[i] = base + c;
+        c = -1;
       } else if (c < base) {
         result[i] = c;
         c = 0;
@@ -405,7 +405,7 @@
       divideBySmall(remainderData, remainderData.length, lambda);
     }
 
-    return which === 0 ? createBigInteger(resultSign, trimArray(div)) : createBigInteger(resultSign, trimArray(remainderData));
+    return which === 0 ? createBigInteger(resultSign, trimArray(div)) : createBigInteger(a.signum, trimArray(remainderData));
   };
 
   BigInteger.prototype = {

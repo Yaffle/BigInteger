@@ -61,7 +61,7 @@
   var ZERO = null;
   var ONE = null;
   var createArray = function (length) {
-    var x = [];
+    var x = new Array(length);
     var i = -1;
     while (++i < length) {
       x[i] = 0;
@@ -96,7 +96,7 @@
     return a;
   };
 
-  var zeros = [];
+  var zeros = new Array(32);
   var u = -1;
   var s = "";
   while (++u < 32) {
@@ -104,7 +104,7 @@
     s += "0";
   }
 
-  var base = 67108864;
+  var base = 16777216;
 
   var checkRadix = function (radix) {
     if (!(2 <= radix && radix <= 36)) {
@@ -137,6 +137,7 @@
     var sign = 1;
     if (flag !== null) {
       magnitude = flag;
+      flag = null;
       sign = radix;
     } else {
       radix = floor(+radix) || 10;
@@ -172,26 +173,18 @@
     }
     this.magnitude = magnitude;
     this.signum = magnitude.length === 0 ? 0 : sign;
-
-    //Object.freeze(this);
-    return this;
   }
 
   var createBigInteger = function (sign, a) {
     flag = a;
-    var bi = new BigInteger("", a.length > 0 ? sign : 0);
-    flag = null;
-    return bi;
+    return new BigInteger("", a.length > 0 ? sign : 0);
   };
 
   function compareMagnitude(aMagnitude, bMagnitude) {
     var aMagnitudeLength = aMagnitude.length;
     var bMagnitudeLength = bMagnitude.length;
-    if (aMagnitudeLength < bMagnitudeLength) {
-      return -1;
-    }
-    if (bMagnitudeLength < aMagnitudeLength) {
-      return +1;
+    if (aMagnitudeLength !== bMagnitudeLength) {
+      return aMagnitudeLength < bMagnitudeLength ? -1 : +1;
     }
     var i = aMagnitudeLength;
     while (--i >= 0) {
@@ -211,43 +204,43 @@
     return (aSignum === bSignum ? compareMagnitude(a.magnitude, b.magnitude) : 1) * aSignum;
   };
 
-  var add = function (a, b) {
-    var aMagnitude = a.magnitude;
-    var bMagnitude = b.magnitude;
+  var add = function (aMagnitude, aSignum, bMagnitude, bSignum) {
     var z = compareMagnitude(aMagnitude, bMagnitude);
     if (z > 0) {
-      var tmp = a;
-      a = b;
-      b = tmp;
-      tmp = aMagnitude;
-      aMagnitude = bMagnitude;
-      bMagnitude = tmp;
+      return add(bMagnitude, bSignum, aMagnitude, aSignum);
     }
     // |a| <= |b|
-    if (compareMagnitude(aMagnitude, ZERO.magnitude) === 0) {
-      return b;
+    if (aSignum === 0) {
+      return createBigInteger(bSignum, bMagnitude);
     }
-    var aSignum = a.signum;
-    var bSignum = b.signum;
-    var result = null;
-    var qs = 1;
+    var subtract = false;
     if (aSignum !== bSignum) {
       if (z === 0) { // a === (-b)
         return ZERO;
       }
-      qs = -1;
+      subtract = true;
     }
     // result !== 0
     var aMagnitudeLength = aMagnitude.length;
     var bMagnitudeLength = bMagnitude.length;
-    result = createArray(bMagnitudeLength + 1);
-    var x = 1;
+    var result = createArray(bMagnitudeLength + (subtract ? 0 : 1));
     var i = -1;
-    while (++i < bMagnitudeLength || x !== 1) {
-      x += base - 1 + (i < bMagnitudeLength ? bMagnitude[i] : 0) + (i < aMagnitudeLength ? qs * aMagnitude[i] : 0);
-      var q = floor(x / base);
-      result[i] = x - q * base;
-      x = q;
+    var c = 0;
+    while (++i < bMagnitudeLength) {
+      c += bMagnitude[i] + (i < aMagnitudeLength ? (subtract ? -aMagnitude[i] : aMagnitude[i]) : 0);
+      if (c < 0) {
+        c = -1;
+        result[i] = base + c;
+      } else if (c < base) {
+        result[i] = c;
+        c = 0;
+      } else {
+        result[i] = c - base;
+        c = +1;
+      }
+    }
+    if (c !== 0) {
+      result[bMagnitudeLength] = c;
     }
     return createBigInteger(bSignum, trimArray(result));
   };
@@ -266,18 +259,19 @@
       return createBigInteger(resultSign, aMagnitude);
     }
     var result = createArray(aMagnitude.length + bMagnitude.length);
-    var x = 0;
-    var j = 0;
     var i = -1;
-    while (++i < bMagnitude.length) {
-      j = -1;
-      x = 0;
-      while (++j < aMagnitude.length || x !== 0) {
-        x += (j < aMagnitude.length ? aMagnitude[j] * bMagnitude[i] : 0) + result[j + i];
-        var q = floor(x / base);
-        result[j + i] = x - q * base;
-        x = q;
+    var aLength = aMagnitude.length;
+    var bLength = bMagnitude.length;
+    while (++i < bLength) {
+      var c = 0;
+      var j = -1;
+      while (++j < aLength) {
+        c += aMagnitude[j] * bMagnitude[i] + result[j + i];
+        var q = floor(c / base);
+        result[j + i] = c - q * base;
+        c = q;
       }
+      result[aLength + i] = c;
     }
     return createBigInteger(resultSign, trimArray(result));
   };
@@ -298,15 +292,15 @@
   var multiplyBySmall = function (data, lambda) {
     var length = data.length;
     var result = createArray(length + 1);
-    var x = 0;
+    var c = 0;
     var i = -1;
     while (++i < length) {
-      x += data[i] * lambda;
-      var q = floor(x / base);
-      result[i] = x - q * base;
-      x = q;
+      c += data[i] * lambda;
+      var q = floor(c / base);
+      result[i] = c - q * base;
+      c = q;
     }
-    result[length] = x;
+    result[length] = c;
     return trimArray(result);
   };
 
@@ -342,75 +336,86 @@
     var x = 0;
     var q = 0;
     var shift = aMagnitude.length - bMagnitude.length + 1;
-    var div = which === 0 ? createArray(shift > 0 ? shift : 1) : null; // ZERO
+    var div = which === 0 ? createArray(shift > 0 ? shift : 0) : null; // ZERO
 
-    var reminderData = copyArray(aMagnitude);
+    var remainderData = copyArray(aMagnitude);
     var resultSign = a.signum * b.signum;
-
     var i = shift;
-    var ax = 0;
-    var bx = 0;
-    var j = 0;
-    var firstIndex = 0;
     while (--i >= 0) {
-
-      if (shift - 1 === i) {
-        x = reminderData[reminderData.length - (shift - i)];
-      } else {
-        x = reminderData[reminderData.length - (shift - i) + 1] * base + reminderData[reminderData.length - (shift - i)];
+      x = (shift - 1 === i ? 0 : remainderData[remainderData.length - (shift - i) + 1] * base) + remainderData[remainderData.length - (shift - i)];
+      q = floor(x / top);
+      if (q > base - 1) {
+        q = base - 1;
       }
 
-      if (bMagnitude.length > 1) {
-        firstIndex = floor(x / (top + 1));
-        q = firstIndex;
-
-        ax = 1;
-        bx = 0;
-        do {
-          ++q;
+      if (q > 0) {
+        var ax = 0;
+        var bx = 0;
+        var j = -1;
+        while (++j < bMagnitude.length) {
+          bx += q * bMagnitude[j];
+          var qbx = floor(bx / base);
+          ax += remainderData[j + i] - (bx - qbx * base);
+          if (ax < 0) {
+            remainderData[j + i] = base + ax;
+            ax = -1;
+          } else {
+            remainderData[j + i] = ax;
+            ax = 0;
+          }
+          bx = qbx;
+        }
+        if (bMagnitude.length + i < remainderData.length) {
+          ax += remainderData[bMagnitude.length + i] - bx;
+          if (ax < 0) {
+            remainderData[bMagnitude.length + i] = base + ax;
+            ax = -1;
+          } else {
+            remainderData[bMagnitude.length + i] = ax;
+            ax = 0;
+          }
+          bx = 0;
+        }
+        while (ax !== 0 || bx !== 0) {
+          --q;
           j = -1;
+          var c = 0;
           while (++j < bMagnitude.length) {
-            bx += q * bMagnitude[j];
-            ax += base - 1 + reminderData[j + i] - (bx % base);
-            bx = floor(bx / base);
-            ax = floor(ax / base);
+            c += remainderData[j + i] + bMagnitude[j];
+            if (c < base) {
+              remainderData[j + i] = c;
+              c = 0;
+            } else {
+              remainderData[j + i] = c - base;
+              c = 1;
+            }
           }
-          if (j + i < reminderData.length) {
-            ax += base - 1 + reminderData[j + i] - (bx % base);
-            bx = floor(bx / base);// bx = 0;
-            ax = floor(ax / base);
+          if (bMagnitude.length + i < remainderData.length) {
+            c += remainderData[bMagnitude.length + i];
+            if (c < base) {
+              remainderData[bMagnitude.length + i] = c;
+              c = 0;
+            } else {
+              remainderData[bMagnitude.length + i] = c - base;
+              c = 1;
+            }
           }
-        } while (ax === 1 && bx === 0);
-        --q;
-      } else {
-        q = floor(x / top);
+          if (ax !== 0) {
+            ax += c;
+            c = 0;
+          }
+          bx -= c;
+        }
       }
       if (which === 0) {
         div[i] = q;
       }
-
-      if (q > 0) {
-        ax = 1;
-        bx = 0;
-        j = -1;
-        while (++j < bMagnitude.length) {
-          bx += q * bMagnitude[j];
-          ax += base - 1 + reminderData[j + i] - (bx % base);
-          reminderData[j + i] = ax % base;
-          bx = floor(bx / base);
-          ax = floor(ax / base);
-        }
-        if (j + i < reminderData.length) {
-          ax += base - 1 + reminderData[j + i] - (bx % base);
-          reminderData[j + i] = ax % base;
-        }
-      }
     }
 
     if (which === 1 && lambda > 1) {
-      divideBySmall(reminderData, reminderData.length, lambda);
+      divideBySmall(remainderData, remainderData.length, lambda);
     }
-    return which === 0 ? createBigInteger(resultSign, trimArray(div)) : createBigInteger(resultSign, trimArray(reminderData));
+    return which === 0 ? createBigInteger(resultSign, trimArray(div)) : createBigInteger(resultSign, trimArray(remainderData));
   };
 
   BigInteger.prototype = {
@@ -424,11 +429,11 @@
     },
 
     add: function (b) {
-      return add(this, b);
+      return add(this.magnitude, this.signum, b.magnitude, b.signum);
     },
 
     subtract: function (b) {
-      return add(this, createBigInteger(-b.signum, b.magnitude));
+      return add(this.magnitude, this.signum, b.magnitude, -b.signum);
     },
 
     multiply: function (b) {

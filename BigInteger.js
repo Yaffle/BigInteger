@@ -1,5 +1,6 @@
 /*jslint plusplus: true, vars: true, indent: 2 */
 
+
 (function (exports) {
   "use strict";
 
@@ -34,7 +35,7 @@
     return n;
   };
 
-  function pow(x, count, accumulator) {
+  var pow = function (x, count, accumulator) {
     while (count > 0) {
       if (count % 2 !== 0) {
         count -= 1;
@@ -45,7 +46,7 @@
       }
     }
     return accumulator;
-  }
+  };
 
   function ArithmeticException() {
     Function.prototype.apply.call(RangeError, this);
@@ -178,7 +179,7 @@
     return new BigInteger("", a.length > 0 ? sign : 0);
   };
 
-  function compareMagnitude(aMagnitude, bMagnitude) {
+  var compareMagnitude = function (aMagnitude, bMagnitude) {
     var aMagnitudeLength = aMagnitude.length;
     var bMagnitudeLength = bMagnitude.length;
     if (aMagnitudeLength !== bMagnitudeLength) {
@@ -191,7 +192,7 @@
       }
     }
     return 0;
-  }
+  };
 
   var compareTo = function (a, b) {
     var aSignum = a.signum;
@@ -246,20 +247,20 @@
   var multiply = function (a, b) {
     var aMagnitude = a.magnitude;
     var bMagnitude = b.magnitude;
-    if (compareMagnitude(aMagnitude, ZERO.magnitude) === 0 || compareMagnitude(bMagnitude, ZERO.magnitude) === 0) {
+    var aLength = aMagnitude.length;
+    var bLength = bMagnitude.length;
+    if (aLength === 0 || bLength === 0) {
       return ZERO;
     }
     var resultSign = a.signum * b.signum;
-    if (compareMagnitude(aMagnitude, ONE.magnitude) === 0) {
+    if (aLength === 1 && aMagnitude[0] === 1) {
       return createBigInteger(resultSign, bMagnitude);
     }
-    if (compareMagnitude(bMagnitude, ONE.magnitude) === 0) {
+    if (bLength === 1 && bMagnitude[0] === 1) {
       return createBigInteger(resultSign, aMagnitude);
     }
-    var result = createArray(aMagnitude.length + bMagnitude.length);
+    var result = createArray(aLength + bLength);
     var i = -1;
-    var aLength = aMagnitude.length;
-    var bLength = bMagnitude.length;
     while (++i < bLength) {
       var c = 0;
       var j = -1;
@@ -305,13 +306,13 @@
   var divideAndRemainder = function (a, b, which) {
     var aMagnitude = a.magnitude;
     var bMagnitude = b.magnitude;
-    if (compareMagnitude(bMagnitude, ZERO.magnitude) === 0) {
+    if (bMagnitude.length === 0) {
       throw new ArithmeticException();
     }
-    if (compareMagnitude(aMagnitude, ZERO.magnitude) === 0) {
+    if (aMagnitude.length === 0) {
       return ZERO;
     }
-    if (compareMagnitude(bMagnitude, ONE.magnitude) === 0) {
+    if (bMagnitude.length === 1 && bMagnitude[0] === 1) {
       return (which === 1 ? ZERO : multiply(a, b));
     }
 
@@ -331,19 +332,17 @@
       }
     }
 
-    var x = 0;
-    var q = 0;
-    var shift = aMagnitude.length - bMagnitude.length + 1;
+    var aLength = aMagnitude.length;
+    var bLength = bMagnitude.length;
+    var shift = aLength - bLength + 1;
     var div = which === 0 ? createArray(shift > 0 ? shift : 0) : null; // ZERO
 
-    var remainderData = createArray(aMagnitude.length + 1); // +1 to avoid some `index < remainderData.length`
+    var remainderData = createArray(aLength + 1); // +1 to avoid some `index < remainderData.length`
     copyArray(aMagnitude, remainderData);
     var resultSign = a.signum * b.signum;
-    var bLength = bMagnitude.length;
     var i = shift;
     while (--i >= 0) {
-      x = remainderData[aMagnitude.length - (shift - i) + 1] * base + remainderData[aMagnitude.length - (shift - i)];
-      q = floor(x / top);
+      var q = floor((remainderData[bLength + i] * base + remainderData[bLength + i - 1]) / top);
       if (q > base - 1) {
         q = base - 1;
       }

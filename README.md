@@ -18,7 +18,7 @@ BigInteger.prototype.subtract
 BigInteger.prototype.multiply
 BigInteger.prototype.divide
 BigInteger.ptototype.remainder
-BigInteger.prototype.toString
+BigInteger.prototype.toString(radix:number = 10)
 
 constants:
 BigInteger.ZERO

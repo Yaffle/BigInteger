@@ -7,7 +7,6 @@
   // http://cacr.uwaterloo.ca/hac/about/chap14.pdf
 
   var floor = Math.floor;
-  var log = Math.log;
 
   var parseInteger = function (s, from, to, radix) {
     var i = from - 1;
@@ -48,15 +47,10 @@
     return accumulator;
   };
 
-  function ArithmeticException() {
-    Function.prototype.apply.call(RangeError, this);
-  }
-
-  var F = function () {
+  var log = function (a, b) {
+    var x = floor(a / b) >= b ? 2 * log(a, b * b) : 0;
+    return floor(a / pow(b, x, 1)) >= b ? x + 1 : x;
   };
-  F.prototype = RangeError.prototype;
-
-  ArithmeticException.prototype = new F();
 
   var flag = null;
   var ZERO = null;
@@ -95,13 +89,18 @@
     return a;
   };
 
-  var zeros = new Array(32);
-  var u = -1;
-  var s = "";
-  while (++u < 32) {
-    zeros[u] = s;
-    s += "0";
-  }
+  var repeat = function (s, count, accumulator) {
+    while (count > 0) {
+      if (count % 2 !== 0) {
+        count -= 1;
+        accumulator += s;
+      } else {
+        count /= 2;
+        s += s;
+      }
+    }
+    return accumulator;
+  };
 
   var base = 16777216;
 
@@ -156,7 +155,7 @@
 
       var length = s.length - from;
 
-      var groupLength = floor(log(base) / log(radix));
+      var groupLength = log(base, radix);
       var size = -floor(-length / groupLength);
 
       magnitude = createArray(size);
@@ -307,7 +306,7 @@
     var aMagnitude = a.magnitude;
     var bMagnitude = b.magnitude;
     if (bMagnitude.length === 0) {
-      throw new ArithmeticException();
+      throw new RangeError();
     }
     if (aMagnitude.length === 0) {
       return ZERO;
@@ -328,7 +327,7 @@
         top = bMagnitude[bMagnitude.length - 1];
       }
       if (top < floor(base / 2)) {
-        throw new Error();
+        throw new RangeError();
       }
     }
 
@@ -444,7 +443,7 @@
       var result = "";
       var magnitude = this.magnitude;
 
-      var groupLength = floor(log(base) / log(radix));
+      var groupLength = log(base, radix);
       var wr = pow(radix, groupLength, 1);
       var remainderMagnitude = createArray(magnitude.length);
       copyArray(magnitude, remainderMagnitude);
@@ -456,7 +455,7 @@
           --remainderMagnitudeLength;
         }
         var t = q.toString(radix);
-        result = zeros[remainderMagnitudeLength !== 0 ? groupLength - t.length : 0] + t + result;
+        result = repeat("0", remainderMagnitudeLength !== 0 ? groupLength - t.length : 0, "") + t + result;
       }
 
       return (this.signum < 0 ? "-" + result : (result === "" ? "0" : result));
@@ -471,7 +470,6 @@
 
   BigInteger.ZERO = ZERO;
   BigInteger.ONE = ONE;
-  exports.ArithmeticException = ArithmeticException;
   exports.BigInteger = BigInteger;
 
 }(this));

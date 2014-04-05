@@ -7,22 +7,24 @@ The API is a subset of the java.math.BigInteger:
 
 ```javascript
 /*
+
 constructor:
-BigInteger(s:string, radix:number = 10)
+function BigInteger(s:string, radix:number = 10) { ... }
 
 methods:
-BigInteger.ptototype.compareTo
-BigInteger.prototype.negate
-BigInteger.prototype.add
-BigInteger.prototype.subtract
-BigInteger.prototype.multiply
-BigInteger.prototype.divide
-BigInteger.ptototype.remainder
-BigInteger.prototype.toString
+BigInteger.prototype.compareTo = function (x:BigInteger):number { ... };
+BigInteger.prototype.negate = function ():BigInteger { ... };
+BigInteger.prototype.add = function (x:BigInteger):BigInteger { ... };
+BigInteger.prototype.subtract = function (x:BigInteger):BigInteger { ... };
+BigInteger.prototype.multiply = function (x:BigInteger):BigInteger { ... };
+BigInteger.prototype.divide = function (x:BigInteger):BigInteger { ... };
+BigInteger.prototype.remainder = function (x:BigInteger):BigInteger { ... };
+BigInteger.prototype.toString = function (radix:number = 10):string { ... };
 
 constants:
-BigInteger.ZERO
-BigInteger.ONE
+BigInteger.ZERO = new BigInteger("0");
+BigInteger.ONE = new BigInteger("1");
+
 */
 
 function factorial(n) {

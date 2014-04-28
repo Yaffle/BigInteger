@@ -36,11 +36,12 @@
 
   var pow = function (x, count, accumulator) {
     while (count > 0) {
-      if (count % 2 !== 0) {
+      var c = floor(count / 2);
+      if (count !== c * 2) {
         count -= 1;
         accumulator *= x;
       } else {
-        count /= 2;
+        count = c;
         x *= x;
       }
     }
@@ -91,11 +92,12 @@
 
   var repeat = function (s, count, accumulator) {
     while (count > 0) {
-      if (count % 2 !== 0) {
+      var c = floor(count / 2);
+      if (count !== c * 2) {
         count -= 1;
         accumulator += s;
       } else {
-        count /= 2;
+        count = c;
         s += s;
       }
     }
@@ -104,10 +106,12 @@
 
   var base = 16777216;
 
-  var checkRadix = function (radix) {
+  var toRadix = function (radix) {
+    radix = floor(Number(radix)) || 10;
     if (!(2 <= radix && radix <= 36)) {
       throw new RangeError("radix argument must be between 2 and 36");
     }
+    return radix;
   };
 
   var convertRadix = function (data, size, radix) {
@@ -138,8 +142,7 @@
       flag = null;
       sign = radix;
     } else {
-      radix = floor(+radix) || 10;
-      checkRadix(radix);
+      radix = toRadix(radix);
       if (s === "") {
         throw new RangeError();
       }
@@ -154,6 +157,9 @@
       }
 
       var length = s.length - from;
+      if (length === 0) {
+        throw new RangeError();
+      }
 
       var groupLength = log(base, radix);
       var size = -floor(-length / groupLength);
@@ -196,10 +202,17 @@
   var compareTo = function (a, b) {
     var aSignum = a.signum;
     var bSignum = b.signum;
+    if (aSignum === bSignum) {
+      var c = compareMagnitude(a.magnitude, b.magnitude);
+      if (c === 0) {
+        return c; // positive zero
+      }
+      return aSignum * c;
+    }
     if (aSignum === 0) {
       return -bSignum;
     }
-    return (aSignum === bSignum ? compareMagnitude(a.magnitude, b.magnitude) : 1) * aSignum;
+    return aSignum;
   };
 
   var add = function (aMagnitude, aSignum, bMagnitude, bSignum) {
@@ -225,7 +238,7 @@
     var i = -1;
     var c = 0;
     while (++i < bMagnitudeLength) {
-      c += bMagnitude[i] + (i < aMagnitudeLength ? (subtract ? -aMagnitude[i] : aMagnitude[i]) : 0);
+      c += (i < aMagnitudeLength ? (subtract ? bMagnitude[i] - aMagnitude[i] : bMagnitude[i] + aMagnitude[i]) : bMagnitude[i]);
       if (c < 0) {
         result[i] = base + c;
         c = -1;
@@ -302,7 +315,7 @@
     return trimArray(result);
   };
 
-  var divideAndRemainder = function (a, b, which) {
+  var divide = function (a, b) {
     var aMagnitude = a.magnitude;
     var bMagnitude = b.magnitude;
     if (bMagnitude.length === 0) {
@@ -312,7 +325,7 @@
       return ZERO;
     }
     if (bMagnitude.length === 1 && bMagnitude[0] === 1) {
-      return (which === 1 ? ZERO : multiply(a, b));
+      return multiply(a, b);
     }
 
     var top = bMagnitude[bMagnitude.length - 1];
@@ -334,7 +347,7 @@
     var aLength = aMagnitude.length;
     var bLength = bMagnitude.length;
     var shift = aLength - bLength + 1;
-    var div = which === 0 ? createArray(shift > 0 ? shift : 0) : null; // ZERO
+    var div = createArray(shift > 0 ? shift : 0); // ZERO
 
     var remainderData = createArray(aLength + 1); // +1 to avoid some `index < remainderData.length`
     copyArray(aMagnitude, remainderData);
@@ -394,16 +407,14 @@
         }
         ax += c;
       }
-      if (which === 0) {
-        div[i] = q;
-      }
+      div[i] = q;
     }
 
-    if (which === 1 && lambda > 1) {
-      divideBySmall(remainderData, remainderData.length, lambda);
-    }
+    //if (lambda > 1) {
+    //  divideBySmall(remainderData, remainderData.length, lambda);
+    //}
 
-    return which === 0 ? createBigInteger(resultSign, trimArray(div)) : createBigInteger(a.signum, trimArray(remainderData));
+    return createBigInteger(resultSign, trimArray(div));
   };
 
   BigInteger.prototype = {
@@ -413,7 +424,7 @@
     },
 
     negate: function () {
-      return createBigInteger(-this.signum, this.magnitude);
+      return createBigInteger(0 - this.signum, this.magnitude);
     },
 
     add: function (b) {
@@ -421,7 +432,7 @@
     },
 
     subtract: function (b) {
-      return add(this.magnitude, this.signum, b.magnitude, -b.signum);
+      return add(this.magnitude, this.signum, b.magnitude, 0 - b.signum);
     },
 
     multiply: function (b) {
@@ -429,16 +440,16 @@
     },
 
     divide: function (b) {
-      return divideAndRemainder(this, b, 0);
+      return divide(this, b);
     },
 
     remainder: function (b) {
-      return divideAndRemainder(this, b, 1);
+      var c = multiply(b, divide(this, b));
+      return add(this.magnitude, this.signum, c.magnitude, 0 - c.signum);
     },
 
     toString: function (radix) { // 2 <= radix <= 36 < base
-      radix = floor(+radix) || 10;
-      checkRadix(radix);
+      radix = toRadix(radix);
 
       var result = "";
       var magnitude = this.magnitude;

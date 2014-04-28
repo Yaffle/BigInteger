@@ -54,8 +54,6 @@
   };
 
   var flag = null;
-  var ZERO = null;
-  var ONE = null;
   var createArray = function (length) {
     var x = new Array(length);
     var i = -1;
@@ -227,7 +225,7 @@
     var subtract = false;
     if (aSignum !== bSignum) {
       if (z === 0) { // a === (-b)
-        return ZERO;
+        return createBigInteger(0, createArray(0));
       }
       subtract = true;
     }
@@ -262,7 +260,7 @@
     var aLength = aMagnitude.length;
     var bLength = bMagnitude.length;
     if (aLength === 0 || bLength === 0) {
-      return ZERO;
+      return createBigInteger(0, aMagnitude);
     }
     var resultSign = a.signum * b.signum;
     if (aLength === 1 && aMagnitude[0] === 1) {
@@ -322,7 +320,7 @@
       throw new RangeError();
     }
     if (aMagnitude.length === 0) {
-      return ZERO;
+      return createBigInteger(0, aMagnitude);
     }
     if (bMagnitude.length === 1 && bMagnitude[0] === 1) {
       return multiply(a, b);
@@ -474,10 +472,10 @@
 
   };
 
-  ZERO = createBigInteger(0, createArray(0));
+  var ZERO = createBigInteger(0, createArray(0));
   var oneData = createArray(1);
   oneData[0] = 1;
-  ONE = createBigInteger(1, oneData);
+  var ONE = createBigInteger(1, oneData);
 
   BigInteger.ZERO = ZERO;
   BigInteger.ONE = ONE;

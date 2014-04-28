@@ -260,7 +260,7 @@
     var aLength = aMagnitude.length;
     var bLength = bMagnitude.length;
     if (aLength === 0 || bLength === 0) {
-      return createBigInteger(0, aMagnitude);
+      return createBigInteger(0, createArray(0));
     }
     var resultSign = a.signum * b.signum;
     if (aLength === 1 && aMagnitude[0] === 1) {
@@ -313,17 +313,17 @@
     return trimArray(result);
   };
 
-  var divide = function (a, b) {
+  var divideAndRemainder = function (a, b, which) {
     var aMagnitude = a.magnitude;
     var bMagnitude = b.magnitude;
     if (bMagnitude.length === 0) {
       throw new RangeError();
     }
     if (aMagnitude.length === 0) {
-      return createBigInteger(0, aMagnitude);
+      return createBigInteger(0, createArray(0));
     }
     if (bMagnitude.length === 1 && bMagnitude[0] === 1) {
-      return multiply(a, b);
+      return (which === 1 ? createBigInteger(0, createArray(0)) : multiply(a, b));
     }
 
     var top = bMagnitude[bMagnitude.length - 1];
@@ -345,7 +345,7 @@
     var aLength = aMagnitude.length;
     var bLength = bMagnitude.length;
     var shift = aLength - bLength + 1;
-    var div = createArray(shift > 0 ? shift : 0); // ZERO
+    var div = which === 0 ? createArray(shift > 0 ? shift : 0) : null; // ZERO
 
     var remainderData = createArray(aLength + 1); // +1 to avoid some `index < remainderData.length`
     copyArray(aMagnitude, remainderData);
@@ -405,14 +405,16 @@
         }
         ax += c;
       }
-      div[i] = q;
+      if (which === 0) {
+        div[i] = q;
+      }
     }
 
-    //if (lambda > 1) {
-    //  divideBySmall(remainderData, remainderData.length, lambda);
-    //}
+    if (which === 1 && lambda > 1) {
+      divideBySmall(remainderData, remainderData.length, lambda);
+    }
 
-    return createBigInteger(resultSign, trimArray(div));
+    return which === 0 ? createBigInteger(resultSign, trimArray(div)) : createBigInteger(a.signum, trimArray(remainderData));
   };
 
   BigInteger.prototype = {
@@ -438,12 +440,11 @@
     },
 
     divide: function (b) {
-      return divide(this, b);
+      return divideAndRemainder(this, b, 0);
     },
 
     remainder: function (b) {
-      var c = multiply(b, divide(this, b));
-      return add(this.magnitude, this.signum, c.magnitude, 0 - c.signum);
+      return divideAndRemainder(this, b, 1);
     },
 
     toString: function (radix) { // 2 <= radix <= 36 < base

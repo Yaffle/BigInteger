@@ -102,7 +102,7 @@
     return accumulator;
   };
 
-  var base = 16777216;
+  var base = 67108864;
 
   var toRadix = function (radix) {
     radix = floor(Number(radix)) || 10;

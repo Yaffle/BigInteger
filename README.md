@@ -41,5 +41,6 @@ console.log(factorial(30).toString());
 
 Other implementations with Java-like API:
  1. http://www-cs-students.stanford.edu/~tjw/jsbn/
- 2. https://github.com/iriscouch/bigdecimal.js
- 3. https://github.com/silentmatt/javascript-biginteger
+ 2. https://github.com/silentmatt/javascript-biginteger
+ 3. https://github.com/iriscouch/bigdecimal.js
+ 4. https://github.com/dtrebbien/BigDecimal.js

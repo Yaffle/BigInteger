@@ -28,23 +28,18 @@
     return n;
   };
 
-  var pow = function (x, count, accumulator) {
-    while (count > 0) {
-      var c = floor(count / 2);
-      if (count !== c * 2) {
-        count -= 1;
-        accumulator *= x;
-      } else {
-        count = c;
-        x *= x;
-      }
-    }
-    return accumulator;
-  };
+  var base = 67108864;
 
-  var log = function (a, b) {
-    var x = floor(a / b) >= b ? 2 * log(a, b * b) : 0;
-    return floor(a / pow(b, x, 1)) >= b ? x + 1 : x;
+  var getGroupLengthAndGroupRadix = function (radix) {
+    var z = floor(base / radix) >= radix ? getGroupLengthAndGroupRadix(radix * radix) : 1;
+    var groupLength = floor(z / (base * 2));
+    var groupRadix = z - groupLength * base * 2;
+    groupLength *= 2;
+    if (floor(base / groupRadix) >= radix) {
+      groupLength += 1;
+      groupRadix *= radix;
+    }
+    return groupLength * base * 2 + groupRadix;
   };
 
   var flag = null;
@@ -95,8 +90,6 @@
     }
     return accumulator;
   };
-
-  var base = 67108864;
 
   var toRadix = function (radix) {
     radix = floor(Number(radix)) || 10;
@@ -153,7 +146,9 @@
         throw new RangeError();
       }
 
-      var groupLength = log(base, radix);
+      var z = getGroupLengthAndGroupRadix(radix);
+      var groupLength = floor(z / (base * 2));
+      var groupRadix = z - groupLength * base * 2;
       var size = -floor(-length / groupLength);
 
       magnitude = createArray(size);
@@ -164,7 +159,7 @@
         i -= groupLength;
       }
 
-      convertRadix(magnitude, size, pow(radix, groupLength, 1));
+      convertRadix(magnitude, size, groupRadix);
       magnitude = trimArray(magnitude);
     }
     this.signum = magnitude.length === 0 ? 0 : sign;
@@ -414,14 +409,16 @@
   var toString = function (signum, magnitude, radix) {
     var result = "";
 
-    var groupLength = log(base, radix);
-    var wr = pow(radix, groupLength, 1);
+    var z = getGroupLengthAndGroupRadix(radix);
+    var groupLength = floor(z / (base * 2));
+    var groupRadix = z - groupLength * base * 2;
+
     var remainder = createArray(magnitude.length);
     copyArray(magnitude, remainder);
     var remainderLength = remainder.length;
 
     while (remainderLength !== 0) {
-      var q = divideBySmall(remainder, remainderLength, wr);
+      var q = divideBySmall(remainder, remainderLength, groupRadix);
       while (remainderLength !== 0 && remainder[remainderLength - 1] === 0) {
         --remainderLength;
       }

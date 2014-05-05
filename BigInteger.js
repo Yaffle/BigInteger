@@ -42,7 +42,6 @@
     return groupLength * base * 2 + groupRadix;
   };
 
-  var flag = null;
   var createArray = function (length) {
     var x = new Array(length);
     var i = -1;
@@ -50,14 +49,6 @@
       x[i] = 0;
     }
     return x;
-  };
-
-  var copyArray = function (y, x) {
-    var length = y.length;
-    var i = -1;
-    while (++i < length) {
-      x[i] = y[i];
-    }
   };
 
   var trimArray = function (a) {
@@ -116,15 +107,14 @@
 
   // BigInteger(String[, radix = 10]), (2 <= radix <= 36)
   // throws RangeError, TypeError
-  function BigInteger(s, radix) {
+  function BigInteger(s, radix, m) {
     if (typeof s !== "string") {
       throw new TypeError();
     }
     var magnitude = null;
     var sign = 1;
-    if (flag !== null) {
-      magnitude = flag;
-      flag = null;
+    if (m !== undefined) {
+      magnitude = m;
       sign = radix;
     } else {
       radix = toRadix(radix);
@@ -167,8 +157,7 @@
   }
 
   var createBigInteger = function (signum, magnitude) {
-    flag = magnitude;
-    return new BigInteger("", signum);
+    return new BigInteger("", signum, magnitude);
   };
 
   var compareMagnitude = function (aMagnitude, bMagnitude) {
@@ -332,7 +321,11 @@
     var quotinent = divide ? createArray(shift > 0 ? shift : 0) : null; // ZERO
 
     var remainder = createArray(aLength + 1); // `+ 1` to avoid `index < remainder.length`
-    copyArray(aMagnitude, remainder);
+    var n = -1;
+    while (++n < aLength) {
+      remainder[n] = aMagnitude[n];
+    }
+    
     var resultSign = aSignum * bSignum;
     var i = shift;
     while (--i >= 0) {
@@ -413,9 +406,12 @@
     var groupLength = floor(z / (base * 2));
     var groupRadix = z - groupLength * base * 2;
 
-    var remainder = createArray(magnitude.length);
-    copyArray(magnitude, remainder);
-    var remainderLength = remainder.length;
+    var remainderLength = magnitude.length;
+    var remainder = createArray(remainderLength);
+    var n = -1;
+    while (++n < remainderLength) {
+      remainder[n] = magnitude[n];
+    }
 
     while (remainderLength !== 0) {
       var q = divideBySmall(remainder, remainderLength, groupRadix);

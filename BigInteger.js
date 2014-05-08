@@ -83,7 +83,6 @@
   };
 
   var toRadix = function (radix) {
-    radix = floor(Number(radix)) || 10;
     if (radix < 2 || radix > 36) {
       throw new RangeError("radix argument must be between 2 and 36");
     }
@@ -117,8 +116,9 @@
       magnitude = m;
       sign = radix;
     } else {
-      radix = toRadix(radix);
-      if (s === "") {
+      radix = toRadix(radix === undefined ? 10 : floor(Number(radix)));
+      var length = s.length;
+      if (length === 0) {
         throw new RangeError();
       }
       var signCharCode = s.charCodeAt(0);
@@ -131,7 +131,7 @@
         sign = -1;
       }
 
-      var length = s.length - from;
+      length -= from;
       if (length === 0) {
         throw new RangeError();
       }
@@ -423,7 +423,7 @@
       result = repeat("0", remainderLength !== 0 ? groupLength - t.length : 0, "") + t + result;
     }
 
-    return (signum < 0 ? "-" + result : (result === "" ? "0" : result));
+    return (signum === 0 ? "0" : (signum < 0 ? "-" + result : result));
   };
 
   BigInteger.prototype = {
@@ -457,7 +457,7 @@
     },
 
     toString: function (radix) {
-      return toString(this.signum, this.magnitude, toRadix(radix));
+      return toString(this.signum, this.magnitude, toRadix(radix === undefined ? 10 : floor(Number(radix))));
     }
 
   };

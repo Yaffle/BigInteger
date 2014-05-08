@@ -400,7 +400,8 @@
       return "0";
     }
     if (remainderLength === 1) {
-      return (signum * magnitude[0]).toString(radix);
+      result = magnitude[0].toString(radix);
+      return (signum < 0 ? "-" + result : result);
     }
     var groupLength = 0;
     var groupRadix = 1;

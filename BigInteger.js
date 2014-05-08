@@ -30,18 +30,6 @@
 
   var base = 67108864;
 
-  var getGroupLengthAndGroupRadix = function (radix) {
-    var z = floor(base / radix) >= radix ? getGroupLengthAndGroupRadix(radix * radix) : 1;
-    var groupLength = floor(z / (base * 2));
-    var groupRadix = z - groupLength * base * 2;
-    groupLength *= 2;
-    if (floor(base / groupRadix) >= radix) {
-      groupLength += 1;
-      groupRadix *= radix;
-    }
-    return groupLength * base * 2 + groupRadix;
-  };
-
   var createArray = function (length) {
     var x = new Array(length);
     var i = -1;
@@ -136,9 +124,13 @@
         throw new RangeError();
       }
 
-      var z = getGroupLengthAndGroupRadix(radix);
-      var groupLength = floor(z / (base * 2));
-      var groupRadix = z - groupLength * base * 2;
+      var groupLength = 0;
+      var groupRadix = 1;
+      var y = floor(base / radix);
+      while (y >= groupRadix && groupLength < length) {
+        groupLength += 1;
+        groupRadix *= radix;
+      }
       var size = -floor(-length / groupLength);
 
       magnitude = createArray(size);
@@ -403,11 +395,20 @@
   var toString = function (signum, magnitude, radix) {
     var result = "";
 
-    var z = getGroupLengthAndGroupRadix(radix);
-    var groupLength = floor(z / (base * 2));
-    var groupRadix = z - groupLength * base * 2;
-
     var remainderLength = magnitude.length;
+    if (remainderLength === 0) {
+      return "0";
+    }
+    if (remainderLength === 1) {
+      return (signum * magnitude[0]).toString(radix);
+    }
+    var groupLength = 0;
+    var groupRadix = 1;
+    var y = floor(base / radix);
+    while (y >= groupRadix) {
+      groupLength += 1;
+      groupRadix *= radix;
+    }
     var remainder = createArray(remainderLength);
     var n = -1;
     while (++n < remainderLength) {
@@ -423,7 +424,7 @@
       result = repeat("0", remainderLength !== 0 ? groupLength - t.length : 0, "") + t + result;
     }
 
-    return (signum === 0 ? "0" : (signum < 0 ? "-" + result : result));
+    return (signum < 0 ? "-" + result : result);
   };
 
   BigInteger.prototype = {

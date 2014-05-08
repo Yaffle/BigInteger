@@ -43,7 +43,7 @@
     var length = a.length;
     var k = length;
     while (k > 0 && a[k - 1] === 0) {
-      --k;
+      k -= 1;
     }
     if (length !== k) {
       var x = createArray(k);
@@ -352,7 +352,7 @@
         ax = 0;
       }
       while (ax !== 0) {
-        --q;
+        q -= 1;
         var c = 0;
         var k = i - 1;
         while (++k < t) {
@@ -419,7 +419,7 @@
     while (remainderLength !== 0) {
       var q = divideBySmall(remainder, remainderLength, groupRadix);
       while (remainderLength !== 0 && remainder[remainderLength - 1] === 0) {
-        --remainderLength;
+        remainderLength -= 1;
       }
       var t = q.toString(radix);
       result = repeat("0", remainderLength !== 0 ? groupLength - t.length : 0, "") + t + result;

@@ -15,9 +15,9 @@
       var code = s.charCodeAt(i);
       var v = code - 48;
       if (v < 0 || y <= v) {
-        v = code - 65 + 10;
+        v = 10 - 65 + code;
         if (v < 10 || radix <= v) {
-          v = code - 97 + 10;
+          v = 10 - 97 + code;
           if (v < 10 || radix <= v) {
             throw new RangeError();
           }
@@ -393,15 +393,15 @@
   };
 
   var toString = function (signum, magnitude, radix) {
-    var result = "";
+    var result = signum < 0 ? "-" : "";
 
     var remainderLength = magnitude.length;
     if (remainderLength === 0) {
       return "0";
     }
     if (remainderLength === 1) {
-      result = magnitude[0].toString(radix);
-      return (signum < 0 ? "-" + result : result);
+      result += magnitude[0].toString(radix);
+      return result;
     }
     var groupLength = 0;
     var groupRadix = 1;
@@ -410,22 +410,28 @@
       groupLength += 1;
       groupRadix *= radix;
     }
-    var remainder = createArray(remainderLength);
+    var size = remainderLength - floor(-remainderLength / groupLength);
+    var remainder = createArray(size);
     var n = -1;
     while (++n < remainderLength) {
       remainder[n] = magnitude[n];
     }
 
+    var k = size;
     while (remainderLength !== 0) {
       var q = divideBySmall(remainder, remainderLength, groupRadix);
       while (remainderLength !== 0 && remainder[remainderLength - 1] === 0) {
         remainderLength -= 1;
       }
-      var t = q.toString(radix);
-      result = repeat("0", remainderLength !== 0 ? groupLength - t.length : 0, "") + t + result;
+      remainder[--k] = q;
     }
-
-    return (signum < 0 ? "-" + result : result);
+    result += remainder[k].toString(radix);
+    while (++k < size) {
+      var t = remainder[k].toString(radix);
+      result += repeat("0", groupLength - t.length, "");
+      result += t;
+    }
+    return result;
   };
 
   BigInteger.prototype = {

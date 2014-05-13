@@ -29,9 +29,10 @@
   };
 
   var base = 67108864;
+  var emptyArray = [];
 
   var createArray = function (length) {
-    var x = new Array(length);
+    var x = length === 0 ? emptyArray : new Array(length); // new Array(length); - https://bugzilla.mozilla.org/show_bug.cgi?id=966173#c38
     var i = -1;
     while (++i < length) {
       x[i] = 0;

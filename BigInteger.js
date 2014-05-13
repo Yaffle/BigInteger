@@ -31,8 +31,10 @@
   var base = 67108864;
 
   var createArray = function (length) {
-    //var x = new Array(length); - see https://bugzilla.mozilla.org/show_bug.cgi?id=989586 , http://stackoverflow.com/questions/22726716/new-arraylength-gives-wrong-size
-    var x = [];
+    var x = new Array(length);
+    if (x.length !== length) {
+      x = []; // see https://bugzilla.mozilla.org/show_bug.cgi?id=989586 , http://stackoverflow.com/questions/22726716/new-arraylength-gives-wrong-size
+    }
     var i = -1;
     while (++i < length) {
       x[i] = 0;

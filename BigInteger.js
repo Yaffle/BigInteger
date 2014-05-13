@@ -59,7 +59,8 @@
     return a;
   };
 
-  var repeat = function (s, count, accumulator) {
+  var repeat = function (s, count) {
+    var accumulator = "";
     while (count > 0) {
       var c = floor(count / 2);
       if (count !== c * 2) {
@@ -431,7 +432,7 @@
     result += remainder[k].toString(radix);
     while (++k < size) {
       var t = remainder[k].toString(radix);
-      result += repeat("0", groupLength - t.length, "");
+      result += repeat("0", groupLength - t.length);
       result += t;
     }
     return result;

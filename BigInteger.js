@@ -29,18 +29,16 @@
   };
 
   var base = 67108864;
-  var emptyArray = null;
 
   var createArray = function (length) {
-    var x = length === 0 && emptyArray !== null ? emptyArray : new Array(length); // new Array(length); - https://bugzilla.mozilla.org/show_bug.cgi?id=966173#c38
+    //var x = new Array(length); - see https://bugzilla.mozilla.org/show_bug.cgi?id=989586 , http://stackoverflow.com/questions/22726716/new-arraylength-gives-wrong-size
+    var x = [];
     var i = -1;
     while (++i < length) {
       x[i] = 0;
     }
     return x;
   };
-
-  emptyArray = createArray(0);
 
   var trimArray = function (a) {
     var length = a.length;

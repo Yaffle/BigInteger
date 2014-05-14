@@ -42,8 +42,7 @@
     return x;
   };
 
-  var trimArray = function (a) {
-    var length = a.length;
+  var trimArray = function (a, length) {
     var k = length;
     while (k > 0 && a[k - 1] === 0) {
       k -= 1;
@@ -146,7 +145,7 @@
       }
 
       convertRadix(magnitude, size, groupRadix);
-      magnitude = trimArray(magnitude);
+      magnitude = trimArray(magnitude, size);
     }
     this.signum = magnitude.length === 0 ? 0 : sign;
     this.magnitude = magnitude;
@@ -204,7 +203,8 @@
     // result !== 0
     var aLength = aMagnitude.length;
     var bLength = bMagnitude.length;
-    var result = createArray(bLength + (subtract ? 0 : 1));
+    var resultLength = bLength + (subtract ? 0 : 1);
+    var result = createArray(resultLength);
     var i = -1;
     var c = 0;
     while (++i < bLength) {
@@ -223,7 +223,7 @@
     if (c !== 0) {
       result[bLength] = c;
     }
-    return createBigInteger(bSignum, trimArray(result));
+    return createBigInteger(bSignum, trimArray(result, resultLength));
   };
 
   var multiply = function (aSignum, aMagnitude, bSignum, bMagnitude) {
@@ -239,7 +239,8 @@
     if (bLength === 1 && bMagnitude[0] === 1) {
       return createBigInteger(resultSign, aMagnitude);
     }
-    var result = createArray(aLength + bLength);
+    var resultLength = aLength + bLength;
+    var result = createArray(resultLength);
     var i = -1;
     while (++i < bLength) {
       var c = 0;
@@ -252,7 +253,7 @@
       }
       result[aLength + i] = c;
     }
-    return createBigInteger(resultSign, trimArray(result));
+    return createBigInteger(resultSign, trimArray(result, resultLength));
   };
 
   var divideBySmall = function (magnitude, length, lambda) {
@@ -268,9 +269,8 @@
     return x;
   };
 
-  var multiplyBySmall = function (magnitude, lambda) {
-    var length = magnitude.length;
-    var result = createArray(length + 1);
+  var multiplyBySmall = function (magnitude, length, extraLength, lambda) {
+    var result = createArray(length + extraLength);
     var c = 0;
     var i = -1;
     while (++i < length) {
@@ -279,42 +279,48 @@
       result[i] = c - q * base;
       c = q;
     }
-    result[length] = c;
-    return trimArray(result);
+    if (extraLength !== 0) {
+      result[length] = c;
+    }
+    return result;
   };
 
   var divideAndRemainder = function (aSignum, aMagnitude, bSignum, bMagnitude, divide) {
-    if (bMagnitude.length === 0) {
+    var aLength = aMagnitude.length;
+    var bLength = bMagnitude.length;
+    if (bLength === 0) {
       throw new RangeError();
     }
-    if (aMagnitude.length === 0) {
+    if (aLength === 0) {
       return createBigInteger(0, createArray(0));
     }
-    if (bMagnitude.length === 1 && bMagnitude[0] === 1) {
+    if (bLength === 1 && bMagnitude[0] === 1) {
       return divide ? createBigInteger(aSignum === 0 ? 0 : aSignum * bSignum, aMagnitude) : createBigInteger(0, createArray(0));
     }
 
-    var top = bMagnitude[bMagnitude.length - 1];
+    var top = bMagnitude[bLength - 1];
 
     // normalization
     var lambda = 1;
-    if (bMagnitude.length > 1) {
+    if (bLength > 1) {
       //lambda = -floor(-floor(base / 2) / top);
       lambda = floor(base / (top + 1));
       if (lambda > 1) {
-        aMagnitude = multiplyBySmall(aMagnitude, lambda);
-        bMagnitude = multiplyBySmall(bMagnitude, lambda);
-        top = bMagnitude[bMagnitude.length - 1];
+        aMagnitude = multiplyBySmall(aMagnitude, aLength, 1, lambda);
+        bMagnitude = multiplyBySmall(bMagnitude, bLength, 0, lambda);
+        aLength += 1;
+        top = bMagnitude[bLength - 1];
       }
       if (top < floor(base / 2)) {
         throw new RangeError();
       }
     }
 
-    var aLength = aMagnitude.length;
-    var bLength = bMagnitude.length;
     var shift = aLength - bLength + 1;
-    var quotinent = divide ? createArray(shift > 0 ? shift : 0) : null; // ZERO
+    if (shift < 0) {
+      shift = 0;
+    }
+    var quotinent = divide ? createArray(shift) : null; // ZERO
 
     var remainder = createArray(aLength + 1); // `+ 1` to avoid `index < remainder.length`
     var n = -1;
@@ -385,13 +391,13 @@
     }
 
     if (!divide && lambda > 1) {
-      divideBySmall(remainder, remainder.length, lambda);
+      divideBySmall(remainder, aLength, lambda);
     }
 
     if (divide) {
-      quotinent = trimArray(quotinent);
+      quotinent = trimArray(quotinent, shift);
     } else {
-      remainder = trimArray(remainder);
+      remainder = trimArray(remainder, aLength + 1);
     }
     return divide ? createBigInteger(quotinent.length === 0 ? 0 : resultSign, quotinent) : createBigInteger(remainder.length === 0 ? 0 : aSignum, remainder);
   };

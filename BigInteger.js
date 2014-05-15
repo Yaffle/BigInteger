@@ -279,18 +279,20 @@
       return divide ? createBigInteger(aSignum === 0 ? 0 : aSignum * bSignum, aMagnitude) : createBigInteger(0, createArray(0));
     }
 
-    var remainder = createArray(aLength + 1); // `+ 1` to avoid `index < remainder.length` and for extra digit in case of normalization
-    var n = -1;
-    while (++n < aLength) {
+    var divisorOffset = aLength + 1;
+    var divisorAndRemainder = createArray(divisorOffset + bLength + 1); // `+ 1` to avoid `index < remainder.length` and for extra digit in case of normalization
+    var divisor = divisorAndRemainder;
+    var remainder = divisorAndRemainder;
+    var n = aLength;
+    while (--n >= 0) {
       remainder[n] = aMagnitude[n];
     }
-    var divisor = createArray(bLength + 1); // `+ 1` to avoid `index < divisor.length`
-    var m = -1;
-    while (++m < bLength) {
-      divisor[m] = bMagnitude[m];
+    var m = bLength;
+    while (--m >= 0) {
+      divisor[divisorOffset + m] = bMagnitude[m];
     }
 
-    var top = divisor[bLength - 1];
+    var top = divisor[divisorOffset + bLength - 1];
 
     // normalization
     var lambda = 1;
@@ -298,10 +300,8 @@
       //lambda = -floor(-floor(base / 2) / top);
       lambda = floor(base / (top + 1));
       if (lambda > 1) {
-        multiplyBySmall(remainder, aLength, lambda);
-        multiplyBySmall(divisor, bLength, lambda);
-        //aLength += 1;
-        top = divisor[bLength - 1];
+        multiplyBySmall(divisorAndRemainder, divisorOffset + bLength, lambda);
+        top = divisor[divisorOffset + bLength - 1];
       }
       if (top < floor(base / 2)) {
         throw new RangeError();
@@ -326,7 +326,7 @@
       var bx = 0;
       var j = i - 1;
       while (++j <= t) {
-        bx += q * divisor[j - i];
+        bx += q * divisor[divisorOffset + j - i];
         var qbx = floor(bx / base);
         ax += remainder[j] - (bx - qbx * base);
         if (ax < 0) {
@@ -343,7 +343,7 @@
         var c = 0;
         var k = i - 1;
         while (++k <= t) {
-          c += remainder[k] + divisor[k - i];
+          c += remainder[k] + divisor[divisorOffset + k - i];
           if (c < base) {
             remainder[k] = c;
             c = 0;
@@ -362,18 +362,28 @@
       }
     }
 
-    if (!divide && lambda > 1) {
-      divideBySmall(remainder, aLength + 1, lambda);
-    }
-
     if (divide) {
       if (quotinent === null) {
-        quotinent = createArray(0);
+        return createBigInteger(0, createArray(0));
       }
-    } else {
-      remainder = trimArray(remainder, aLength + 1);
+      return createBigInteger(aSignum * bSignum, quotinent);
     }
-    return divide ? createBigInteger(quotinent.length === 0 ? 0 : aSignum * bSignum, quotinent) : createBigInteger(remainder.length === 0 ? 0 : aSignum, remainder);
+
+    var remainderLength = aLength + 1;
+    if (lambda > 1) {
+      divideBySmall(remainder, remainderLength, lambda);
+    }
+    while (remainderLength > 0 && remainder[remainderLength - 1] === 0) {
+      remainderLength -= 1;
+    }
+    if (remainderLength === 0) {
+      return createBigInteger(0, createArray(0));
+    }
+    var result = createArray(remainderLength);
+    while (--remainderLength >= 0) {
+      result[remainderLength] = remainder[remainderLength];
+    }
+    return createBigInteger(aSignum, result);
   };
 
   var toString = function (signum, magnitude, radix) {

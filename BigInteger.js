@@ -50,6 +50,25 @@
     return k;
   };
 
+  var performMultiplication = function (carry, a, b, result, index) {
+    var c = carry + a * b;
+    var q = floor(c / base);
+    result[index] = (c - q * base);
+    carry = q;
+    return carry;
+  };
+
+  var performDivision = function (c, v, d, result, index) {
+    var carry = c * base + v;
+    var q = floor(carry / d);
+    if (result === null) {
+      return q;
+    }
+    result[index] = q;
+    carry -= q * d;
+    return carry;
+  };
+
   var toRadix = function (radix) {
     if (radix < 2 || radix > 36) {
       throw new RangeError("radix argument must be between 2 and 36");
@@ -61,13 +80,10 @@
     var i = -1;
     while (++i < size) {
       var j = -1;
-      var x = magnitude[i];
+      var c = magnitude[i];
       magnitude[i] = 0;
       while (++j < i + 1) {
-        x += magnitude[j] * radix;
-        var q = floor(x / base);
-        magnitude[j] = x - q * base;
-        x = q;
+        c = performMultiplication(c, magnitude[j], radix, magnitude, j);
       }
     }
   };
@@ -225,10 +241,7 @@
       var c = 0;
       var j = -1;
       while (++j < aLength) {
-        c += aMagnitude[j] * bMagnitude[i] + result[j + i];
-        var q = floor(c / base);
-        result[j + i] = c - q * base;
-        c = q;
+        c = performMultiplication(c + result[j + i], aMagnitude[j], bMagnitude[i], result, j + i);
       }
       result[aLength + i] = c;
     }
@@ -239,11 +252,7 @@
     var c = 0;
     var i = length;
     while (--i >= 0) {
-      c *= base;
-      c += magnitude[i];
-      var q = floor(c / lambda);
-      magnitude[i] = q;
-      c -= q * lambda;
+      c = performDivision(c, magnitude[i], lambda, magnitude, i);
     }
     return c;
   };
@@ -252,10 +261,7 @@
     var c = 0;
     var i = -1;
     while (++i < length) {
-      c += magnitude[i] * lambda;
-      var q = floor(c / base);
-      magnitude[i] = c - q * base;
-      c = q;
+      c = performMultiplication(c, magnitude[i], lambda, magnitude, i);
     }
     magnitude[length] = c;
   };
@@ -310,7 +316,7 @@
     var i = shift;
     while (--i >= 0) {
       var t = bLength + i;
-      var q = floor((remainder[t] * base + remainder[t - 1]) / top);
+      var q = performDivision(remainder[t], remainder[t - 1], top, null, 0);
       if (q > base - 1) {
         q = base - 1;
       }
@@ -319,9 +325,9 @@
       var bx = 0;
       var j = i - 1;
       while (++j <= t) {
-        bx += q * divisor[divisorOffset + j - i];
-        var qbx = floor(bx / base);
-        ax += remainder[j] - (bx - qbx * base);
+        var rj = remainder[j];
+        bx = performMultiplication(bx, q, divisor[divisorOffset + j - i], remainder, j);
+        ax += rj - remainder[j];
         if (ax < 0) {
           remainder[j] = base + ax;
           ax = -1;
@@ -329,7 +335,6 @@
           remainder[j] = ax;
           ax = 0;
         }
-        bx = qbx;
       }
       while (ax !== 0) {
         q -= 1;

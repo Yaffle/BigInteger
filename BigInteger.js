@@ -54,19 +54,14 @@
     var c = carry + a * b;
     var q = floor(c / base);
     result[index] = (c - q * base);
-    carry = q;
-    return carry;
+    return q;
   };
 
-  var performDivision = function (c, v, d, result, index) {
-    var carry = c * base + v;
-    var q = floor(carry / d);
-    if (result === null) {
-      return q;
-    }
+  var performDivision = function (a, b, divisor, result, index) {
+    var carry = a * base + b;
+    var q = floor(carry / divisor);
     result[index] = q;
-    carry -= q * d;
-    return carry;
+    return (carry - q * divisor);
   };
 
   var toRadix = function (radix) {
@@ -316,10 +311,10 @@
     var i = shift;
     while (--i >= 0) {
       var t = bLength + i;
-      var q = performDivision(remainder[t], remainder[t - 1], top, null, 0);
-      if (q > base - 1) {
-        q = base - 1;
-      }
+      var tmp = remainder[t];
+      performDivision(remainder[t], remainder[t - 1], top, remainder, t);
+      var q = remainder[t];
+      remainder[t] = tmp;
 
       var ax = 0;
       var bx = 0;

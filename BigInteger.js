@@ -3,7 +3,11 @@
 (function (exports) {
   "use strict";
 
-  // http://cacr.uwaterloo.ca/hac/about/chap14.pdf
+  // BigInteger.js
+  // Available under Public Domain
+  // https://github.com/Yaffle/BigInteger/
+
+  // For implementation details, see "The Handbook of Applied Cryptography" http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf
 
   var floor = Math.floor;
 

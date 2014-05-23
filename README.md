@@ -39,8 +39,12 @@ console.log(factorial(30).toString());
 
 ```
 
-Other implementations with Java-like API:
+Other pure JavaScript implementations with Java-like API:
  1. http://www-cs-students.stanford.edu/~tjw/jsbn/
  2. https://github.com/silentmatt/javascript-biginteger
- 3. https://github.com/iriscouch/bigdecimal.js
- 4. https://github.com/dtrebbien/BigDecimal.js
+ 3. https://github.com/peterolson/BigInteger.js
+ 4. https://github.com/iriscouch/bigdecimal.js
+ 5. https://github.com/dtrebbien/BigDecimal.js
+And with another API:
+ 1. https://github.com/indutny/bn.js
+ 2. https://github.com/dankogai/js-math-bigint

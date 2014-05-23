@@ -45,6 +45,7 @@ Other pure JavaScript implementations with Java-like API:
  3. https://github.com/peterolson/BigInteger.js
  4. https://github.com/iriscouch/bigdecimal.js
  5. https://github.com/dtrebbien/BigDecimal.js
+
 And with another API:
  1. https://github.com/indutny/bn.js
  2. https://github.com/dankogai/js-math-bigint

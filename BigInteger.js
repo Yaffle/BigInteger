@@ -68,11 +68,10 @@
     return (carry - q * divisor);
   };
 
-  var toRadix = function (radix) {
+  var checkRadix = function (radix) {
     if (radix < 2 || radix > 36) {
       throw new RangeError("radix argument must be between 2 and 36");
     }
-    return radix;
   };
 
   var convertRadix = function (magnitude, size, radix) {
@@ -101,7 +100,13 @@
       magnitude = m;
       magnitudeLength = sign * radix;
     } else {
-      radix = toRadix(radix === undefined ? 10 : floor(Number(radix)));
+      if (radix === undefined) {
+        radix = 10;
+      }
+      if (typeof radix !== "number" || floor(radix) !== radix) {
+        throw new TypeError();
+      }
+      checkRadix(radix);
       var length = s.length;
       if (length === 0) {
         throw new RangeError();
@@ -461,7 +466,14 @@
     },
 
     toString: function (radix) {
-      return toString(this.signum, this.magnitude, this.length, toRadix(radix === undefined ? 10 : floor(Number(radix))));
+      if (radix === undefined) {
+        radix = 10;
+      }
+      if (typeof radix !== "number" || floor(radix) !== radix) {
+        throw new TypeError();
+      }
+      checkRadix(radix);
+      return toString(this.signum, this.magnitude, this.length, radix);
     }
 
   };

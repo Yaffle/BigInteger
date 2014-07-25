@@ -133,7 +133,7 @@
         groupLength += 1;
         groupRadix *= radix;
       }
-      var size = -floor(-length / groupLength);
+      var size = floor((length - 1) / groupLength) + 1;
 
       magnitude = createArray(size);
       var k = size;
@@ -299,7 +299,7 @@
     // normalization
     var lambda = 1;
     if (bLength > 1) {
-      //lambda = -floor(-floor(base / 2) / top);
+      //lambda = floor((floor(base / 2) - 1) / top) + 1;
       lambda = floor(base / (top + 1));
       if (lambda > 1) {
         multiplyBySmall(divisorAndRemainder, divisorOffset + bLength, lambda);
@@ -408,7 +408,7 @@
       groupLength += 1;
       groupRadix *= radix;
     }
-    var size = remainderLength - floor(-remainderLength / groupLength);
+    var size = remainderLength + floor((remainderLength - 1) / groupLength) + 1;
     var remainder = createArray(size);
     var n = -1;
     while (++n < remainderLength) {

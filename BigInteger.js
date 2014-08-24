@@ -87,11 +87,8 @@
   };
 
   // BigInteger(String[, radix = 10]), (2 <= radix <= 36)
-  // throws RangeError, TypeError
+  // throws RangeError
   function BigInteger(s, radix, m) {
-    if (typeof s !== "string") {
-      throw new TypeError();
-    }
     var sign = 1;
     var magnitude = null;
     var magnitudeLength = 0;
@@ -103,8 +100,8 @@
       if (radix === undefined) {
         radix = 10;
       }
-      if (typeof radix !== "number" || floor(radix) !== radix) {
-        throw new TypeError();
+      if (radix !== Number(radix) || floor(radix) !== radix) {
+        throw new RangeError();
       }
       checkRadix(radix);
       var length = s.length;
@@ -139,7 +136,8 @@
       var k = size;
       var i = length;
       while (i > 0) {
-        magnitude[--k] = parseInteger(s, from + (i > groupLength ? i - groupLength : 0), from + i, radix);
+        k -= 1;
+        magnitude[k] = parseInteger(s, from + (i > groupLength ? i - groupLength : 0), from + i, radix);
         i -= groupLength;
       }
 
@@ -421,7 +419,8 @@
       while (remainderLength !== 0 && remainder[remainderLength - 1] === 0) {
         remainderLength -= 1;
       }
-      remainder[--k] = q;
+      k -= 1;
+      remainder[k] = q;
     }
     result += remainder[k].toString(radix);
     while (++k < size) {
@@ -435,47 +434,43 @@
     return result;
   };
 
-  BigInteger.prototype = {
+  BigInteger.prototype.compareTo = function (b) {
+    return compareTo(this.signum, this.magnitude, this.length, b.signum, b.magnitude, b.length);
+  };
 
-    compareTo: function (b) {
-      return compareTo(this.signum, this.magnitude, this.length, b.signum, b.magnitude, b.length);
-    },
+  BigInteger.prototype.negate = function () {
+    return createBigInteger(0 - this.signum, this.magnitude, this.length);
+  };
 
-    negate: function () {
-      return createBigInteger(0 - this.signum, this.magnitude, this.length);
-    },
+  BigInteger.prototype.add = function (b) {
+    return add(this.signum, this.magnitude, this.length, b.signum, b.magnitude, b.length);
+  };
 
-    add: function (b) {
-      return add(this.signum, this.magnitude, this.length, b.signum, b.magnitude, b.length);
-    },
+  BigInteger.prototype.subtract = function (b) {
+    return add(this.signum, this.magnitude, this.length, 0 - b.signum, b.magnitude, b.length);
+  };
 
-    subtract: function (b) {
-      return add(this.signum, this.magnitude, this.length, 0 - b.signum, b.magnitude, b.length);
-    },
+  BigInteger.prototype.multiply = function (b) {
+    return multiply(this.signum, this.magnitude, this.length, b.signum, b.magnitude, b.length);
+  };
 
-    multiply: function (b) {
-      return multiply(this.signum, this.magnitude, this.length, b.signum, b.magnitude, b.length);
-    },
+  BigInteger.prototype.divide = function (b) {
+    return divideAndRemainder(this.signum, this.magnitude, this.length, b.signum, b.magnitude, b.length, true);
+  };
 
-    divide: function (b) {
-      return divideAndRemainder(this.signum, this.magnitude, this.length, b.signum, b.magnitude, b.length, true);
-    },
+  BigInteger.prototype.remainder = function (b) {
+    return divideAndRemainder(this.signum, this.magnitude, this.length, b.signum, b.magnitude, b.length, false);
+  };
 
-    remainder: function (b) {
-      return divideAndRemainder(this.signum, this.magnitude, this.length, b.signum, b.magnitude, b.length, false);
-    },
-
-    toString: function (radix) {
-      if (radix === undefined) {
-        radix = 10;
-      }
-      if (typeof radix !== "number" || floor(radix) !== radix) {
-        throw new TypeError();
-      }
-      checkRadix(radix);
-      return toString(this.signum, this.magnitude, this.length, radix);
+  BigInteger.prototype.toString = function (radix) {
+    if (radix === undefined) {
+      radix = 10;
     }
-
+    if (radix !== Number(radix) || floor(radix) !== radix) {
+      throw new RangeError();
+    }
+    checkRadix(radix);
+    return toString(this.signum, this.magnitude, this.length, radix);
   };
 
   var ZERO = createBigInteger(0, createArray(0), 0);

@@ -1,0 +1,19 @@
+{
+  "name": "js-big-integer",
+  "description": "Yet another class for arbitrary-precision integers in pure JavaScript. Small. Well tested.",
+  "version": "1.0.2",
+  "keywords": [
+    "BigInteger",
+    "BigNumber",
+    "bigint",
+    "bignum"
+  ],
+  "main": "BigInteger.js",
+  "repositories": [
+    {
+      "type": "git",
+      "url": "https://github.com/Yaffle/BigInteger"
+    }
+  ],
+  "homepage": "https://github.com/Yaffle/BigInteger"
+}

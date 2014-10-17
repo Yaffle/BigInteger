@@ -36,9 +36,6 @@
 
   var createArray = function (length) {
     var x = new Array(length);
-    if (x.length !== length) {
-      x.length = length; // see https://bugzilla.mozilla.org/show_bug.cgi?id=989586 , http://stackoverflow.com/questions/22726716/new-arraylength-gives-wrong-size
-    }
     var i = -1;
     while (++i < length) {
       x[i] = 0;
@@ -69,24 +66,32 @@
   };
 
   var checkRadix = function (radix) {
+    if (radix !== Number(radix) || floor(radix) !== radix) {
+      throw new RangeError();
+    }
     if (radix < 2 || radix > 36) {
       throw new RangeError("radix argument must be between 2 and 36");
     }
   };
 
-  var convertRadix = function (magnitude, size, radix) {
-    var i = -1;
-    while (++i < size) {
-      var j = -1;
-      var c = magnitude[i];
-      magnitude[i] = 0;
-      while (++j < i + 1) {
-        c = performMultiplication(c, magnitude[j], radix, magnitude, j);
-      }
+  var divideBySmall = function (magnitude, length, lambda) {
+    var c = 0;
+    var i = length;
+    while (--i >= 0) {
+      c = performDivision(c, magnitude[i], lambda, magnitude, i);
     }
+    return c;
   };
 
-  // BigInteger(String[, radix = 10]), (2 <= radix <= 36)
+  var multiplyBySmall = function (c, magnitude, length, lambda) {
+    var i = -1;
+    while (++i < length) {
+      c = performMultiplication(c, magnitude[i], lambda, magnitude, i);
+    }
+    magnitude[length] = c;
+  };
+
+  // BigInteger(string[, radix = 10]), (2 <= radix <= 36)
   // throws RangeError
   function BigInteger(s, radix, m) {
     var sign = 1;
@@ -99,9 +104,6 @@
     } else {
       if (radix === undefined) {
         radix = 10;
-      }
-      if (radix !== Number(radix) || floor(radix) !== radix) {
-        throw new RangeError();
       }
       checkRadix(radix);
       var length = s.length;
@@ -141,7 +143,11 @@
         i -= groupLength;
       }
 
-      convertRadix(magnitude, size, groupRadix);
+      var j = -1;
+      while (++j < size) {
+        multiplyBySmall(magnitude[j], magnitude, j, groupRadix);
+      }
+
       magnitudeLength = getLength(magnitude, size);
     }
     this.signum = magnitudeLength === 0 ? 0 : sign;
@@ -250,24 +256,6 @@
     return createBigInteger(resultSign, result, getLength(result, resultLength));
   };
 
-  var divideBySmall = function (magnitude, length, lambda) {
-    var c = 0;
-    var i = length;
-    while (--i >= 0) {
-      c = performDivision(c, magnitude[i], lambda, magnitude, i);
-    }
-    return c;
-  };
-
-  var multiplyBySmall = function (magnitude, length, lambda) {
-    var c = 0;
-    var i = -1;
-    while (++i < length) {
-      c = performMultiplication(c, magnitude[i], lambda, magnitude, i);
-    }
-    magnitude[length] = c;
-  };
-
   var divideAndRemainder = function (aSignum, aMagnitude, aLength, bSignum, bMagnitude, bLength, divide) {
     if (bLength === 0) {
       throw new RangeError();
@@ -300,9 +288,10 @@
       //lambda = floor((floor(base / 2) - 1) / top) + 1;
       lambda = floor(base / (top + 1));
       if (lambda > 1) {
-        multiplyBySmall(divisorAndRemainder, divisorOffset + bLength, lambda);
+        multiplyBySmall(0, divisorAndRemainder, divisorOffset + bLength, lambda);
         top = divisor[divisorOffset + bLength - 1];
       }
+      // assertion
       if (top < floor(base / 2)) {
         throw new RangeError();
       }
@@ -416,9 +405,7 @@
     var k = size;
     while (remainderLength !== 0) {
       var q = divideBySmall(remainder, remainderLength, groupRadix);
-      while (remainderLength !== 0 && remainder[remainderLength - 1] === 0) {
-        remainderLength -= 1;
-      }
+      remainderLength = getLength(remainder, remainderLength);
       k -= 1;
       remainder[k] = q;
     }
@@ -465,9 +452,6 @@
   BigInteger.prototype.toString = function (radix) {
     if (radix === undefined) {
       radix = 10;
-    }
-    if (radix !== Number(radix) || floor(radix) !== radix) {
-      throw new RangeError();
     }
     checkRadix(radix);
     return toString(this.signum, this.magnitude, this.length, radix);

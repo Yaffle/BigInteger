@@ -7,7 +7,8 @@
   // Available under Public Domain
   // https://github.com/Yaffle/BigInteger/
 
-  // For implementation details, see "The Handbook of Applied Cryptography" http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf
+  // For implementation details, see "The Handbook of Applied Cryptography"
+  // http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf
 
   var floor = Math.floor;
 
@@ -41,14 +42,6 @@
       x[i] = 0;
     }
     return x;
-  };
-
-  var getLength = function (a, length) {
-    var k = length;
-    while (k > 0 && a[k - 1] === 0) {
-      k -= 1;
-    }
-    return k;
   };
 
   var performMultiplication = function (carry, a, b, result, index) {
@@ -148,7 +141,10 @@
         multiplyBySmall(magnitude[j], magnitude, j, groupRadix);
       }
 
-      magnitudeLength = getLength(magnitude, size);
+      while (size > 0 && magnitude[size - 1] === 0) {
+        size -= 1;
+      }
+      magnitudeLength = size;
     }
     this.signum = magnitudeLength === 0 ? 0 : sign;
     this.magnitude = magnitude;
@@ -228,7 +224,10 @@
     if (c !== 0) {
       result[bLength] = c;
     }
-    return createBigInteger(bSignum, result, getLength(result, resultLength));
+    while (resultLength > 0 && result[resultLength - 1] === 0) {
+      resultLength -= 1;
+    }
+    return createBigInteger(bSignum, result, resultLength);
   };
 
   var multiply = function (aSignum, aMagnitude, aLength, bSignum, bMagnitude, bLength) {
@@ -253,7 +252,10 @@
       }
       result[aLength + i] = c;
     }
-    return createBigInteger(resultSign, result, getLength(result, resultLength));
+    while (resultLength > 0 && result[resultLength - 1] === 0) {
+      resultLength -= 1;
+    }
+    return createBigInteger(resultSign, result, resultLength);
   };
 
   var divideAndRemainder = function (aSignum, aMagnitude, aLength, bSignum, bMagnitude, bLength, divide) {
@@ -264,19 +266,22 @@
       return createBigInteger(0, createArray(0), 0);
     }
     if (bLength === 1 && bMagnitude[0] === 1) {
-      return divide ? createBigInteger(aSignum === 0 ? 0 : aSignum * bSignum, aMagnitude, aLength) : createBigInteger(0, createArray(0), 0);
+      if (divide) {
+        return createBigInteger(aSignum === 0 ? 0 : aSignum * bSignum, aMagnitude, aLength);
+      }
+      return createBigInteger(0, createArray(0), 0);
     }
 
-    var divisorOffset = aLength + 1;
-    var divisorAndRemainder = createArray(divisorOffset + bLength + 1); // `+ 1` to avoid `index < remainder.length` and for extra digit in case of normalization
+    var divisorOffset = aLength + 1; // `+ 1` for extra digit in case of normalization
+    var divisorAndRemainder = createArray(divisorOffset + bLength + 1); // `+ 1` to avoid `index < length` checks
     var divisor = divisorAndRemainder;
     var remainder = divisorAndRemainder;
-    var n = aLength;
-    while (--n >= 0) {
+    var n = -1;
+    while (++n < aLength) {
       remainder[n] = aMagnitude[n];
     }
-    var m = bLength;
-    while (--m >= 0) {
+    var m = -1;
+    while (++m < bLength) {
       divisor[divisorOffset + m] = bMagnitude[m];
     }
 
@@ -370,8 +375,8 @@
       return createBigInteger(0, createArray(0), 0);
     }
     var result = createArray(remainderLength);
-    var o = remainderLength;
-    while (--o >= 0) {
+    var o = -1;
+    while (++o < remainderLength) {
       result[o] = remainder[o];
     }
     return createBigInteger(aSignum, result, remainderLength);
@@ -405,7 +410,9 @@
     var k = size;
     while (remainderLength !== 0) {
       var q = divideBySmall(remainder, remainderLength, groupRadix);
-      remainderLength = getLength(remainder, remainderLength);
+      while (remainderLength > 0 && remainder[remainderLength - 1] === 0) {
+        remainderLength -= 1;
+      }
       k -= 1;
       remainder[k] = q;
     }

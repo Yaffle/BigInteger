@@ -86,18 +86,19 @@
 
   // BigInteger(string[, radix = 10]), (2 <= radix <= 36)
   // throws RangeError
-  function BigInteger(s, radix, m) {
+  function BigInteger(s, radix, magnitude) {
+    if (radix === undefined) {
+      radix = 10;
+    }
+    if (magnitude === undefined) {
+      magnitude = undefined;
+    }
     var sign = 1;
-    var magnitude = null;
     var magnitudeLength = 0;
-    if (m !== undefined) {
+    if (magnitude !== undefined) {
       sign = radix < 0 ? -1 : 1;
-      magnitude = m;
       magnitudeLength = sign * radix;
     } else {
-      if (radix === undefined) {
-        radix = 10;
-      }
       checkRadix(radix);
       var length = s.length;
       if (length === 0) {
@@ -306,7 +307,7 @@
     if (shift < 0) {
       shift = 0;
     }
-    var quotinent = null;
+    var quotinent = undefined;
     var quotinentLength = 0;
 
     var i = shift;
@@ -349,7 +350,7 @@
         ax += c;
       }
       if (divide && q !== 0) {
-        if (quotinent === null) {
+        if (quotinentLength === 0) {
           quotinentLength = i + 1;
           quotinent = createArray(quotinentLength);
         }
@@ -358,7 +359,7 @@
     }
 
     if (divide) {
-      if (quotinent === null) {
+      if (quotinentLength === 0) {
         return createBigInteger(0, createArray(0), 0);
       }
       return createBigInteger(aSignum * bSignum, quotinent, quotinentLength);

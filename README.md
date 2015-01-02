@@ -3,35 +3,37 @@ BigInteger
 
 Yet another BigInteger class in JavaScript
 
-The API is a subset of the java.math.BigInteger:
-
 ```javascript
 /*
 
-constructor:
-function BigInteger(s:string, radix:number = 10) { ... }
+factory:
+BigInteger.parseInteger = function (s:string, radix:number = 10):any {...};
 
 methods:
-BigInteger.prototype.compareTo = function (x:BigInteger):number { ... };
-BigInteger.prototype.negate = function ():BigInteger { ... };
-BigInteger.prototype.add = function (x:BigInteger):BigInteger { ... };
-BigInteger.prototype.subtract = function (x:BigInteger):BigInteger { ... };
-BigInteger.prototype.multiply = function (x:BigInteger):BigInteger { ... };
-BigInteger.prototype.divide = function (x:BigInteger):BigInteger { ... };
-BigInteger.prototype.remainder = function (x:BigInteger):BigInteger { ... };
+BigInteger.prototype[BigInteger.COMPARE_TO] = function (x:BigInteger|number):any { ... };
+BigInteger.prototype[BigInteger.NEGATE] = function ():any { ... };
+BigInteger.prototype[BigInteger.ADD] = function (x:BigInteger|number):any { ... };
+BigInteger.prototype[BigInteger.SUBTRACT] = function (x:BigInteger|number):any { ... };
+BigInteger.prototype[BigInteger.MULTIPLY] = function (x:BigInteger|number):any { ... };
+BigInteger.prototype[BigInteger.DIVIDE] = function (x:BigInteger|number):any { ... };
+BigInteger.prototype[BigInteger.REMAINDER] = function (x:BigInteger|number):any { ... };
 BigInteger.prototype.toString = function (radix:number = 10):string { ... };
 
-constants:
-BigInteger.ZERO = new BigInteger("0");
-BigInteger.ONE = new BigInteger("1");
+Number.prototype[BigInteger.COMPARE_TO] = function (x:BigInteger|number):any { ... };
+Number.prototype[BigInteger.NEGATE] = function ():any { ... };
+Number.prototype[BigInteger.ADD] = function (x:BigInteger|number):any { ... };
+Number.prototype[BigInteger.SUBTRACT] = function (x:BigInteger|number):any { ... };
+Number.prototype[BigInteger.MULTIPLY] = function (x:BigInteger|number):any { ... };
+Number.prototype[BigInteger.DIVIDE] = function (x:BigInteger|number):any { ... };
+Number.prototype[BigInteger.REMAINDER] = function (x:BigInteger|number):any { ... };
 
 */
 
 function factorial(n) {
-  var result = BigInteger.ONE;
+  var result = 1;
   var i = 0;
   while (++i <= n) {
-    result = result.multiply(new BigInteger(String(i)));
+    result = result[BigInteger.MULTIPLY](i);
   }
   return result;
 }

@@ -1,6 +1,6 @@
 /*jslint plusplus: true, vars: true, indent: 2 */
 
-(function (exports, Symbol) {
+(function (exports) {
   "use strict";
 
   // BigInteger.js
@@ -178,22 +178,22 @@
     return new BigInteger("", signum * length, magnitude);
   };
 
-  var compareMagnitude = function (aMagnitude, aLength, bMagnitude, bLength) {
+  var compareMagnitude = function (aMagnitude, aLength, aValue, bMagnitude, bLength, bValue) {
     if (aLength !== bLength) {
       return aLength < bLength ? -1 : +1;
     }
     var i = aLength;
     while (--i >= 0) {
-      if (aMagnitude[i] !== bMagnitude[i]) {
-        return aMagnitude[i] < bMagnitude[i] ? -1 : +1;
+      if ((aMagnitude === undefined ? aValue : aMagnitude[i]) !== (bMagnitude === undefined ? bValue : bMagnitude[i])) {
+        return (aMagnitude === undefined ? aValue : aMagnitude[i]) < (bMagnitude === undefined ? bValue : bMagnitude[i]) ? -1 : +1;
       }
     }
     return 0;
   };
 
-  var compareTo = function (aSignum, aMagnitude, aLength, bSignum, bMagnitude, bLength) {
+  var compareTo = function (aSignum, aMagnitude, aLength, aValue, bSignum, bMagnitude, bLength, bValue) {
     if (aSignum === bSignum) {
-      var c = compareMagnitude(aMagnitude, aLength, bMagnitude, bLength);
+      var c = compareMagnitude(aMagnitude, aLength, aValue, bMagnitude, bLength, bValue);
       if (c === 0) {
         return c; // positive zero
       }
@@ -205,25 +205,21 @@
     return aSignum;
   };
 
-  var add = function (aSignum, aMagnitude, aLength, bSignum, bMagnitude, bLength) {
-    var z = compareMagnitude(aMagnitude, aLength, bMagnitude, bLength);
-    if (z > 0) {
-      return add(bSignum, bMagnitude, bLength, aSignum, aMagnitude, aLength);
-    }
+  var addNext = function (aSignum, aMagnitude, aLength, aValue, bSignum, bMagnitude, bLength, bValue) {
     // |a| <= |b|
     if (aSignum === 0) {
-      return createBigInteger(bSignum, bMagnitude, bLength);
+      return bMagnitude === undefined ? bSignum * bValue : createBigInteger(bSignum, bMagnitude, bLength);
     }
     var subtract = false;
     if (aSignum !== bSignum) {
-      if (z === 0) { // a === (-b)
-        return createBigInteger(0, createArray(0), 0);
-      }
       subtract = true;
       if (aLength === bLength) {
-        while (bLength > 0 && aMagnitude[bLength - 1] === bMagnitude[bLength - 1]) {
+        while (bLength > 0 && (aMagnitude === undefined ? aValue : aMagnitude[bLength - 1]) === (bMagnitude === undefined ? bValue : bMagnitude[bLength - 1])) {
           bLength -= 1;
         }
+      }
+      if (bLength === 0) { // a === (-b)
+        return createBigInteger(0, createArray(0), 0);
       }
     }
     // result !== 0
@@ -232,7 +228,15 @@
     var i = -1;
     var c = 0;
     while (++i < bLength) {
-      c += (i < aLength ? (subtract ? bMagnitude[i] - aMagnitude[i] : bMagnitude[i] + aMagnitude[i]) : bMagnitude[i]);
+      if (i < aLength) {
+        if (subtract) {
+          c += (bMagnitude === undefined ? bValue : bMagnitude[i]) - (aMagnitude === undefined ? aValue : aMagnitude[i]);
+        } else {
+          c += (bMagnitude === undefined ? bValue : bMagnitude[i]) + (aMagnitude === undefined ? aValue : aMagnitude[i]);
+        }
+      } else {
+        c += bMagnitude === undefined ? bValue : bMagnitude[i];
+      }
       if (c < 0) {
         result[i] = base + c;
         c = -1;
@@ -253,16 +257,24 @@
     return createBigInteger(bSignum, result, resultLength);
   };
 
-  var multiply = function (aSignum, aMagnitude, aLength, bSignum, bMagnitude, bLength) {
+  var add = function (aSignum, aMagnitude, aLength, aValue, bSignum, bMagnitude, bLength, bValue) {
+    var z = compareMagnitude(aMagnitude, aLength, aValue, bMagnitude, bLength, bValue);
+    if (z > 0) {
+      return addNext(bSignum, bMagnitude, bLength, bValue, aSignum, aMagnitude, aLength, aValue);
+    }
+    return addNext(aSignum, aMagnitude, aLength, aValue, bSignum, bMagnitude, bLength, bValue);
+  };
+
+  var multiply = function (aSignum, aMagnitude, aLength, aValue, bSignum, bMagnitude, bLength, bValue) {
     if (aLength === 0 || bLength === 0) {
       return createBigInteger(0, createArray(0), 0);
     }
     var resultSign = aSignum * bSignum;
-    if (aLength === 1 && aMagnitude[0] === 1) {
-      return createBigInteger(resultSign, bMagnitude, bLength);
+    if (aLength === 1 && (aMagnitude === undefined ? aValue : aMagnitude[0]) === 1) {
+      return bMagnitude === undefined ? resultSign * bValue : createBigInteger(resultSign, bMagnitude, bLength);
     }
-    if (bLength === 1 && bMagnitude[0] === 1) {
-      return createBigInteger(resultSign, aMagnitude, aLength);
+    if (bLength === 1 && (bMagnitude === undefined ? bValue : bMagnitude[0]) === 1) {
+      return aMagnitude === undefined ? resultSign * aValue : createBigInteger(resultSign, aMagnitude, aLength);
     }
     var resultLength = aLength + bLength;
     var result = createArray(resultLength);
@@ -271,7 +283,7 @@
       var c = 0;
       var j = -1;
       while (++j < aLength) {
-        c = performMultiplication(c + result[j + i], aMagnitude[j], bMagnitude[i], result, j + i);
+        c = performMultiplication(c + result[j + i], (aMagnitude === undefined ? aValue : aMagnitude[j]), (bMagnitude === undefined ? bValue : bMagnitude[i]), result, j + i);
       }
       result[aLength + i] = c;
     }
@@ -281,16 +293,16 @@
     return createBigInteger(resultSign, result, resultLength);
   };
 
-  var divideAndRemainder = function (aSignum, aMagnitude, aLength, bSignum, bMagnitude, bLength, divide) {
+  var divideAndRemainder = function (aSignum, aMagnitude, aLength, aValue, bSignum, bMagnitude, bLength, bValue, divide) {
     if (bLength === 0) {
       throw new RangeError();
     }
     if (aLength === 0) {
       return createBigInteger(0, createArray(0), 0);
     }
-    if (bLength === 1 && bMagnitude[0] === 1) {
+    if (bLength === 1 && (bMagnitude === undefined ? bValue : bMagnitude[0]) === 1) {
       if (divide) {
-        return createBigInteger(aSignum === 0 ? 0 : aSignum * bSignum, aMagnitude, aLength);
+        return aMagnitude === undefined ? aSignum * bSignum * aValue : createBigInteger(aSignum * bSignum, aMagnitude, aLength);
       }
       return createBigInteger(0, createArray(0), 0);
     }
@@ -301,11 +313,11 @@
     var remainder = divisorAndRemainder;
     var n = -1;
     while (++n < aLength) {
-      remainder[n] = aMagnitude[n];
+      remainder[n] = aMagnitude === undefined ? aValue : aMagnitude[n];
     }
     var m = -1;
     while (++m < bLength) {
-      divisor[divisorOffset + m] = bMagnitude[m];
+      divisor[divisorOffset + m] = bMagnitude === undefined ? bValue : bMagnitude[m];
     }
 
     var top = divisor[divisorOffset + bLength - 1];
@@ -451,6 +463,11 @@
     return result;
   };
 
+  function F() {}
+  F.prototype = Number.prototype;
+
+  BigInteger.prototype = new F();
+
   BigInteger.prototype.toString = function (radix) {
     if (radix === undefined) {
       radix = 10;
@@ -460,7 +477,7 @@
   };
 
   var compareToBigIntegerBigInteger = function (x, y) {
-    return compareTo(x.signum, x.magnitude, x.length, y.signum, y.magnitude, y.length);
+    return compareTo(x.signum, x.magnitude, x.length, 0, y.signum, y.magnitude, y.length, 0);
   };
 
   var negateBigInteger = function (x) {
@@ -468,64 +485,41 @@
   };
 
   var addBigIntegerBigInteger = function (x, y) {
-    return add(x.signum, x.magnitude, x.length, y.signum, y.magnitude, y.length);
+    return add(x.signum, x.magnitude, x.length, 0, y.signum, y.magnitude, y.length, 0);
   };
 
   var subtractBigIntegerBigInteger = function (x, y) {
-    return add(x.signum, x.magnitude, x.length, 0 - y.signum, y.magnitude, y.length);
+    return add(x.signum, x.magnitude, x.length, 0, 0 - y.signum, y.magnitude, y.length, 0);
   };
 
   var multiplyBigIntegerBigInteger = function (x, y) {
-    return multiply(x.signum, x.magnitude, x.length, y.signum, y.magnitude, y.length);
+    return multiply(x.signum, x.magnitude, x.length, 0, y.signum, y.magnitude, y.length, 0);
   };
 
   var divideBigIntegerBigInteger = function (x, y) {
-    return divideAndRemainder(x.signum, x.magnitude, x.length, y.signum, y.magnitude, y.length, true);
+    return divideAndRemainder(x.signum, x.magnitude, x.length, 0, y.signum, y.magnitude, y.length, 0, true);
   };
 
   var remainderBigIntegerBigInteger = function (x, y) {
-    return divideAndRemainder(x.signum, x.magnitude, x.length, y.signum, y.magnitude, y.length, false);
+    return divideAndRemainder(x.signum, x.magnitude, x.length, 0, y.signum, y.magnitude, y.length, 0, false);
   };
 
-  var ZERO = createBigInteger(0, createArray(0), 0);
-  var oneMagnitude = createArray(1);
-  oneMagnitude[0] = 1;
-  var ONE = createBigInteger(1, oneMagnitude, 1);
-
-  BigInteger.ZERO = ZERO;
-  BigInteger.ONE = ONE;
   exports.BigInteger = BigInteger;
-
-  BigInteger.valueOf = function (x) {
-    if (x === 0) {
-      return BigInteger.ZERO;
-    }
-    var signum = +1;
-    if (x < 0) {
-      signum = -1;
-      x = -x;
-    }
-    var a1 = floor(x / base);
-    var a0 = x - a1 * base;
-    var result = createArray(2);
-    result[0] = a0;
-    result[1] = a1;
-    return createBigInteger(signum, result, a1 === 0 ? 1 : 2);
+  
+  var sign = function (x) {
+    return x === 0 ? 0 : (x < 0 ? -1 : +1);
   };
 
-  var toNumber = function (x) {
-    var signum = x.signum;
-    var magnitude = x.magnitude;
-    var length = x.length;
-    return length === 0 ? 0 : (length > 1 ? (signum < 0 ? -base : base) : (signum * magnitude[0]));
+  var abs = function (x) {
+    return x === 0 ? 0 : (x < 0 ? -x : +x);
   };
 
   var compareToBigIntegerNumber = function (x, y) {
-    return compareToNumberNumber(toNumber(x), y);
+    return compareTo(x.signum, x.magnitude, x.length, 0, sign(y), undefined, y === 0 ? 0 : 1, abs(y));
   };
 
   var compareToNumberBigInteger = function (x, y) {
-    return compareToNumberNumber(x, toNumber(y));
+    return compareTo(sign(x), undefined, x === 0 ? 0 : 1, abs(x), y.signum, y.magnitude, y.length, 0);
   };
 
   var compareToNumberNumber = function (x, y) {
@@ -536,62 +530,12 @@
     return 0 - x;
   };
 
-  var addNumber = function (aSignum, aMagnitude, aLength, y) {
-    if (y === 0) {
-      return createBigInteger(aSignum, aMagnitude, aLength);
-    }
-    var bSignum = +1;
-    if (y < 0) {
-      bSignum = -1;
-      y = -y;
-    }
-    if (aLength === 0) {
-      var tmp = createArray(1);
-      tmp[0] = y;
-      return createBigInteger(bSignum, tmp, 1);
-    }
-    if (aLength === 1) {
-      var value = aMagnitude[0] * aSignum + y * bSignum;
-      return BigInteger.valueOf(value);
-    }
-
-    var subtract = aSignum !== bSignum;
-    if (aSignum !== bSignum) {
-      subtract = true;
-    }
-    // result !== 0
-    var resultLength = aLength + (subtract ? 0 : 1);
-    var result = createArray(resultLength);
-    var i = -1;
-    var c = subtract ? -y : y;
-    while (++i < aLength) {
-      c += aMagnitude[i];
-      if (c < 0) {
-        result[i] = base + c;
-        c = -1;
-      } else if (c < base) {
-        result[i] = c;
-        c = 0;
-      } else {
-        result[i] = c - base;
-        c = +1;
-      }
-    }
-    if (c !== 0) {
-      result[aLength] = c;
-    }
-    while (resultLength > 0 && result[resultLength - 1] === 0) {
-      resultLength -= 1;
-    }
-    return createBigInteger(aSignum, result, resultLength);
-  };
-
   var addBigIntegerNumber = function (x, y) {
-    return addNumber(x.signum, x.magnitude, x.length, y);
+    return add(x.signum, x.magnitude, x.length, 0, sign(y), undefined, y === 0 ? 0 : 1, abs(y));
   };
 
   var addNumberBigInteger = function (x, y) {
-    return addNumber(y.signum, y.magnitude, y.length, x);
+    return add(sign(x), undefined, x === 0 ? 0 : 1, abs(x), y.signum, y.magnitude, y.length, 0);
   };
 
   var addNumberNumber = function (x, y) {
@@ -599,15 +543,15 @@
     if (isSmallInteger(value)) {
       return value;
     }
-    return BigInteger.valueOf(value);
+    return add(sign(x), undefined, x === 0 ? 0 : 1, abs(x), sign(y), undefined, y === 0 ? 0 : 1, abs(y));
   };
 
   var subtractBigIntegerNumber = function (x, y) {
-    return addNumber(x.signum, x.magnitude, x.length, 0 - y);
+    return add(x.signum, x.magnitude, x.length, 0, 0 - sign(y), undefined, y === 0 ? 0 : 1, abs(y));
   };
 
   var subtractNumberBigInteger = function (x, y) {
-    return addNumber(0 - y.signum, y.magnitude, y.length, x);
+    return add(sign(x), undefined, x === 0 ? 0 : 1, abs(x), 0 - y.signum, y.magnitude, y.length, 0);
   };
 
   var subtractNumberNumber = function (x, y) {
@@ -615,40 +559,15 @@
     if (isSmallInteger(value)) {
       return value;
     }
-    return BigInteger.valueOf(value);
+    return add(sign(x), undefined, x === 0 ? 0 : 1, abs(x), 0 - sign(y), undefined, y === 0 ? 0 : 1, abs(y));
   };
 
   var multiplyBigIntegerNumber = function (x, y) {
-    var aSignum = x.signum;
-    var aMagnitude = x.magnitude;
-    var aLength = x.length;
-    if (aLength === 0 || y === 0) {
-      return BigInteger.ZERO;
-    }
-    var bSignum = 1;
-    if (y < 0) {
-      bSignum = -1;
-      y = -y;
-    }
-    var resultSign = aSignum * bSignum;
-    if (y === 1) {
-      return createBigInteger(resultSign, aMagnitude, aLength);
-    }
-    var resultLength = aLength + 1;
-    var result = createArray(resultLength);
-    var i = -1;
-    while (++i < aLength) {
-      result[i] = aMagnitude[i];
-    }
-    multiplyBySmall(0, result, aLength, y);
-    while (resultLength > 0 && result[resultLength - 1] === 0) {
-      resultLength -= 1;
-    }
-    return createBigInteger(resultSign, result, resultLength);
+    return multiply(x.signum, x.magnitude, x.length, 0, sign(y), undefined, y === 0 ? 0 : 1, abs(y));
   };
 
   var multiplyNumberBigInteger = function (x, y) {
-    return multiplyBigIntegerNumber(y, x);
+    return multiply(sign(x), undefined, x === 0 ? 0 : 1, abs(x), y.signum, y.magnitude, y.length, 0);
   };
 
   var multiplyNumberNumber = function (x, y) {
@@ -656,60 +575,39 @@
     if (isSmallInteger(value)) {
       return value;
     }
-    return BigInteger.valueOf(value);
-  };
-
-  var divideAndRemainderNumber = function (aSignum, aMagnitude, aLength, x, divide) {
-    if (x === 0) {
-      throw new RangeError();
-    }
-    if (x < 0) {
-      aSignum = 0 - aSignum;
-      x = -x;
-    }
-    var size = aLength;
-
-    var remainder = createArray(size);
-    var i = -1;
-    while (++i < size) {
-      remainder[i] = aMagnitude[i];
-    }
-    var q = divideBySmall(remainder, size, x);
-    while (size > 0 && remainder[size - 1] === 0) {
-      size -= 1;
-    }
-    return divide ? createBigInteger(size === 0 ? 0 : aSignum, remainder, size) : q;
+    return multiply(sign(x), undefined, x === 0 ? 0 : 1, abs(x), sign(y), undefined, y === 0 ? 0 : 1, abs(y));
   };
 
   var divideBigIntegerNumber = function (x, y) {
-    return divideAndRemainderNumber(x.signum, x.magnitude, x.length, y, true);
+    return divideAndRemainder(x.signum, x.magnitude, x.length, 0, sign(y), undefined, y === 0 ? 0 : 1, abs(y), true);
   };
 
   var divideNumberBigInteger = function (x, y) {
-    var v = toNumber(y);
-    if (v === 0) {
-      throw new RangeError();
-    }
-    return (x / v) | 0;
+    return divideAndRemainder(sign(x), undefined, x === 0 ? 0 : 1, abs(x), y.signum, y.magnitude, y.length, 0, true);
   };
 
   var divideNumberNumber = function (x, y) {
     if (y === 0) {
       throw new RangeError();
     }
-    return (x / y) | 0;
+    var s = +1;
+    if (y < 0) {
+      y = -y;
+      s = -s;
+    }
+    if (x < 0) {
+      x = -x;
+      s = -s;
+    }
+    return 0 + s * floor(x / y);
   };
 
   var remainderBigIntegerNumber = function (x, y) {
-    return divideAndRemainderNumber(x.signum, x.magnitude, x.length, y, false);
+    return divideAndRemainder(x.signum, x.magnitude, x.length, 0, sign(y), undefined, y === 0 ? 0 : 1, abs(y), false);
   };
 
   var remainderNumberBigInteger = function (x, y) {
-    var v = toNumber(y);
-    if (v === 0) {
-      throw new RangeError();
-    }
-    return x % v;
+    return divideAndRemainder(sign(x), undefined, x === 0 ? 0 : 1, abs(x), y.signum, y.magnitude, y.length, 0, false);
   };
 
   var remainderNumberNumber = function (x, y) {
@@ -728,18 +626,18 @@
 
   // see http://jsperf.com/symbol-vs-property/3
 
-  var createSymbol = function (s) {
+  var Symbol = function (s) {
     return s;
   };
 
   // public:
-  BigInteger.COMPARE_TO = createSymbol("BigInteger.COMPARE_TO");
-  BigInteger.NEGATE = createSymbol("BigInteger.NEGATE");
-  BigInteger.ADD = createSymbol("BigInteger.ADD");
-  BigInteger.SUBTRACT = createSymbol("BigInteger.SUBTRACT");
-  BigInteger.MULTIPLY = createSymbol("BigInteger.MULTIPLY");
-  BigInteger.DIVIDE = createSymbol("BigInteger.DIVIDE");
-  BigInteger.REMAINDER = createSymbol("BigInteger.REMAINDER");
+  BigInteger.COMPARE_TO = Symbol("BigInteger.COMPARE_TO");
+  BigInteger.NEGATE = Symbol("BigInteger.NEGATE");
+  BigInteger.ADD = Symbol("BigInteger.ADD");
+  BigInteger.SUBTRACT = Symbol("BigInteger.SUBTRACT");
+  BigInteger.MULTIPLY = Symbol("BigInteger.MULTIPLY");
+  BigInteger.DIVIDE = Symbol("BigInteger.DIVIDE");
+  BigInteger.REMAINDER = Symbol("BigInteger.REMAINDER");
 
   // private:
   //var COMPARE_TO_NUMBER = Symbol("1");
@@ -899,6 +797,4 @@
     return remainderBigIntegerBigInteger(this, y);
   };
 
-}(this, this.Symbol !== undefined ? this.Symbol : function (s) {
-  return s;
-}));
+}(this));

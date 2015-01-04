@@ -33,8 +33,6 @@
     return n;
   };
 
-  var base = 67108864;
-
   var createArray = function (length) {
     var x = new Array(length);
     var i = -1;
@@ -43,6 +41,62 @@
     }
     return x;
   };
+
+  var base = 67108864 * 67108864;
+  var ihalf = 1 / 67108864;
+
+  var performMultiplication = function (carry, a, b, result, index) {
+    a *= ihalf;
+    b *= ihalf;
+    var a1 = floor(a);
+    var b1 = floor(b);
+    a -= a1;
+    b -= b1;
+
+    var m = a * b1 + a1 * b;
+    var m1 = floor(m);
+    m -= m1;
+    m += a * b;
+    m1 += a1 * b1;
+    if (m >= 1) {
+      m -= 1;
+      m1 += 1;
+    }
+
+    m *= base;
+
+    m += carry;
+    if (m >= base) {
+      m -= base;
+      m1 += 1;
+    }
+
+    result[index] = m;
+    return m1;
+  };
+
+  var performDivision = function (a, b, divisor, result, index) {
+    // assert(a < divisor)
+    var q = floor((a * base + b) / divisor);
+
+    // z = q * divisor
+    var z = performMultiplication(0, q, divisor, result, index);
+    var r = (a - z) * base + (b - result[index]);
+
+    // assert(-divisor < r && r < 2 * divisor)
+    if (r < 0) {
+      r += divisor;
+      q -= 1;
+    } else if (r >= divisor) {
+      r -= divisor;
+      q += 1;
+    }
+    result[index] = q;
+    return r;
+  };
+
+/*
+  var base = 67108864;
 
   var performMultiplication = function (carry, a, b, result, index) {
     var c = carry + a * b;
@@ -57,6 +111,7 @@
     result[index] = q;
     return (carry - q * divisor);
   };
+*/
 
   var checkRadix = function (radix) {
     if (radix !== Number(radix) || floor(radix) !== radix) {
@@ -109,15 +164,7 @@
     if (length === 0) {
       throw new RangeError();
     }
-    var groupLength = 0;
-    var groupRadix = 1;
-    var y = floor(base / radix);
-    while (y >= groupRadix && groupLength < length) {
-      groupLength += 1;
-      groupRadix *= radix;
-    }
-    var size = floor((length - 1) / groupLength) + 1;
-    if (!forceBigInteger && size < 2) {
+    if (!forceBigInteger && length < floor(Math.log(base) / Math.log(radix))) {
       var value = parseInteger(s, from, from + length, radix);
       if (sign < 0) {
         value = 0 - value;
@@ -126,6 +173,14 @@
         return value;
       }
     }
+    var groupLength = 0;
+    var groupRadix = 1;
+    var y = floor(base / radix);
+    while (y >= groupRadix && groupLength < length) {
+      groupLength += 1;
+      groupRadix *= radix;
+    }
+    var size = floor((length - 1) / groupLength) + 1;
 
     var magnitude = createArray(size);
     var k = size;
@@ -283,7 +338,13 @@
       var c = 0;
       var j = -1;
       while (++j < aLength) {
-        c = performMultiplication(c + result[j + i], (aMagnitude === undefined ? aValue : aMagnitude[j]), (bMagnitude === undefined ? bValue : bMagnitude[i]), result, j + i);
+        var carry = 0;
+        c += result[j + i];
+        if (c >= base) {
+          c -= base;
+          carry = 1;
+        }
+        c = carry + performMultiplication(c, (aMagnitude === undefined ? aValue : aMagnitude[j]), (bMagnitude === undefined ? bValue : bMagnitude[i]), result, j + i);
       }
       result[aLength + i] = c;
     }

@@ -54,16 +54,14 @@
     var m = a * b1 + a1 * b;
     var m1 = floor(m / half);
     m -= m1 * half;
+    m1 += a1 * b1 + 1;
     m *= half;
-    m += a * b;
-    m1 += a1 * b1;
-    if (m >= base) {
-      m -= base;
-      m1 += 1;
-    }
+    m += a * b - base + carry;
 
-    m += carry;
-    if (m >= base) {
+    if (m < 0) {
+      m += base;
+      m1 -= 1;
+    } else if (m >= base) {
       m -= base;
       m1 += 1;
     }
@@ -284,20 +282,21 @@
         if (subtract) {
           c += (bMagnitude === undefined ? bValue : bMagnitude[i]) - (aMagnitude === undefined ? aValue : aMagnitude[i]);
         } else {
-          c += (bMagnitude === undefined ? bValue : bMagnitude[i]) + (aMagnitude === undefined ? aValue : aMagnitude[i]);
+          c += (bMagnitude === undefined ? bValue : bMagnitude[i]) - base + (aMagnitude === undefined ? aValue : aMagnitude[i]);
         }
       } else {
-        c += bMagnitude === undefined ? bValue : bMagnitude[i];
+        if (subtract) {
+          c += (bMagnitude === undefined ? bValue : bMagnitude[i]);
+        } else {
+          c += (bMagnitude === undefined ? bValue : bMagnitude[i]) - base;
+        }
       }
       if (c < 0) {
         result[i] = base + c;
-        c = -1;
-      } else if (c < base) {
-        result[i] = c;
-        c = 0;
+        c = subtract ? -1 : 0;
       } else {
-        result[i] = c - base;
-        c = +1;
+        result[i] = c;
+        c = subtract ? 0 : +1;
       }
     }
     if (c !== 0) {
@@ -336,10 +335,11 @@
       var j = -1;
       while (++j < aLength) {
         var carry = 0;
-        c += result[j + i];
-        if (c >= base) {
-          c -= base;
+        c += result[j + i] - base;
+        if (c >= 0) {
           carry = 1;
+        } else {
+          c += base;
         }
         c = carry + performMultiplication(c, (aMagnitude === undefined ? aValue : aMagnitude[j]), (bMagnitude === undefined ? bValue : bMagnitude[i]), result, j + i);
       }
@@ -430,12 +430,12 @@
         var c = 0;
         var k = i - 1;
         while (++k <= t) {
-          c += remainder[k] + divisor[divisorOffset + k - i];
-          if (c < base) {
-            remainder[k] = c;
+          c += remainder[k] - base + divisor[divisorOffset + k - i];
+          if (c < 0) {
+            remainder[k] = c + base;
             c = 0;
           } else {
-            remainder[k] = c - base;
+            remainder[k] = c;
             c = +1;
           }
         }

@@ -43,27 +43,24 @@
   };
 
   var base = 67108864 * 67108864;
-  var ihalf = 1 / 67108864;
+  var half = 67108864;
 
   var performMultiplication = function (carry, a, b, result, index) {
-    a *= ihalf;
-    b *= ihalf;
-    var a1 = floor(a);
-    var b1 = floor(b);
-    a -= a1;
-    b -= b1;
+    var a1 = floor(a / half);
+    var b1 = floor(b / half);
+    a -= a1 * half;
+    b -= b1 * half;
 
     var m = a * b1 + a1 * b;
-    var m1 = floor(m);
-    m -= m1;
+    var m1 = floor(m / half);
+    m -= m1 * half;
+    m *= half;
     m += a * b;
     m1 += a1 * b1;
-    if (m >= 1) {
-      m -= 1;
+    if (m >= base) {
+      m -= base;
       m1 += 1;
     }
-
-    m *= base;
 
     m += carry;
     if (m >= base) {

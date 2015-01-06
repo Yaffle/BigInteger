@@ -11,6 +11,7 @@
   // http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf
 
   var floor = Math.floor;
+  var log = Math.log;
 
   var parseInteger = function (s, from, to, radix) {
     var i = from - 1;
@@ -42,27 +43,61 @@
     return x;
   };
 
-  var base = 67108864 * 67108864;
-  var half = 67108864;
+  var base = 2 * 67108864 * 67108864;
+  var firstHalf = 2 * 67108864;
+  var secondHalf = 67108864;
 
   var performMultiplication = function (carry, a, b, result, index) {
-    var a1 = floor(a / half);
-    var b1 = floor(b / half);
-    a -= a1 * half;
-    b -= b1 * half;
+    var a1 = floor(a / firstHalf);
+    var b1 = floor(b / firstHalf);
+    a -= a1 * firstHalf;
+    b -= b1 * firstHalf;
 
-    var m = a * b1 + a1 * b;
-    var m1 = floor(m / half);
-    m -= m1 * half;
-    m1 += a1 * b1 + 1;
-    m *= half;
-    m += a * b - base + carry;
+    // a1 * b1
+    var m1 = a1 * b1;
+    if (firstHalf !== secondHalf) {
+      m1 *= 2;
+    }
+    var x = 0;
 
+    // a * b1 + a1 * b
+    var middle = a * b1 - base + a1 * b;
+    if (middle < 0) {
+      middle += base;
+    } else {
+      m1 += firstHalf;
+    }
+    x = floor(middle / secondHalf);
+    m1 += x;
+    var m = (middle - x * secondHalf) * firstHalf;
+
+    // a * b
+    if (b > a) {
+      var t = b;
+      b = a;
+      a = t;
+    }
+    if (a > secondHalf) {
+      a -= secondHalf;
+      m += b * secondHalf - base;
+      if (m < 0) {
+        m += base;
+      } else {
+        m1 += 1;
+      }
+    }
+    m += a * b - base;
     if (m < 0) {
       m += base;
-      m1 -= 1;
-    } else if (m >= base) {
-      m -= base;
+    } else {
+      m1 += 1;
+    }
+
+    // + carry
+    m += carry - base;
+    if (m < 0) {
+      m += base;
+    } else {
       m1 += 1;
     }
 
@@ -78,6 +113,11 @@
     var z = performMultiplication(0, q, divisor, result, index);
     var r = (a - z) * base + (b - result[index]);
 
+    if (r < 0) {
+      r += divisor;
+      q -= 1;
+    }
+
     // assert(-divisor < r && r < 2 * divisor)
     if (r < 0) {
       r += divisor;
@@ -86,6 +126,7 @@
       r -= divisor;
       q += 1;
     }
+
     result[index] = q;
     return r;
   };
@@ -159,7 +200,9 @@
     if (length === 0) {
       throw new RangeError();
     }
-    if (!forceBigInteger && length < floor(Math.log(base) / Math.log(radix))) {
+    //TODO: fix
+    var groupLength = floor(log(base) / log(radix));
+    if (!forceBigInteger && length <= groupLength) {
       var value = parseInteger(s, from, from + length, radix);
       if (sign < 0) {
         value = 0 - value;
@@ -168,11 +211,9 @@
         return value;
       }
     }
-    var groupLength = 0;
     var groupRadix = 1;
-    var y = floor(base / radix);
-    while (y >= groupRadix && groupLength < length) {
-      groupLength += 1;
+    var e = -1;
+    while (++e < groupLength) {
       groupRadix *= radix;
     }
     var size = floor((length - 1) / groupLength) + 1;
@@ -486,11 +527,10 @@
       result += magnitude[0].toString(radix);
       return result;
     }
-    var groupLength = 0;
+    var groupLength = floor(log(base) / log(radix));
     var groupRadix = 1;
-    var y = floor(base / radix);
-    while (y >= groupRadix) {
-      groupLength += 1;
+    var e = -1;
+    while (++e < groupLength) {
       groupRadix *= radix;
     }
     var size = remainderLength + floor((remainderLength - 1) / groupLength) + 1;

@@ -43,9 +43,43 @@
     return x;
   };
 
-  var base = 2 * 67108864 * 67108864;
-  var firstHalf = 2 * 67108864;
-  var secondHalf = 67108864;
+  var pow = function (x, n) {
+    var accumulator = 1;
+    while (n !== 0) {
+      var t = floor(n / 2);
+      if (t * 2 !== n) {
+        accumulator *= x;
+        n -= 1;
+      } else {
+        x *= x;
+        n = t;
+      }
+    }
+    return accumulator;
+  };
+
+  var min = function (a, b) {
+    return a < b ? a : b;
+  };
+
+  var fh = 134217728;
+  var sh = 67108864;
+  if (Number.MAX_SAFE_INTEGER !== undefined && Number.EPSILON !== undefined) {
+  debugger;
+    var maxValue = min(Number.MAX_SAFE_INTEGER + 1, floor(2 / Number.EPSILON));
+    var n = floor(floor(log(maxValue) / log(2) - 0.5) / 2);
+    var sh = pow(2, n);
+    var fh = sh;
+    if (fh * 2 <= floor(maxValue / fh)) {
+      fh *= 2;
+    }
+    if (fh * 2 <= floor(maxValue / fh)) {
+      sh *= 2;
+    }
+  }
+  var firstHalf = fh;
+  var secondHalf = sh;
+  var base = firstHalf * secondHalf;
 
   var performMultiplication = function (carry, a, b, result, index) {
     var a1 = floor(a / firstHalf);
@@ -200,8 +234,7 @@
     if (length === 0) {
       throw new RangeError();
     }
-    //TODO: fix
-    var groupLength = floor(log(base) / log(radix));
+    var groupLength = floor(log(base) / log(radix) - 0.5);
     if (!forceBigInteger && length <= groupLength) {
       var value = parseInteger(s, from, from + length, radix);
       if (sign < 0) {
@@ -211,11 +244,7 @@
         return value;
       }
     }
-    var groupRadix = 1;
-    var e = -1;
-    while (++e < groupLength) {
-      groupRadix *= radix;
-    }
+    var groupRadix = pow(radix, groupLength);
     var size = floor((length - 1) / groupLength) + 1;
 
     var magnitude = createArray(size);
@@ -527,12 +556,8 @@
       result += magnitude[0].toString(radix);
       return result;
     }
-    var groupLength = floor(log(base) / log(radix));
-    var groupRadix = 1;
-    var e = -1;
-    while (++e < groupLength) {
-      groupRadix *= radix;
-    }
+    var groupLength = floor(log(base) / log(radix) - 0.5);
+    var groupRadix = pow(radix, groupLength);
     var size = remainderLength + floor((remainderLength - 1) / groupLength) + 1;
     var remainder = createArray(size);
     var n = -1;

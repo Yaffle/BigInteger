@@ -65,11 +65,10 @@
   var fh = 134217728;
   var sh = 67108864;
   if (Number.MAX_SAFE_INTEGER !== undefined && Number.EPSILON !== undefined) {
-  debugger;
     var maxValue = min(Number.MAX_SAFE_INTEGER + 1, floor(2 / Number.EPSILON));
     var n = floor(floor(log(maxValue) / log(2) - 0.5) / 2);
-    var sh = pow(2, n);
-    var fh = sh;
+    fh = pow(2, n);
+    sh = fh;
     if (fh * 2 <= floor(maxValue / fh)) {
       fh *= 2;
     }

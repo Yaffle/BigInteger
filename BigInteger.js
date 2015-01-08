@@ -77,7 +77,6 @@
     if (firstHalf !== secondHalf) {
       m1 *= 2;
     }
-    var x = 0;
 
     // a * b1 + a1 * b
     var middle = a * b1 - base + a1 * b;
@@ -86,17 +85,13 @@
     } else {
       m1 += firstHalf;
     }
-    x = Math.floor(middle / secondHalf);
+
+    var x = Math.floor(middle / secondHalf);
     m1 += x;
     var m = (middle - x * secondHalf) * firstHalf;
 
     // a * b
-    if (b > a) {
-      var t = b;
-      b = a;
-      a = t;
-    }
-    if (a > secondHalf) {
+    if (a > secondHalf && b > secondHalf) {
       a -= secondHalf;
       m += b * secondHalf - base;
       if (m < 0) {

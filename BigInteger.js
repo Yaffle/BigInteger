@@ -10,8 +10,12 @@
   // For implementation details, see "The Handbook of Applied Cryptography"
   // http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf
 
-  var floor = Math.floor;
-  var log = Math.log;
+  if (Math.trunc === undefined) {
+    Math.trunc = function (value) {
+      var number = Number(value);
+      return number < 0 ? -Math.floor(-number) : Math.floor(number);
+    };
+  }
 
   var parseInteger = function (s, from, to, radix) {
     var i = from - 1;
@@ -46,7 +50,7 @@
   var pow = function (x, n) {
     var accumulator = 1;
     while (n !== 0) {
-      var t = floor(n / 2);
+      var t = Math.floor(n / 2);
       if (t * 2 !== n) {
         accumulator *= x;
         n -= 1;
@@ -63,8 +67,8 @@
   var base = 134217728 * 67108864;
 
   var performMultiplication = function (carry, a, b, result, index) {
-    var a1 = floor(a / firstHalf);
-    var b1 = floor(b / firstHalf);
+    var a1 = Math.floor(a / firstHalf);
+    var b1 = Math.floor(b / firstHalf);
     a -= a1 * firstHalf;
     b -= b1 * firstHalf;
 
@@ -82,7 +86,7 @@
     } else {
       m1 += firstHalf;
     }
-    x = floor(middle / secondHalf);
+    x = Math.floor(middle / secondHalf);
     m1 += x;
     var m = (middle - x * secondHalf) * firstHalf;
 
@@ -122,7 +126,7 @@
 
   var performDivision = function (a, b, divisor, result, index) {
     // assert(a < divisor)
-    var q = floor((a * base + b) / divisor);
+    var q = Math.trunc((a * base + b) / divisor);
 
     // z = q * divisor
     var z = performMultiplication(0, q, divisor, result, index);
@@ -151,21 +155,21 @@
 
   var performMultiplication = function (carry, a, b, result, index) {
     var c = carry + a * b;
-    var q = floor(c / base);
+    var q = Math.floor(c / base);
     result[index] = (c - q * base);
     return q;
   };
 
   var performDivision = function (a, b, divisor, result, index) {
     var carry = a * base + b;
-    var q = floor(carry / divisor);
+    var q = Math.floor(carry / divisor);
     result[index] = q;
     return (carry - q * divisor);
   };
 */
 
   var checkRadix = function (radix) {
-    if (radix !== Number(radix) || floor(radix) !== radix) {
+    if (radix !== Number(radix) || Math.floor(radix) !== radix) {
       throw new RangeError();
     }
     if (radix < 2 || radix > 36) {
@@ -215,7 +219,7 @@
     if (length === 0) {
       throw new RangeError();
     }
-    var groupLength = floor(log(base) / log(radix) - 0.5);
+    var groupLength = Math.floor(Math.log(base) / Math.log(radix) - 0.5);
     if (!forceBigInteger && length <= groupLength) {
       var value = parseInteger(s, from, from + length, radix);
       if (sign < 0) {
@@ -226,7 +230,7 @@
       }
     }
     var groupRadix = pow(radix, groupLength);
-    var size = floor((length - 1) / groupLength) + 1;
+    var size = Math.floor((length - 1) / groupLength) + 1;
 
     var magnitude = createArray(size);
     var k = size;
@@ -434,14 +438,14 @@
     // normalization
     var lambda = 1;
     if (bLength > 1) {
-      //lambda = floor((floor(base / 2) - 1) / top) + 1;
-      lambda = floor(base / (top + 1));
+      //lambda = Math.trunc((Math.trunc(base / 2) - 1) / top) + 1;
+      lambda = Math.trunc(base / (top + 1));
       if (lambda > 1) {
         multiplyBySmall(0, divisorAndRemainder, divisorOffset + bLength, lambda);
         top = divisor[divisorOffset + bLength - 1];
       }
       // assertion
-      if (top < floor(base / 2)) {
+      if (top < Math.trunc(base / 2)) {
         throw new RangeError();
       }
     }
@@ -537,9 +541,9 @@
       result += magnitude[0].toString(radix);
       return result;
     }
-    var groupLength = floor(log(base) / log(radix) - 0.5);
+    var groupLength = Math.floor(Math.log(base) / Math.log(radix) - 0.5);
     var groupRadix = pow(radix, groupLength);
-    var size = remainderLength + floor((remainderLength - 1) / groupLength) + 1;
+    var size = remainderLength + Math.floor((remainderLength - 1) / groupLength) + 1;
     var remainder = createArray(size);
     var n = -1;
     while (++n < remainderLength) {
@@ -694,16 +698,7 @@
     if (y === 0) {
       throw new RangeError();
     }
-    var s = +1;
-    if (y < 0) {
-      y = -y;
-      s = -s;
-    }
-    if (x < 0) {
-      x = -x;
-      s = -s;
-    }
-    return 0 + s * floor(x / y);
+    return 0 + Math.trunc(x / y);
   };
 
   var remainderBigIntegerNumber = function (x, y) {

@@ -207,11 +207,8 @@
   };
 
   var checkRadix = function (radix) {
-    if (radix !== Number(radix) || Math.floor(radix) !== radix) {
-      throw new RangeError();
-    }
-    if (radix < 2 || radix > 36) {
-      throw new RangeError("radix argument must be between 2 and 36");
+    if (radix !== Number(radix) || Math.floor(radix) !== radix || radix < 2 || radix > 36) {
+      throw new RangeError("radix argument must be an integer between 2 and 36");
     }
   };
 
@@ -371,19 +368,8 @@
     var i = -1;
     var c = 0;
     while (++i < bLength) {
-      if (i < aLength) {
-        if (subtract) {
-          c += (bMagnitude === undefined ? bValue : bMagnitude[i]) - (aMagnitude === undefined ? aValue : aMagnitude[i]);
-        } else {
-          c += (bMagnitude === undefined ? bValue : bMagnitude[i]) - base + (aMagnitude === undefined ? aValue : aMagnitude[i]);
-        }
-      } else {
-        if (subtract) {
-          c += (bMagnitude === undefined ? bValue : bMagnitude[i]);
-        } else {
-          c += (bMagnitude === undefined ? bValue : bMagnitude[i]) - base;
-        }
-      }
+      var aDigit = i < aLength ? (aMagnitude === undefined ? aValue : aMagnitude[i]) : 0;
+      c += (bMagnitude === undefined ? bValue : bMagnitude[i]) + (subtract ? 0 - aDigit : aDigit - base);
       if (c < 0) {
         result[i] = base + c;
         c = subtract ? -1 : 0;
@@ -609,19 +595,6 @@
     return result;
   };
 
-  function F() {}
-  F.prototype = Number.prototype;
-
-  BigInteger.prototype = new F();
-
-  BigInteger.prototype.toString = function (radix) {
-    if (radix === undefined) {
-      radix = 10;
-    }
-    checkRadix(radix);
-    return toString(this.signum, this.magnitude, this.length, radix);
-  };
-
   var compareToBigIntegerBigInteger = function (x, y) {
     return compareTo(x.signum, x.magnitude, x.length, 0, y.signum, y.magnitude, y.length, 0);
   };
@@ -650,8 +623,6 @@
     return divideAndRemainder(x.signum, x.magnitude, x.length, 0, y.signum, y.magnitude, y.length, 0, false);
   };
 
-  exports.BigInteger = BigInteger;
-  
   var sign = function (x) {
     return x === 0 ? 0 : (x < 0 ? -1 : +1);
   };
@@ -758,14 +729,7 @@
     if (y === 0) {
       throw new RangeError();
     }
-    return x % y;
-  };
-
-  BigInteger.parseInteger = function (s, radix) {
-    if (radix === undefined) {
-      radix = 10;
-    }
-    return parseBigInteger(s, radix, false);
+    return 0 + x % y;
   };
 
   // see http://jsperf.com/symbol-vs-property/3
@@ -775,6 +739,12 @@
   };
 
   // public:
+  BigInteger.parseInteger = function (s, radix) {
+    if (radix === undefined) {
+      radix = 10;
+    }
+    return parseBigInteger(s, radix, false);
+  };
   BigInteger.COMPARE_TO = Symbol("BigInteger.COMPARE_TO");
   BigInteger.NEGATE = Symbol("BigInteger.NEGATE");
   BigInteger.ADD = Symbol("BigInteger.ADD");
@@ -855,6 +825,20 @@
   };
   Number.prototype["REMAINDER_NUMBER"] = function (x) {
     return remainderNumberNumber(x, 0 + this);
+  };
+
+  function F() {
+  }
+  F.prototype = Number.prototype;
+
+  BigInteger.prototype = new F();
+
+  BigInteger.prototype.toString = function (radix) {
+    if (radix === undefined) {
+      radix = 10;
+    }
+    checkRadix(radix);
+    return toString(this.signum, this.magnitude, this.length, radix);
   };
 
   BigInteger.prototype["BigInteger.COMPARE_TO"] = function (y) {
@@ -940,5 +924,7 @@
   BigInteger.prototype.remainder = function (y) {
     return remainderBigIntegerBigInteger(this, y);
   };
+
+  exports.BigInteger = BigInteger;
 
 }(this));

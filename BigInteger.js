@@ -55,7 +55,15 @@
     return accumulator;
   };
 
-  var C = Number.EPSILON !== undefined ? 1 / Number.EPSILON : 4503599627370496;
+  var epsilon = 1 / 4503599627370496;
+  var n = 0;
+  while ((1 + epsilon / 2) !== 1) {
+    epsilon /= 2;
+    n += 1;
+  }
+  var C = 4503599627370496 * pow(2, n);
+  var BASE = C * 2;
+  var SPLIT = 134217728 * pow(2, Math.floor(n / 2)) + 1;
 
   var trunc = function (x) {
     if (x > C) {
@@ -65,16 +73,14 @@
     return (v > x ? v - 1 : v);
   };
 
-  var base = 9007199254740992;
-
   var performMultiplication = function (carry, a, b, result, index) {
     // Veltkamp-Dekker's algorithm
     // see http://web.mit.edu/tabbott/Public/quaddouble-debian/qd-2.3.4-old/docs/qd.pdf
 
-    var at = (134217728.0 + 1.0) * a;
+    var at = SPLIT * a;
     var ahi = at - (at - a);
     var alo = a - ahi;
-    var bt = (134217728.0 + 1.0) * b;
+    var bt = SPLIT * b;
     var bhi = bt - (bt - b);
     var blo = b - bhi;
     var product = a * b;
@@ -84,18 +90,18 @@
     // var product = a * b;
     // var error = Math.fma(a, b, -product);
 
-    var hi = trunc(product / base);
-    var lo = product - hi * base + error;
+    var hi = trunc(product / BASE);
+    var lo = product - hi * BASE + error;
 
     if (lo < 0) {
-      lo += base;
+      lo += BASE;
       hi -= 1;
     }
 
     // + carry
-    lo += carry - base;
+    lo += carry - BASE;
     if (lo < 0) {
-      lo += base;
+      lo += BASE;
     } else {
       hi += 1;
     }
@@ -104,99 +110,20 @@
     return hi;
   };
 
-/*
-  var firstHalf = 134217728;
-  var secondHalf = 67108864;
-
-  var performMultiplication = function (carry, a, b, result, index) {
-    var a1 = Math.floor(a / firstHalf);
-    var b1 = Math.floor(b / firstHalf);
-    a -= a1 * firstHalf;
-    b -= b1 * firstHalf;
-
-    // a1 * b1
-    var m1 = a1 * b1;
-    if (firstHalf !== secondHalf) {
-      m1 *= 2;
-    }
-
-    // a * b1 + a1 * b
-    var middle = a * b1 - base + a1 * b;
-    if (middle < 0) {
-      middle += base;
-    } else {
-      m1 += firstHalf;
-    }
-
-    var x = Math.floor(middle / secondHalf);
-    m1 += x;
-    var m = (middle - x * secondHalf) * firstHalf;
-
-    // a * b
-    if (a > secondHalf && b > secondHalf) {
-      a -= secondHalf;
-      m += b * secondHalf - base;
-      if (m < 0) {
-        m += base;
-      } else {
-        m1 += 1;
-      }
-    }
-    m += a * b - base;
-    if (m < 0) {
-      m += base;
-    } else {
-      m1 += 1;
-    }
-
-    // + carry
-    m += carry - base;
-    if (m < 0) {
-      m += base;
-    } else {
-      m1 += 1;
-    }
-
-    result[index] = m;
-    return m1;
-  };
-
-  var base = 67108864;
-
-  var performMultiplication = function (carry, a, b, result, index) {
-    var c = carry + a * b;
-    var q = Math.floor(c / base);
-    result[index] = (c - q * base);
-    return q;
-  };
-
   var performDivision = function (a, b, divisor, result, index) {
     // assertion
     if (a >= divisor) {
       throw new RangeError();
     }
-    var product = a * base + b;
-    var q = Math.floor(product / divisor);
-    result[index] = q;
-    return (product - q * divisor);
-  };
-
-*/
-
-  var performDivision = function (a, b, divisor, result, index) {
-    // assertion
-    if (a >= divisor) {
-      throw new RangeError();
-    }
-    var q = trunc((a * base + b) / divisor);
-    if (q >= base) {
-      q = base - 1;
+    var q = trunc((a * BASE + b) / divisor);
+    if (q >= BASE) {
+      q = BASE - 1;
     }
 
     // z = q * divisor
     var z = performMultiplication(0, q, divisor, result, index);
-    // (a * base + b) - (q * divisor)
-    var r = (a - z) * base + (b - result[index]);
+    // (a * BASE + b) - (q * divisor)
+    var r = (a - z) * BASE + (b - result[index]);
 
     if (r < 0) {
       r += divisor;
@@ -239,7 +166,7 @@
   };
 
   var isSmallInteger = function (value) {
-    return value > -base && value < base;
+    return value > -BASE && value < BASE;
   };
 
   var parseBigInteger = function (s, radix, forceBigInteger) {
@@ -263,7 +190,7 @@
     if (length === 0) {
       throw new RangeError();
     }
-    var groupLength = Math.floor(Math.log(base) / Math.log(radix) - 1 / 512);
+    var groupLength = Math.floor(Math.log(BASE) / Math.log(radix) - 1 / 512);
     if (!forceBigInteger && length <= groupLength) {
       var value = parseInteger(s, from, from + length, radix);
       if (sign < 0) {
@@ -373,9 +300,9 @@
     var c = 0;
     while (++i < bLength) {
       var aDigit = i < aLength ? (aMagnitude === undefined ? aValue : aMagnitude[i]) : 0;
-      c += (bMagnitude === undefined ? bValue : bMagnitude[i]) + (subtract ? 0 - aDigit : aDigit - base);
+      c += (bMagnitude === undefined ? bValue : bMagnitude[i]) + (subtract ? 0 - aDigit : aDigit - BASE);
       if (c < 0) {
-        result[i] = base + c;
+        result[i] = BASE + c;
         c = subtract ? -1 : 0;
       } else {
         result[i] = c;
@@ -418,11 +345,11 @@
       var j = -1;
       while (++j < aLength) {
         var carry = 0;
-        c += result[j + i] - base;
+        c += result[j + i] - BASE;
         if (c >= 0) {
           carry = 1;
         } else {
-          c += base;
+          c += BASE;
         }
         c = carry + performMultiplication(c, aMagnitude === undefined ? aValue : aMagnitude[j], bMagnitude === undefined ? bValue : bMagnitude[i], result, j + i);
       }
@@ -467,14 +394,14 @@
     // normalization
     var lambda = 1;
     if (bLength > 1) {
-      //lambda = trunc((trunc(base / 2) - 1) / top) + 1;
-      lambda = trunc(base / (top + 1));
+      //lambda = trunc((trunc(BASE / 2) - 1) / top) + 1;
+      lambda = trunc(BASE / (top + 1));
       if (lambda > 1) {
         multiplyBySmall(0, divisorAndRemainder, divisorOffset + bLength, lambda);
         top = divisor[divisorOffset + bLength - 1];
       }
       // assertion
-      if (top < trunc(base / 2)) {
+      if (top < trunc(BASE / 2)) {
         throw new RangeError();
       }
     }
@@ -489,7 +416,7 @@
     var i = shift;
     while (--i >= 0) {
       var t = bLength + i;
-      var q = base - 1;
+      var q = BASE - 1;
       var tmp = remainder[t];
       if (tmp !== top) {
         performDivision(remainder[t], remainder[t - 1], top, remainder, t);
@@ -505,7 +432,7 @@
         bx = performMultiplication(bx, q, divisor[divisorOffset + j - i], remainder, j);
         ax += rj - remainder[j];
         if (ax < 0) {
-          remainder[j] = base + ax;
+          remainder[j] = BASE + ax;
           ax = -1;
         } else {
           remainder[j] = ax;
@@ -517,9 +444,9 @@
         var c = 0;
         var k = i - 1;
         while (++k <= t) {
-          c += remainder[k] - base + divisor[divisorOffset + k - i];
+          c += remainder[k] - BASE + divisor[divisorOffset + k - i];
           if (c < 0) {
-            remainder[k] = base + c;
+            remainder[k] = BASE + c;
             c = 0;
           } else {
             remainder[k] = c;
@@ -573,7 +500,7 @@
       result += magnitude[0].toString(radix);
       return result;
     }
-    var groupLength = Math.floor(Math.log(base) / Math.log(radix) - 1 / 512);
+    var groupLength = Math.floor(Math.log(BASE) / Math.log(radix) - 1 / 512);
     var groupRadix = pow(radix, groupLength);
     var size = remainderLength + Math.floor((remainderLength - 1) / groupLength) + 1;
     var remainder = createArray(size);

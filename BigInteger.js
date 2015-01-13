@@ -61,16 +61,12 @@
     epsilon /= 2;
     n += 1;
   }
-  var C = 4503599627370496 * pow(2, n);
-  var BASE = C * 2;
+  var BASE = 4503599627370496 * 2 * pow(2, n);
   var SPLIT = 134217728 * pow(2, Math.floor(n / 2)) + 1;
 
   var trunc = function (x) {
-    if (x > C) {
-      return x;
-    }
-    var v = (C + x) - C;
-    return (v > x ? v - 1 : v);
+    var v = (x - BASE) + BASE;
+    return v > x ? v - 1 : v;
   };
 
   var performMultiplication = function (carry, a, b, result, index) {

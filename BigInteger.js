@@ -165,7 +165,10 @@
     return value > -BASE && value < BASE;
   };
 
-  var parseBigInteger = function (s, radix, forceBigInteger) {
+  var parseBigInteger = function (s, radix) {
+    if (radix === undefined) {
+      radix = 10;
+    }
     checkRadix(radix);
     var length = s.length;
     if (length === 0) {
@@ -187,7 +190,7 @@
       throw new RangeError();
     }
     var groupLength = Math.floor(Math.log(BASE) / Math.log(radix) - 1 / 512);
-    if (!forceBigInteger && length <= groupLength) {
+    if (length <= groupLength) {
       var value = parseInteger(s, from, from + length, radix);
       if (sign < 0) {
         value = 0 - value;
@@ -234,7 +237,7 @@
     }
     if (magnitude === undefined) {
       // deprecated
-      var x = parseBigInteger(s, radix, true);
+      var x = toBigInteger(parseBigInteger(s, radix));
       radix = x.signum;
       magnitude = x.magnitude;
       length = x.length;
@@ -245,7 +248,7 @@
   }
 
   var createBigInteger = function (signum, magnitude, length) {
-    return new BigInteger("", signum, magnitude, length);
+    return length < 2 ? (length === 0 ? 0 : (signum < 0 ? 0 - magnitude[0] : magnitude[0])) : new BigInteger("", signum, magnitude, length);
   };
 
   var compareMagnitude = function (aMagnitude, aLength, aValue, bMagnitude, bLength, bValue) {
@@ -670,12 +673,7 @@
   };
 
   // public:
-  BigInteger.parseInteger = function (s, radix) {
-    if (radix === undefined) {
-      radix = 10;
-    }
-    return parseBigInteger(s, radix, false);
-  };
+  BigInteger.parseInteger = parseBigInteger;
   BigInteger.COMPARE_TO = Symbol("BigInteger.COMPARE_TO");
   BigInteger.NEGATE = Symbol("BigInteger.NEGATE");
   BigInteger.ADD = Symbol("BigInteger.ADD");
@@ -834,26 +832,40 @@
 
   // deprecated methods:
 
+  BigInteger.prototype.constructor = BigInteger;
+
+  var toBigInteger = function (x) {
+    if (x.constructor === BigInteger) {
+      return x;
+    }
+    var length = x === 0 ? 0 : 1;
+    var magnitude = createArray(length);
+    if (length !== 0) {
+      magnitude[0] = abs(x);
+    }
+    return new BigInteger("", sign(x), magnitude, length);
+  };
+
   BigInteger.prototype.compareTo = function (y) {
     return compareToBigIntegerBigInteger(this, y);
   };
   BigInteger.prototype.negate = function () {
-    return negateBigInteger(this);
+    return toBigInteger(negateBigInteger(this));
   };
   BigInteger.prototype.add = function (y) {
-    return addBigIntegerBigInteger(this, y);
+    return toBigInteger(addBigIntegerBigInteger(this, y));
   };
   BigInteger.prototype.subtract = function (y) {
-    return subtractBigIntegerBigInteger(this, y);
+    return toBigInteger(subtractBigIntegerBigInteger(this, y));
   };
   BigInteger.prototype.multiply = function (y) {
-    return multiplyBigIntegerBigInteger(this, y);
+    return toBigInteger(multiplyBigIntegerBigInteger(this, y));
   };
   BigInteger.prototype.divide = function (y) {
-    return divideBigIntegerBigInteger(this, y);
+    return toBigInteger(divideBigIntegerBigInteger(this, y));
   };
   BigInteger.prototype.remainder = function (y) {
-    return remainderBigIntegerBigInteger(this, y);
+    return toBigInteger(remainderBigIntegerBigInteger(this, y));
   };
 
   exports.BigInteger = BigInteger;

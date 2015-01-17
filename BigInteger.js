@@ -42,17 +42,15 @@
 
   var pow = function (x, n) {
     var accumulator = 1;
-    while (n !== 0) {
+    while (n !== 1) {
       var t = Math.floor(n / 2);
       if (t * 2 !== n) {
         accumulator *= x;
-        n -= 1;
-      } else {
-        x *= x;
-        n = t;
       }
+      x *= x;
+      n = t;
     }
-    return accumulator;
+    return accumulator * x;
   };
 
   var epsilon = 1 / 4503599627370496;
@@ -61,8 +59,8 @@
     epsilon /= 2;
     n += 1;
   }
-  var BASE = 4503599627370496 * 2 * pow(2, n);
-  var SPLIT = 134217728 * pow(2, Math.floor(n / 2)) + 1;
+  var BASE = 4503599627370496 * pow(2, n + 1);
+  var SPLIT = 67108864 * pow(2, Math.floor(n / 2) + 1) + 1;
 
   var trunc = function (x) {
     var v = (x - BASE) + BASE;

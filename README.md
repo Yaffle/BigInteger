@@ -2,53 +2,74 @@ BigInteger
 ==========
 
 Yet another BigInteger class in JavaScript
+This library performs arithmetic operations on integers of arbitrary size.
+
+To use it from browser:
+```
+<script src="BigInteger.js"></script>
+```
+
+To use it from node.js:
+```
+npm install js-big-integer
+```
+Then:
+```
+var BigInteger = require("BigInteger").BigInteger;
+```
+
+The API is terrible, but small integers are stored as primitive numbers, so operations on small integers are faster.
 
 ```javascript
-/*
+// `BigInteger.parseInteger` converts the string representation with specified radix into an integer
+var a = BigInteger.parseInteger("123", 10);
+var b = BigInteger.parseInteger("CAFE", 16);
+var c = 0;
 
-factory:
-BigInteger.parseInteger = function (s:string, radix:number = 10):any {...};
+c = a[BigInteger.COMPARE_TO](b) < 0; // c = a < b;
+c = a[BigInteger.COMPARE_TO](b) === 0; // c = a === b;
+c = a[BigInteger.COMPARE_TO](b) > 0; // c = a > b;
 
-methods:
-BigInteger.prototype[BigInteger.COMPARE_TO] = function (x:BigInteger|number):any { ... };
-BigInteger.prototype[BigInteger.NEGATE] = function ():any { ... };
-BigInteger.prototype[BigInteger.ADD] = function (x:BigInteger|number):any { ... };
-BigInteger.prototype[BigInteger.SUBTRACT] = function (x:BigInteger|number):any { ... };
-BigInteger.prototype[BigInteger.MULTIPLY] = function (x:BigInteger|number):any { ... };
-BigInteger.prototype[BigInteger.DIVIDE] = function (x:BigInteger|number):any { ... };
-BigInteger.prototype[BigInteger.REMAINDER] = function (x:BigInteger|number):any { ... };
-BigInteger.prototype.toString = function (radix:number = 10):string { ... };
+a = a[BigInteger.NEGATE](); // a = 0 - a;
 
-Number.prototype[BigInteger.COMPARE_TO] = function (x:BigInteger|number):any { ... };
-Number.prototype[BigInteger.NEGATE] = function ():any { ... };
-Number.prototype[BigInteger.ADD] = function (x:BigInteger|number):any { ... };
-Number.prototype[BigInteger.SUBTRACT] = function (x:BigInteger|number):any { ... };
-Number.prototype[BigInteger.MULTIPLY] = function (x:BigInteger|number):any { ... };
-Number.prototype[BigInteger.DIVIDE] = function (x:BigInteger|number):any { ... };
-Number.prototype[BigInteger.REMAINDER] = function (x:BigInteger|number):any { ... };
+a = a[BigInteger.ADD](b); // a = a + b;
 
-*/
+a = a[BigInteger.SUBTRACT](b); // a = a - b;
 
-function factorial(n) {
+a = a[BigInteger.MULTIPLY](b); // a = a * b;
+
+a = a[BigInteger.DIVIDE](b); // a = Math.trunc(a / b);
+
+a = a[BigInteger.REMAINDER](b); // a = a % b;
+
+// `BigInteger.prototype.toString` converts the integer into a string representation in specified radix
+var s = a.toString(10); // s = a.toString(10);
+```
+
+Example
+=======
+```javascript
+
+var factorial = function (n) {
   var result = 1;
   var i = 0;
   while (++i <= n) {
     result = result[BigInteger.MULTIPLY](i);
   }
   return result;
-}
+};
+
 console.log(factorial(30).toString());
 
 ```
 
-Other pure JavaScript implementations with Java-like API:
+Other pure JavaScript implementations:
  1. http://www-cs-students.stanford.edu/~tjw/jsbn/
  2. https://github.com/silentmatt/javascript-biginteger
  3. https://github.com/peterolson/BigInteger.js
  4. https://github.com/iriscouch/bigdecimal.js
  5. https://github.com/dtrebbien/BigDecimal.js
  6. https://github.com/node-modules/BigInteger
-
-And with another API:
- 1. https://github.com/indutny/bn.js
- 2. https://github.com/dankogai/js-math-bigint
+ 7. https://github.com/jtobey/javascript-bignum
+ 8. https://github.com/indutny/bn.js
+ 9. https://github.com/dankogai/js-math-bigint

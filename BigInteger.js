@@ -129,28 +129,27 @@
     if (a >= divisor) {
       throw new RangeError();
     }
-    var q = trunc((a * BASE + b) / divisor);
-    if (q >= BASE) {
-      q = BASE - 1;
-    }
 
-    // z = q * divisor
-    var z = performMultiplication(0, q, divisor, result, index);
-    // (a * BASE + b) - (q * divisor)
-    var r = (a - z) * BASE + (b - result[index]);
-
-    if (r < 0) {
-      r += divisor;
+    var p = a * BASE;
+    var y = p / divisor;
+    var r = p % divisor;
+    var q = trunc(y);
+    y -= q;
+    if (y === 0 && r > divisor - r) {
       q -= 1;
     }
-
-    if (r < 0) {
-      r += divisor;
-      q -= 1;
-    } else if (r >= divisor) {
-      r -= divisor;
+    if (y > 1 - y && r === 0) {
       q += 1;
     }
+    r += b - divisor;
+    if (r < 0) {
+      r += divisor;
+    } else {
+      q += 1;
+    }
+    y = trunc(r / divisor);
+    r -= y * divisor;
+    q += y;
 
     result[index] = q;
     return r;

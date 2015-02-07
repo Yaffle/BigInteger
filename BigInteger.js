@@ -384,10 +384,10 @@
     if (aLength === 0) {
       return createBigInteger(0, createArray(0), 0);
     }
-    var quotinentSign = aSignum < 0 ? 0 - bSignum : bSignum;
+    var quotientSign = aSignum < 0 ? 0 - bSignum : bSignum;
     if (bLength === 1 && (bMagnitude === undefined ? bValue : bMagnitude[0]) === 1) {
       if (divide) {
-        return aMagnitude === undefined ? (quotinentSign < 0 ? 0 - aValue : aValue) : createBigInteger(quotinentSign, aMagnitude, aLength);
+        return aMagnitude === undefined ? (quotientSign < 0 ? 0 - aValue : aValue) : createBigInteger(quotientSign, aMagnitude, aLength);
       }
       return createBigInteger(0, createArray(0), 0);
     }
@@ -425,8 +425,8 @@
     if (shift < 0) {
       shift = 0;
     }
-    var quotinent = undefined;
-    var quotinentLength = 0;
+    var quotient = undefined;
+    var quotientLength = 0;
 
     var i = shift;
     while (--i >= 0) {
@@ -471,19 +471,19 @@
         ax += c;
       }
       if (divide && q !== 0) {
-        if (quotinentLength === 0) {
-          quotinentLength = i + 1;
-          quotinent = createArray(quotinentLength);
+        if (quotientLength === 0) {
+          quotientLength = i + 1;
+          quotient = createArray(quotientLength);
         }
-        quotinent[i] = q;
+        quotient[i] = q;
       }
     }
 
     if (divide) {
-      if (quotinentLength === 0) {
+      if (quotientLength === 0) {
         return createBigInteger(0, createArray(0), 0);
       }
-      return createBigInteger(quotinentSign, quotinent, quotinentLength);
+      return createBigInteger(quotientSign, quotient, quotientLength);
     }
 
     var remainderLength = aLength + 1;

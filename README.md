@@ -21,26 +21,26 @@ var BigInteger = require("BigInteger").BigInteger;
 The API is terrible, but small integers are stored as primitive numbers, so operations on small integers are faster.
 
 ```javascript
-// `BigInteger.parseInteger` converts the string representation with specified radix into an integer
-var a = BigInteger.parseInteger("123", 10);
-var b = BigInteger.parseInteger("CAFE", 16);
+// `BigInteger.parseInt` converts the string representation with specified radix into an integer
+var a = BigInteger.parseInt("42", 13);
+var b = BigInteger.parseInt("CAFE", 16);
 var c = 0;
 
-c = a[BigInteger.COMPARE_TO](b) < 0; // c = a < b;
-c = a[BigInteger.COMPARE_TO](b) === 0; // c = a === b;
-c = a[BigInteger.COMPARE_TO](b) > 0; // c = a > b;
+c = a[BigInteger.compareTo](b) < 0; // c = a < b;
+c = a[BigInteger.compareTo](b) === 0; // c = a === b;
+c = a[BigInteger.compareTo](b) > 0; // c = a > b;
 
-a = a[BigInteger.NEGATE](); // a = 0 - a;
+a = a[BigInteger.negate](); // a = 0 - a;
 
-a = a[BigInteger.ADD](b); // a = a + b;
+a = a[BigInteger.add](b); // a = a + b;
 
-a = a[BigInteger.SUBTRACT](b); // a = a - b;
+a = a[BigInteger.subtract](b); // a = a - b;
 
-a = a[BigInteger.MULTIPLY](b); // a = a * b;
+a = a[BigInteger.multiply](b); // a = a * b;
 
-a = a[BigInteger.DIVIDE](b); // a = Math.trunc(a / b);
+a = a[BigInteger.divide](b); // a = Math.trunc(a / b);
 
-a = a[BigInteger.REMAINDER](b); // a = a % b;
+a = a[BigInteger.remainder](b); // a = a % b;
 
 // `BigInteger.prototype.toString` converts the integer into a string representation in specified radix
 var s = a.toString(10); // s = a.toString(10);
@@ -54,7 +54,7 @@ var factorial = function (n) {
   var result = 1;
   var i = 0;
   while (++i <= n) {
-    result = result[BigInteger.MULTIPLY](i);
+    result = result[BigInteger.multiply](i);
   }
   return result;
 };

@@ -186,10 +186,6 @@
     magnitude[length] = c;
   };
 
-  var isSmallInteger = function (value) {
-    return value > -BASE && value < +BASE;
-  };
-
   var parseBigInteger = function (s, radix) {
     if (radix === undefined) {
       radix = 10;
@@ -217,12 +213,7 @@
     var groupLength = Math.floor(LOG2BASE / log2(radix) - 1 / 512);
     if (length <= groupLength) {
       var value = parseInteger(s, from, from + length, radix);
-      if (sign < 0) {
-        value = 0 - value;
-      }
-      if (isSmallInteger(value)) {
-        return value;
-      }
+      return sign < 0 ? 0 - value : value;
     }
     var groupRadix = pow(radix, groupLength);
     var size = Math.floor((length - 1) / groupLength) + 1;
@@ -592,7 +583,7 @@
 
   var addNumberNumber = function (x, y) {
     var value = x + y;
-    if (isSmallInteger(value)) {
+    if (value > -BASE && value < +BASE) {
       return value;
     }
     return add(sign(x), undefined, sign(abs(x)), abs(x), sign(y), undefined, sign(abs(y)), abs(y));
@@ -608,7 +599,7 @@
 
   var subtractNumberNumber = function (x, y) {
     var value = x - y;
-    if (isSmallInteger(value)) {
+    if (value > -BASE && value < +BASE) {
       return value;
     }
     return add(sign(x), undefined, sign(abs(x)), abs(x), 0 - sign(y), undefined, sign(abs(y)), abs(y));
@@ -624,7 +615,7 @@
 
   var multiplyNumberNumber = function (x, y) {
     var value = 0 + x * y;
-    if (isSmallInteger(value)) {
+    if (value > -BASE && value < +BASE) {
       return value;
     }
     return multiply(sign(x), undefined, sign(abs(x)), abs(x), sign(y), undefined, sign(abs(y)), abs(y));

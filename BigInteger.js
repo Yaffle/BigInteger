@@ -186,6 +186,16 @@
     magnitude[length] = c;
   };
 
+  function BigInteger(signum, magnitude, length) {
+    this.signum = signum;
+    this.magnitude = magnitude;
+    this.length = length;
+  }
+
+  var createBigInteger = function (signum, magnitude, length) {
+    return length < 2 ? (length === 0 ? 0 : (signum < 0 ? 0 - magnitude[0] : magnitude[0])) : new BigInteger(signum, magnitude, length);
+  };
+
   var parseBigInteger = function (s, radix) {
     if (radix === undefined) {
       radix = 10;
@@ -195,7 +205,7 @@
     if (length === 0) {
       throw new RangeError();
     }
-    var sign = 1;
+    var signum = 1;
     var signCharCode = s.charCodeAt(0);
     var from = 0;
     if (signCharCode === 43) { // "+"
@@ -203,7 +213,7 @@
     }
     if (signCharCode === 45) { // "-"
       from = 1;
-      sign = -1;
+      signum = -1;
     }
 
     length -= from;
@@ -213,7 +223,7 @@
     var groupLength = Math.floor(LOG2BASE / log2(radix) - 1 / 512);
     if (length <= groupLength) {
       var value = parseInteger(s, from, from + length, radix);
-      return sign < 0 ? 0 - value : value;
+      return signum < 0 ? 0 - value : value;
     }
     var groupRadix = pow(radix, groupLength);
     var size = Math.floor((length - 1) / groupLength) + 1;
@@ -236,17 +246,7 @@
       size -= 1;
     }
 
-    return createBigInteger(size === 0 ? 0 : sign, magnitude, size);
-  };
-
-  function BigInteger(signum, magnitude, length) {
-    this.signum = signum;
-    this.magnitude = magnitude;
-    this.length = length;
-  }
-
-  var createBigInteger = function (signum, magnitude, length) {
-    return length < 2 ? (length === 0 ? 0 : (signum < 0 ? 0 - magnitude[0] : magnitude[0])) : new BigInteger(signum, magnitude, length);
+    return createBigInteger(size === 0 ? 0 : signum, magnitude, size);
   };
 
   var compareMagnitude = function (aMagnitude, aLength, aValue, bMagnitude, bLength, bValue) {
@@ -529,7 +529,7 @@
     return result;
   };
 
-  // see http://jsperf.com/symbol-vs-property/3
+  // see http://jsperf.com/symbol-vs-property/3 , http://jsperf.com/dot-notation-vs-square-bracket-notation/4
 
   var Symbol = function (s) {
     return s;

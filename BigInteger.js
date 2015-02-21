@@ -40,29 +40,22 @@
     return x;
   };
 
-  var pow = function (x, n) {
-    var accumulator = 1;
-    while (n !== 1) {
-      var t = Math.floor(n / 2);
-      if (t * 2 !== n) {
-        accumulator *= x;
-      }
-      x *= x;
-      n = t;
-    }
-    return accumulator * x;
+  var trunc = Math.trunc !== undefined ? Math.trunc : function (x) {
+    return x < 0 ? 0 - Math.floor(0 - x) : Math.floor(x);
   };
 
-  var sign = function (x) {
+  var pow = Math.pow;
+
+  var sign = Math.sign !== undefined ? Math.sign : function (x) {
     return (x < 0 ? -1 : (x > 0 ? +1 : 0 * x));
   };
 
-  var abs = function (x) {
-    return (x < 0 ? (0 - x) : 0 + x);
-  };
+  var abs = Math.abs;
 
-  var log2 = function (x) {
-    return Math.log(x) / Math.log(2);
+  var ilog2 = Math.log2 !== undefined ? function (x) {
+    return Math.floor(Math.log2(x));
+  } : function (x) {
+    return Math.floor(Math.log(x) / Math.log(2));
   };
 
   var epsilon = 1 / 4503599627370496;
@@ -71,32 +64,12 @@
   }
 
   var BASE = 2 / epsilon;
-  var LOG2BASE = Math.floor(log2(BASE) + 0.5);
-  var SPLIT = 67108864 * pow(2, Math.floor((LOG2BASE - 53) / 2) + 1) + 1;
+  var LOG2BASE = ilog2(BASE * 1.4);
+  var SPLIT = 67108864 * pow(2, trunc((LOG2BASE - 53) / 2) + 1) + 1;
 
-  var trunc = function (x) {
-    var v = 0;
-    if (x > +0) {
-      if (x < +1073741823) {
-        return +Math.floor(+x);
-      }
-      //if (x > +BASE) {
-      //  return x;
-      //}
-      v = (x - BASE) + BASE;
-      return v > x ? v - 1 : v;
-    }
-    if (x < -0) {
-      if (x > -1073741823) {
-        return -Math.floor(-x);
-      }
-      //if (x < -BASE) {
-      //  return x;
-      //}
-      v = (x + BASE) - BASE;
-      return v < x ? v + 1 : v;
-    }
-    return x;
+  var fastTrunc = function (x) {
+    var v = (x - BASE) + BASE;
+    return v > x ? v - 1 : v;
   };
 
   var performMultiplication = function (carry, a, b, result, index) {
@@ -116,7 +89,7 @@
     // var product = a * b;
     // var error = Math.fma(a, b, -product);
 
-    var hi = trunc(product / BASE);
+    var hi = fastTrunc(product / BASE);
     var lo = product - hi * BASE + error;
 
     if (lo < 0) {
@@ -145,7 +118,7 @@
     var p = a * BASE;
     var y = p / divisor;
     var r = p % divisor;
-    var q = trunc(y);
+    var q = fastTrunc(y);
     if (y === q && r > divisor - r) {
       q -= 1;
     }
@@ -155,7 +128,7 @@
     } else {
       q += 1;
     }
-    y = trunc(r / divisor);
+    y = fastTrunc(r / divisor);
     r -= y * divisor;
     q += y;
 
@@ -164,9 +137,14 @@
   };
 
   var checkRadix = function (radix) {
-    if (radix !== Number(radix) || Math.floor(radix) !== radix || radix < 2 || radix > 36) {
+    if (radix !== Number(radix) || trunc(radix) !== radix || radix < 2 || radix > 36) {
       throw new RangeError("radix argument must be an integer between 2 and 36");
     }
+  };
+
+  var getGroupLength = function (radix) {
+    var n = trunc(LOG2BASE / (ilog2(radix) + 1));
+    return trunc((n * LOG2BASE) / (ilog2(pow(radix, n)) + 1));
   };
 
   var divideBySmall = function (magnitude, length, lambda) {
@@ -220,13 +198,13 @@
     if (length === 0) {
       throw new RangeError();
     }
-    var groupLength = Math.floor(LOG2BASE / log2(radix) - 1 / 512);
+    var groupLength = getGroupLength(radix);
     if (length <= groupLength) {
       var value = parseInteger(s, from, from + length, radix);
       return signum < 0 ? 0 - value : value;
     }
     var groupRadix = pow(radix, groupLength);
-    var size = Math.floor((length - 1) / groupLength) + 1;
+    var size = trunc((length - 1) / groupLength) + 1;
 
     var magnitude = createArray(size);
     var k = size;
@@ -391,13 +369,13 @@
     // normalization
     var lambda = 1;
     if (bLength > 1) {
-      lambda = trunc(BASE / (top + 1));
+      lambda = fastTrunc(BASE / (top + 1));
       if (lambda > 1) {
         multiplyBySmall(0, divisorAndRemainder, divisorOffset + bLength, lambda);
         top = divisor[divisorOffset + bLength - 1];
       }
       // assertion
-      if (top < trunc(BASE / 2)) {
+      if (top < fastTrunc(BASE / 2)) {
         throw new RangeError();
       }
     }
@@ -499,9 +477,9 @@
       result += magnitude[0].toString(radix);
       return result;
     }
-    var groupLength = Math.floor(LOG2BASE / log2(radix) - 1 / 512);
+    var groupLength = getGroupLength(radix);
     var groupRadix = pow(radix, groupLength);
-    var size = remainderLength + Math.floor((remainderLength - 1) / groupLength) + 1;
+    var size = remainderLength + trunc((remainderLength - 1) / groupLength) + 1;
     var remainder = createArray(size);
     var n = -1;
     while (++n < remainderLength) {

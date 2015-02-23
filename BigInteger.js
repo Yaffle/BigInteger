@@ -52,11 +52,7 @@
 
   var abs = Math.abs;
 
-  var ilog2 = Math.log2 !== undefined ? function (x) {
-    return Math.floor(Math.log2(x));
-  } : function (x) {
-    return Math.floor(Math.log(x) / Math.log(2));
-  };
+  var log = Math.log;
 
   var epsilon = 1 / 4503599627370496;
   while ((1 + epsilon / 2) !== 1) {
@@ -64,8 +60,8 @@
   }
 
   var BASE = 2 / epsilon;
-  var LOG2BASE = ilog2(BASE * 1.4);
-  var SPLIT = 67108864 * pow(2, trunc((LOG2BASE - 53) / 2) + 1) + 1;
+  var LNBASE = log(BASE);
+  var SPLIT = 67108864 * pow(2, trunc((trunc(LNBASE / log(2) + 0.5) - 53) / 2) + 1) + 1;
 
   var fastTrunc = function (x) {
     var v = (x - BASE) + BASE;
@@ -143,8 +139,9 @@
   };
 
   var getGroupLength = function (radix) {
-    var n = trunc(LOG2BASE / (ilog2(radix) + 1));
-    return trunc((n * LOG2BASE) / (ilog2(pow(radix, n)) + 1));
+    var n = trunc(LNBASE / log(radix) - 0.5);
+    var e = Math.pow(radix, n);
+    return e * radix <= BASE ? n + 1 : n;
   };
 
   var divideBySmall = function (magnitude, length, lambda) {
@@ -479,6 +476,10 @@
     }
     var groupLength = getGroupLength(radix);
     var groupRadix = pow(radix, groupLength);
+    // assertion
+    if (groupRadix * radix <= BASE) {
+      throw new RangeError();
+    }
     var size = remainderLength + trunc((remainderLength - 1) / groupLength) + 1;
     var remainder = createArray(size);
     var n = -1;

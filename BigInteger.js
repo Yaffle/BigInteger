@@ -138,12 +138,6 @@
     }
   };
 
-  var getGroupLength = function (radix) {
-    var n = trunc(LNBASE / log(radix) - 0.5);
-    var e = Math.pow(radix, n);
-    return e * radix <= BASE ? n + 1 : n;
-  };
-
   var divideBySmall = function (magnitude, length, lambda) {
     var c = 0;
     var i = length;
@@ -195,12 +189,16 @@
     if (length === 0) {
       throw new RangeError();
     }
-    var groupLength = getGroupLength(radix);
+    var groupLength = trunc(LNBASE / log(radix) - 0.5);
     if (length <= groupLength) {
       var value = parseInteger(s, from, from + length, radix);
       return signum < 0 ? 0 - value : value;
     }
     var groupRadix = pow(radix, groupLength);
+    if (groupRadix * radix <= BASE) {
+      groupLength += 1;
+      groupRadix *= radix;
+    }
     var size = trunc((length - 1) / groupLength) + 1;
 
     var magnitude = createArray(size);
@@ -474,8 +472,12 @@
       result += magnitude[0].toString(radix);
       return result;
     }
-    var groupLength = getGroupLength(radix);
+    var groupLength = trunc(LNBASE / log(radix) - 0.5);
     var groupRadix = pow(radix, groupLength);
+    if (groupRadix * radix <= BASE) {
+      groupLength += 1;
+      groupRadix *= radix;
+    }
     // assertion
     if (groupRadix * radix <= BASE) {
       throw new RangeError();

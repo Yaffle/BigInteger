@@ -41,7 +41,7 @@
   };
 
   var trunc = Math.trunc !== undefined ? Math.trunc : function (x) {
-    return x < 0 ? 0 - Math.floor(0 - x) : Math.floor(x);
+    return x < 0 ? -Math.floor(0 - x) : Math.floor(x);
   };
 
   var pow = Math.pow;
@@ -61,7 +61,7 @@
 
   var BASE = 2 / epsilon;
   var LNBASE = log(BASE);
-  var SPLIT = 67108864 * pow(2, trunc((trunc(LNBASE / log(2) + 0.5) - 53) / 2) + 1) + 1;
+  var SPLIT = 67108864 * pow(2, trunc((trunc(LNBASE / log(2) + 0.25) - 53) / 2) + 1) + 1;
 
   var fastTrunc = function (x) {
     var v = (x - BASE) + BASE;
@@ -132,12 +132,6 @@
     return r;
   };
 
-  var checkRadix = function (radix) {
-    if (radix !== Number(radix) || trunc(radix) !== radix || radix < 2 || radix > 36) {
-      throw new RangeError("radix argument must be an integer between 2 and 36");
-    }
-  };
-
   var divideBySmall = function (magnitude, length, lambda) {
     var c = 0;
     var i = length;
@@ -169,7 +163,10 @@
     if (radix === undefined) {
       radix = 10;
     }
-    checkRadix(radix);
+    radix = trunc(Number(radix));
+    if (radix < 2 || radix > 36) {
+      throw new RangeError("radix argument must be an integer between 2 and 36");
+    }
     var length = s.length;
     if (length === 0) {
       throw new RangeError();
@@ -189,7 +186,7 @@
     if (length === 0) {
       throw new RangeError();
     }
-    var groupLength = trunc(LNBASE / log(radix) - 0.5);
+    var groupLength = trunc(LNBASE / log(radix) - 0.25);
     if (length <= groupLength) {
       var value = parseInteger(s, from, from + length, radix);
       return signum < 0 ? 0 - value : value;
@@ -472,7 +469,7 @@
       result += magnitude[0].toString(radix);
       return result;
     }
-    var groupLength = trunc(LNBASE / log(radix) - 0.5);
+    var groupLength = trunc(LNBASE / log(radix) - 0.25);
     var groupRadix = pow(radix, groupLength);
     if (groupRadix * radix <= BASE) {
       groupLength += 1;
@@ -525,6 +522,7 @@
   BigInteger.multiply = Symbol("BigInteger.multiply");
   BigInteger.divide = Symbol("BigInteger.divide");
   BigInteger.remainder = Symbol("BigInteger.remainder");
+  BigInteger.toString = Symbol("BigInteger.toString");
 
   // private:
   var COMPARE_TO_NUMBER = Symbol("COMPARE_TO_NUMBER");
@@ -540,6 +538,7 @@
   var REMAINDER_NUMBER = Symbol("REMAINDER_NUMBER");
   var REMAINDER_BIG_INTEGER = Symbol("REMAINDER_BIG_INTEGER");
 
+  Number.prototype[BigInteger.toString] = Number.prototype.toString;
   Number.prototype[BigInteger.compareTo] = function (y) {
     return y["COMPARE_TO_NUMBER"](this);
   };
@@ -628,10 +627,13 @@
     if (radix === undefined) {
       radix = 10;
     }
-    checkRadix(radix);
+    radix = trunc(Number(radix));
+    if (radix < 2 || radix > 36) {
+      throw new RangeError("radix argument must be an integer between 2 and 36");
+    }
     return toString(this.signum, this.magnitude, this.length, radix);
   };
-
+  BigInteger.prototype[BigInteger.toString] = BigInteger.prototype.toString;
   BigInteger.prototype[BigInteger.compareTo] = function (y) {
     return y["COMPARE_TO_BIG_INTEGER"](this);
   };

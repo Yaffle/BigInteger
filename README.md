@@ -4,7 +4,7 @@ BigInteger
 Yet another BigInteger class in JavaScript
 This library performs arithmetic operations on integers of arbitrary size.
 
-To use it from browser:
+To use it from browser:t
 ```
 <script src="BigInteger.js"></script>
 ```
@@ -42,8 +42,8 @@ a = a[BigInteger.divide](b); // a = Math.trunc(a / b);
 
 a = a[BigInteger.remainder](b); // a = a % b;
 
-// `BigInteger.prototype.toString` converts the integer into a string representation in specified radix
-var s = a.toString(10); // s = a.toString(10);
+// `BigInteger.prototype[BigInteger.toString]` converts the integer into a string representation in specified radix
+var s = a[BigInteger.toString](10); // s = a.toString(10);
 ```
 
 Example
@@ -59,7 +59,7 @@ var factorial = function (n) {
   return result;
 };
 
-console.log(factorial(30).toString());
+console.log(factorial(30)[BigInteger.toString]());
 
 ```
 

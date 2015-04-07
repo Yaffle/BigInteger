@@ -54,7 +54,7 @@
 
   var log = Math.log;
 
-  var epsilon = 1 / 4503599627370496;
+  var epsilon = Number.EPSILON !== undefined ? Number.EPSILON : 1 / 4503599627370496;
   while ((1 + epsilon / 2) !== 1) {
     epsilon /= 2;
   }

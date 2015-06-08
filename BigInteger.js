@@ -68,10 +68,12 @@
     return v > x ? v - 1 : v;
   };
 
-  var performMultiplication = function (carry, a, b, result, index) {
-    // Veltkamp-Dekker's algorithm
-    // see http://web.mit.edu/tabbott/Public/quaddouble-debian/qd-2.3.4-old/docs/qd.pdf
-
+  // Veltkamp-Dekker's algorithm
+  // see http://web.mit.edu/tabbott/Public/quaddouble-debian/qd-2.3.4-old/docs/qd.pdf
+  // with FMA:
+  // var product = a * b;
+  // var error = Math.fma(a, b, -product);
+  var performMultiplication = function (carry, a, b) {
     var at = SPLIT * a;
     var ahi = at - (at - a);
     var alo = a - ahi;
@@ -81,10 +83,6 @@
     var product = a * b;
     var error = ((ahi * bhi - product) + ahi * blo + alo * bhi) + alo * blo;
 
-    // with FMA:
-    // var product = a * b;
-    // var error = Math.fma(a, b, -product);
-
     var hi = fastTrunc(product / BASE);
     var lo = product - hi * BASE + error;
 
@@ -93,7 +91,6 @@
       hi -= 1;
     }
 
-    // + carry
     lo += carry - BASE;
     if (lo < 0) {
       lo += BASE;
@@ -101,16 +98,13 @@
       hi += 1;
     }
 
-    result[index] = lo;
-    return hi;
+    return {lo: lo, hi: hi};
   };
 
-  var performDivision = function (a, b, divisor, result, index) {
-    // assertion
+  var performDivision = function (a, b, divisor) {
     if (a >= divisor) {
       throw new RangeError();
     }
-
     var p = a * BASE;
     var y = p / divisor;
     var r = p % divisor;
@@ -127,26 +121,7 @@
     y = fastTrunc(r / divisor);
     r -= y * divisor;
     q += y;
-
-    result[index] = q;
-    return r;
-  };
-
-  var divideBySmall = function (magnitude, length, lambda) {
-    var c = 0;
-    var i = length;
-    while (--i >= 0) {
-      c = performDivision(c, magnitude[i], lambda, magnitude, i);
-    }
-    return c;
-  };
-
-  var multiplyBySmall = function (c, magnitude, length, lambda) {
-    var i = -1;
-    while (++i < length) {
-      c = performMultiplication(c, magnitude[i], lambda, magnitude, i);
-    }
-    magnitude[length] = c;
+    return {q: q, r: r};
   };
 
   function BigInteger(signum, magnitude, length) {
@@ -209,7 +184,16 @@
 
     var j = -1;
     while (++j < size) {
-      multiplyBySmall(magnitude[j], magnitude, j, groupRadix);
+      var c = magnitude[j];
+      var l = -1;
+      while (++l < j) {
+        var tmp = performMultiplication(c, magnitude[l], groupRadix, magnitude, l);
+        var lo = tmp.lo;
+        var hi = tmp.hi;
+        magnitude[l] = lo;
+        c = hi;
+      }
+      magnitude[j] = c;
     }
 
     while (size > 0 && magnitude[size - 1] === 0) {
@@ -243,54 +227,57 @@
     return aSignum;
   };
 
-  var addNext = function (aSignum, aMagnitude, aLength, aValue, bSignum, bMagnitude, bLength, bValue) {
+  var add = function (aSignum, aMagnitude, aLength, aValue, bSignum, bMagnitude, bLength, bValue) {
+    var z = compareMagnitude(aMagnitude, aLength, aValue, bMagnitude, bLength, bValue);
+    var minSignum = z < 0 ? aSignum : bSignum;
+    var minMagnitude = z < 0 ? aMagnitude : bMagnitude;
+    var minLength = z < 0 ? aLength : bLength;
+    var minValue = z < 0 ? aValue : bValue;
+    var maxSignum = z < 0 ? bSignum : aSignum;
+    var maxMagnitude = z < 0 ? bMagnitude : aMagnitude;
+    var maxLength = z < 0 ? bLength : aLength;
+    var maxValue = z < 0 ? bValue : aValue;
+
     // |a| <= |b|
-    if (aSignum === 0) {
-      return bMagnitude === undefined ? (bSignum < 0 ? 0 - bValue : bValue) : createBigInteger(bSignum, bMagnitude, bLength);
+    if (minSignum === 0) {
+      return maxMagnitude === undefined ? (maxSignum < 0 ? 0 - maxValue : maxValue) : createBigInteger(maxSignum, maxMagnitude, maxLength);
     }
-    var subtract = false;
-    if (aSignum !== bSignum) {
-      subtract = true;
-      if (aLength === bLength) {
-        while (bLength > 0 && (aMagnitude === undefined ? aValue : aMagnitude[bLength - 1]) === (bMagnitude === undefined ? bValue : bMagnitude[bLength - 1])) {
-          bLength -= 1;
+    var subtract = 0;
+    var resultLength = maxLength;
+    if (minSignum !== maxSignum) {
+      subtract = 1;
+      if (minLength === resultLength) {
+        while (resultLength > 0 && (minMagnitude === undefined ? minValue : minMagnitude[resultLength - 1]) === (maxMagnitude === undefined ? maxValue : maxMagnitude[resultLength - 1])) {
+          resultLength -= 1;
         }
       }
-      if (bLength === 0) { // a === (-b)
+      if (resultLength === 0) { // a === (-b)
         return createBigInteger(0, createArray(0), 0);
       }
     }
     // result !== 0
-    var resultLength = bLength + (subtract ? 0 : 1);
-    var result = createArray(resultLength);
+    var result = createArray(resultLength + (1 - subtract));
     var i = -1;
     var c = 0;
-    while (++i < bLength) {
-      var aDigit = i < aLength ? (aMagnitude === undefined ? aValue : aMagnitude[i]) : 0;
-      c += (bMagnitude === undefined ? bValue : bMagnitude[i]) + (subtract ? 0 - aDigit : aDigit - BASE);
+    while (++i < resultLength) {
+      var aDigit = i < minLength ? (minMagnitude === undefined ? minValue : minMagnitude[i]) : 0;
+      c += (maxMagnitude === undefined ? maxValue : maxMagnitude[i]) + (subtract === 1 ? 0 - aDigit : aDigit - BASE);
       if (c < 0) {
         result[i] = BASE + c;
-        c = subtract ? -1 : 0;
+        c = 0 - subtract;
       } else {
         result[i] = c;
-        c = subtract ? 0 : +1;
+        c = 1 - subtract;
       }
     }
     if (c !== 0) {
-      result[bLength] = c;
+      result[resultLength] = c;
+      resultLength += 1;
     }
     while (resultLength > 0 && result[resultLength - 1] === 0) {
       resultLength -= 1;
     }
-    return createBigInteger(bSignum, result, resultLength);
-  };
-
-  var add = function (aSignum, aMagnitude, aLength, aValue, bSignum, bMagnitude, bLength, bValue) {
-    var z = compareMagnitude(aMagnitude, aLength, aValue, bMagnitude, bLength, bValue);
-    if (z > 0) {
-      return addNext(bSignum, bMagnitude, bLength, bValue, aSignum, aMagnitude, aLength, aValue);
-    }
-    return addNext(aSignum, aMagnitude, aLength, aValue, bSignum, bMagnitude, bLength, bValue);
+    return createBigInteger(maxSignum, result, resultLength);
   };
 
   var multiply = function (aSignum, aMagnitude, aLength, aValue, bSignum, bMagnitude, bLength, bValue) {
@@ -318,7 +305,11 @@
         } else {
           c += BASE;
         }
-        c = carry + performMultiplication(c, aMagnitude === undefined ? aValue : aMagnitude[j], bMagnitude === undefined ? bValue : bMagnitude[i], result, j + i);
+        var tmp = performMultiplication(c, aMagnitude === undefined ? aValue : aMagnitude[j], bMagnitude === undefined ? bValue : bMagnitude[i]);
+        var lo = tmp.lo;
+        var hi = tmp.hi;
+        result[j + i] = lo;
+        c = hi + carry;
       }
       result[aLength + i] = c;
     }
@@ -337,7 +328,7 @@
     }
     var quotientSign = aSignum < 0 ? 0 - bSignum : bSignum;
     if (bLength === 1 && (bMagnitude === undefined ? bValue : bMagnitude[0]) === 1) {
-      if (divide) {
+      if (divide === 1) {
         return aMagnitude === undefined ? (quotientSign < 0 ? 0 - aValue : aValue) : createBigInteger(quotientSign, aMagnitude, aLength);
       }
       return createBigInteger(0, createArray(0), 0);
@@ -363,7 +354,16 @@
     if (bLength > 1) {
       lambda = fastTrunc(BASE / (top + 1));
       if (lambda > 1) {
-        multiplyBySmall(0, divisorAndRemainder, divisorOffset + bLength, lambda);
+        var carry = 0;
+        var l = -1;
+        while (++l < divisorOffset + bLength) {
+          var tmp = performMultiplication(carry, divisorAndRemainder[l], lambda);
+          var lo = tmp.lo;
+          var hi = tmp.hi;
+          divisorAndRemainder[l] = lo;
+          carry = hi;
+        }
+        divisorAndRemainder[divisorOffset + bLength] = carry;
         top = divisor[divisorOffset + bLength - 1];
       }
       // assertion
@@ -383,11 +383,11 @@
     while (--i >= 0) {
       var t = bLength + i;
       var q = BASE - 1;
-      var tmp = remainder[t];
-      if (tmp !== top) {
-        performDivision(remainder[t], remainder[t - 1], top, remainder, t);
-        q = remainder[t];
-        remainder[t] = tmp;
+      if (remainder[t] !== top) {
+        var tmp2 = performDivision(remainder[t], remainder[t - 1], top);
+        var q2 = tmp2.q;
+        var r2 = tmp2.r;
+        q = q2;
       }
 
       var ax = 0;
@@ -395,7 +395,11 @@
       var j = i - 1;
       while (++j <= t) {
         var rj = remainder[j];
-        bx = performMultiplication(bx, q, divisor[divisorOffset + j - i], remainder, j);
+        var tmp3 = performMultiplication(bx, q, divisor[divisorOffset + j - i]);
+        var lo3 = tmp3.lo;
+        var hi3 = tmp3.hi;
+        remainder[j] = lo3;
+        bx = hi3;
         ax += rj - remainder[j];
         if (ax < 0) {
           remainder[j] = BASE + ax;
@@ -421,7 +425,7 @@
         }
         ax += c;
       }
-      if (divide && q !== 0) {
+      if (divide === 1 && q !== 0) {
         if (quotientLength === 0) {
           quotientLength = i + 1;
           quotient = createArray(quotientLength);
@@ -430,7 +434,7 @@
       }
     }
 
-    if (divide) {
+    if (divide === 1) {
       if (quotientLength === 0) {
         return createBigInteger(0, createArray(0), 0);
       }
@@ -439,7 +443,16 @@
 
     var remainderLength = aLength + 1;
     if (lambda > 1) {
-      if (divideBySmall(remainder, remainderLength, lambda) !== 0) {
+      var r = 0;
+      var p = remainderLength;
+      while (--p >= 0) {
+        var tmp4 = performDivision(r, remainder[p], lambda);
+        var q4 = tmp4.q;
+        var r4 = tmp4.r;
+        remainder[p] = q4;
+        r = r4;
+      }
+      if (r !== 0) {
         // assertion
         throw new RangeError();
       }
@@ -488,12 +501,20 @@
 
     var k = size;
     while (remainderLength !== 0) {
-      var q = divideBySmall(remainder, remainderLength, groupRadix);
+      var groupDigit = 0;
+      var i = remainderLength;
+      while (--i >= 0) {
+        var tmp = performDivision(groupDigit, remainder[i], groupRadix);
+        var q = tmp.q;
+        var r = tmp.r;
+        remainder[i] = q;
+        groupDigit = r;
+      }
       while (remainderLength > 0 && remainder[remainderLength - 1] === 0) {
         remainderLength -= 1;
       }
       k -= 1;
-      remainder[k] = q;
+      remainder[k] = groupDigit;
     }
     result += remainder[k].toString(radix);
     while (++k < size) {
@@ -574,10 +595,10 @@
     return multiply(x.signum, x.magnitude, x.length, 0, sign(this), undefined, sign(abs(this)), abs(this));
   };
   Number.prototype[DIVIDE_BIG_INTEGER] = function (x) {
-    return divideAndRemainder(x.signum, x.magnitude, x.length, 0, sign(this), undefined, sign(abs(this)), abs(this), true);
+    return divideAndRemainder(x.signum, x.magnitude, x.length, 0, sign(this), undefined, sign(abs(this)), abs(this), 1);
   };
   Number.prototype[REMAINDER_BIG_INTEGER] = function (x) {
-    return divideAndRemainder(x.signum, x.magnitude, x.length, 0, sign(this), undefined, sign(abs(this)), abs(this), false);
+    return divideAndRemainder(x.signum, x.magnitude, x.length, 0, sign(this), undefined, sign(abs(this)), abs(this), 0);
   };
 
   Number.prototype[COMPARE_TO_NUMBER] = function (x) {
@@ -669,10 +690,10 @@
     return multiply(x.signum, x.magnitude, x.length, 0, this.signum, this.magnitude, this.length, 0);
   };
   BigInteger.prototype[DIVIDE_BIG_INTEGER] = function (x) {
-    return divideAndRemainder(x.signum, x.magnitude, x.length, 0, this.signum, this.magnitude, this.length, 0, true);
+    return divideAndRemainder(x.signum, x.magnitude, x.length, 0, this.signum, this.magnitude, this.length, 0, 1);
   };
   BigInteger.prototype[REMAINDER_BIG_INTEGER] = function (x) {
-    return divideAndRemainder(x.signum, x.magnitude, x.length, 0, this.signum, this.magnitude, this.length, 0, false);
+    return divideAndRemainder(x.signum, x.magnitude, x.length, 0, this.signum, this.magnitude, this.length, 0, 0);
   };
 
   BigInteger.prototype[COMPARE_TO_NUMBER] = function (x) {
@@ -688,10 +709,10 @@
     return multiply(sign(x), undefined, sign(abs(x)), abs(x), this.signum, this.magnitude, this.length, 0);
   };
   BigInteger.prototype[DIVIDE_NUMBER] = function (x) {
-    return divideAndRemainder(sign(x), undefined, sign(abs(x)), abs(x), this.signum, this.magnitude, this.length, 0, true);
+    return divideAndRemainder(sign(x), undefined, sign(abs(x)), abs(x), this.signum, this.magnitude, this.length, 0, 1);
   };
   BigInteger.prototype[REMAINDER_NUMBER] = function (x) {
-    return divideAndRemainder(sign(x), undefined, sign(abs(x)), abs(x), this.signum, this.magnitude, this.length, 0, false);
+    return divideAndRemainder(sign(x), undefined, sign(abs(x)), abs(x), this.signum, this.magnitude, this.length, 0, 0);
   };
 
   exports.BigInteger = BigInteger;

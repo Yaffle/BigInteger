@@ -4,7 +4,7 @@ BigInteger
 Yet another BigInteger class in JavaScript
 This library performs arithmetic operations on integers of arbitrary size.
 
-To use it from browser:t
+To use it from browser:
 ```
 <script src="BigInteger.js"></script>
 ```
@@ -64,12 +64,22 @@ console.log(factorial(30)[BigInteger.toString]());
 ```
 
 Other pure JavaScript implementations:
+
  1. http://www-cs-students.stanford.edu/~tjw/jsbn/
- 2. https://github.com/silentmatt/javascript-biginteger
- 3. https://github.com/peterolson/BigInteger.js
- 4. https://github.com/iriscouch/bigdecimal.js
- 5. https://github.com/dtrebbien/BigDecimal.js
- 6. https://github.com/node-modules/BigInteger
- 7. https://github.com/jtobey/javascript-bignum
- 8. https://github.com/indutny/bn.js
- 9. https://github.com/dankogai/js-math-bigint
+ 2. http://ofmind.net/doc/hapint
+ 3. https://github.com/node-modules/node-biginteger
+ 4. https://github.com/vukicevic/crunch
+ 5. https://github.com/MikeMcl/bignumber.js
+ 6. https://github.com/peterolson/BigInteger.js
+ 7. https://github.com/silentmatt/javascript-biginteger
+ 8. https://github.com/Yaffle/BigInteger
+ 9. https://github.com/peteroupc/BigNumber
+ 10. https://github.com/indutny/bn.js
+ 11. https://github.com/dankogai/js-math-bigint
+ 12. https://github.com/defunctzombie/int
+ 13. https://github.com/dtrebbien/BigDecimal.js
+ 14. https://github.com/iriscouch/bigdecimal.js
+ 15. https://github.com/jtobey/javascript-bignum
+
+Benchmark:
+  http://yaffle.github.io/BigInteger/

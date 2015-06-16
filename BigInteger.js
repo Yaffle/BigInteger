@@ -528,110 +528,82 @@
     return result;
   };
 
-  // see http://jsperf.com/symbol-vs-property/3 , http://jsperf.com/dot-notation-vs-square-bracket-notation/4
-
-  var Symbol = function (s) {
-    return s;
-  };
-
-  // public:
   BigInteger.parseInt = parseBigInteger;
-  BigInteger.compareTo = Symbol("BigInteger.compareTo");
-  BigInteger.negate = Symbol("BigInteger.negate");
-  BigInteger.add = Symbol("BigInteger.add");
-  BigInteger.subtract = Symbol("BigInteger.subtract");
-  BigInteger.multiply = Symbol("BigInteger.multiply");
-  BigInteger.divide = Symbol("BigInteger.divide");
-  BigInteger.remainder = Symbol("BigInteger.remainder");
-  BigInteger.toString = Symbol("BigInteger.toString");
 
-  // private:
-  var COMPARE_TO_NUMBER = Symbol("COMPARE_TO_NUMBER");
-  var COMPARE_TO_BIG_INTEGER = Symbol("COMPARE_TO_BIG_INTEGER");
-  var ADD_NUMBER = Symbol("ADD_NUMBER");
-  var ADD_BIG_INTEGER = Symbol("ADD_BIG_INTEGER");
-  var SUBTRACT_NUMBER = Symbol("SUBTRACT_NUMBER");
-  var SUBTRACT_BIG_INTEGER = Symbol("SUBTRACT_BIG_INTEGER");
-  var MULTIPLY_NUMBER = Symbol("MULTIPLY_NUMBER");
-  var MULTIPLY_BIG_INTEGER = Symbol("MULTIPLY_BIG_INTEGER");
-  var DIVIDE_NUMBER = Symbol("DIVIDE_NUMBER");
-  var DIVIDE_BIG_INTEGER = Symbol("DIVIDE_BIG_INTEGER");
-  var REMAINDER_NUMBER = Symbol("REMAINDER_NUMBER");
-  var REMAINDER_BIG_INTEGER = Symbol("REMAINDER_BIG_INTEGER");
-
-  Number.prototype[BigInteger.toString] = Number.prototype.toString;
-  Number.prototype[BigInteger.compareTo] = function (y) {
-    return y["COMPARE_TO_NUMBER"](this);
+  Number.prototype["BigInteger.toString"] = Number.prototype.toString;
+  Number.prototype["BigInteger.compareTo"] = function (y) {
+    return y["BigInteger.compareToNumber"](this);
   };
-  Number.prototype[BigInteger.negate] = function () {
+  Number.prototype["BigInteger.negate"] = function () {
     return 0 - this;
   };
-  Number.prototype[BigInteger.add] = function (y) {
-    return y["ADD_NUMBER"](this);
+  Number.prototype["BigInteger.add"] = function (y) {
+    return y["BigInteger.addNumber"](this);
   };
-  Number.prototype[BigInteger.subtract] = function (y) {
-    return y["SUBTRACT_NUMBER"](this);
+  Number.prototype["BigInteger.subtract"] = function (y) {
+    return y["BigInteger.subtractNumber"](this);
   };
-  Number.prototype[BigInteger.multiply] = function (y) {
-    return y["MULTIPLY_NUMBER"](this);
+  Number.prototype["BigInteger.multiply"] = function (y) {
+    return y["BigInteger.multiplyNumber"](this);
   };
-  Number.prototype[BigInteger.divide] = function (y) {
-    return y["DIVIDE_NUMBER"](this);
+  Number.prototype["BigInteger.divide"] = function (y) {
+    return y["BigInteger.divideNumber"](this);
   };
-  Number.prototype[BigInteger.remainder] = function (y) {
-    return y["REMAINDER_NUMBER"](this);
+  Number.prototype["BigInteger.remainder"] = function (y) {
+    return y["BigInteger.remainderNumber"](this);
   };
 
-  Number.prototype[COMPARE_TO_BIG_INTEGER] = function (x) {
+  Number.prototype["BigInteger.compareToBigInteger"] = function (x) {
     return compareTo(x.signum, x.magnitude, x.length, 0, sign(this), undefined, sign(abs(this)), abs(this));
   };
-  Number.prototype[ADD_BIG_INTEGER] = function (x) {
+  Number.prototype["BigInteger.addBigInteger"] = function (x) {
     return add(x.signum, x.magnitude, x.length, 0, sign(this), undefined, sign(abs(this)), abs(this));
   };
-  Number.prototype[SUBTRACT_BIG_INTEGER] = function (x) {
+  Number.prototype["BigInteger.subtractBigInteger"] = function (x) {
     return add(x.signum, x.magnitude, x.length, 0, 0 - sign(this), undefined, sign(abs(this)), abs(this));
   };
-  Number.prototype[MULTIPLY_BIG_INTEGER] = function (x) {
+  Number.prototype["BigInteger.multiplyBigInteger"] = function (x) {
     return multiply(x.signum, x.magnitude, x.length, 0, sign(this), undefined, sign(abs(this)), abs(this));
   };
-  Number.prototype[DIVIDE_BIG_INTEGER] = function (x) {
+  Number.prototype["BigInteger.divideBigInteger"] = function (x) {
     return divideAndRemainder(x.signum, x.magnitude, x.length, 0, sign(this), undefined, sign(abs(this)), abs(this), 1);
   };
-  Number.prototype[REMAINDER_BIG_INTEGER] = function (x) {
+  Number.prototype["BigInteger.remainderBigInteger"] = function (x) {
     return divideAndRemainder(x.signum, x.magnitude, x.length, 0, sign(this), undefined, sign(abs(this)), abs(this), 0);
   };
 
-  Number.prototype[COMPARE_TO_NUMBER] = function (x) {
+  Number.prototype["BigInteger.compareToNumber"] = function (x) {
     return x < this ? -1 : (this < x ? +1 : 0);
   };
-  Number.prototype[ADD_NUMBER] = function (x) {
+  Number.prototype["BigInteger.addNumber"] = function (x) {
     var value = x + this;
     if (value > -BASE && value < +BASE) {
       return value;
     }
     return add(sign(x), undefined, sign(abs(x)), abs(x), sign(this), undefined, sign(abs(this)), abs(this));
   };
-  Number.prototype[SUBTRACT_NUMBER] = function (x) {
+  Number.prototype["BigInteger.subtractNumber"] = function (x) {
     var value = x - this;
     if (value > -BASE && value < +BASE) {
       return value;
     }
     return add(sign(x), undefined, sign(abs(x)), abs(x), 0 - sign(this), undefined, sign(abs(this)), abs(this));
   };
-  Number.prototype[MULTIPLY_NUMBER] = function (x) {
+  Number.prototype["BigInteger.multiplyNumber"] = function (x) {
     var value = 0 + x * this;
     if (value > -BASE && value < +BASE) {
       return value;
     }
     return multiply(sign(x), undefined, sign(abs(x)), abs(x), sign(this), undefined, sign(abs(this)), abs(this));
   };
-  Number.prototype[DIVIDE_NUMBER] = function (x) {
+  // Math.floor is for Chrome
+  Number.prototype["BigInteger.divideNumber"] = function (x) {
     if (0 + this === 0) {
       throw new RangeError();
     }
-    return 0 + trunc(x / this);
+    return Math.floor(0 + trunc(x / this));
   };
-  Number.prototype[REMAINDER_NUMBER] = function (x) {
+  Number.prototype["BigInteger.remainderNumber"] = function (x) {
     if (0 + this === 0) {
       throw new RangeError();
     }
@@ -654,64 +626,64 @@
     }
     return toString(this.signum, this.magnitude, this.length, radix);
   };
-  BigInteger.prototype[BigInteger.toString] = BigInteger.prototype.toString;
-  BigInteger.prototype[BigInteger.compareTo] = function (y) {
-    return y["COMPARE_TO_BIG_INTEGER"](this);
+  BigInteger.prototype["BigInteger.toString"] = BigInteger.prototype.toString;
+  BigInteger.prototype["BigInteger.compareTo"] = function (y) {
+    return y["BigInteger.compareToBigInteger"](this);
   };
-  BigInteger.prototype[BigInteger.negate] = function () {
+  BigInteger.prototype["BigInteger.negate"] = function () {
     return createBigInteger(0 - this.signum, this.magnitude, this.length);
   };
-  BigInteger.prototype[BigInteger.add] = function (y) {
-    return y["ADD_BIG_INTEGER"](this);
+  BigInteger.prototype["BigInteger.add"] = function (y) {
+    return y["BigInteger.addBigInteger"](this);
   };
-  BigInteger.prototype[BigInteger.subtract] = function (y) {
-    return y["SUBTRACT_BIG_INTEGER"](this);
+  BigInteger.prototype["BigInteger.subtract"] = function (y) {
+    return y["BigInteger.subtractBigInteger"](this);
   };
-  BigInteger.prototype[BigInteger.multiply] = function (y) {
-    return y["MULTIPLY_BIG_INTEGER"](this);
+  BigInteger.prototype["BigInteger.multiply"] = function (y) {
+    return y["BigInteger.multiplyBigInteger"](this);
   };
-  BigInteger.prototype[BigInteger.divide] = function (y) {
-    return y["DIVIDE_BIG_INTEGER"](this);
+  BigInteger.prototype["BigInteger.divide"] = function (y) {
+    return y["BigInteger.divideBigInteger"](this);
   };
-  BigInteger.prototype[BigInteger.remainder] = function (y) {
-    return y["REMAINDER_BIG_INTEGER"](this);
+  BigInteger.prototype["BigInteger.remainder"] = function (y) {
+    return y["BigInteger.remainderBigInteger"](this);
   };
 
-  BigInteger.prototype[COMPARE_TO_BIG_INTEGER] = function (x) {
+  BigInteger.prototype["BigInteger.compareToBigInteger"] = function (x) {
     return compareTo(x.signum, x.magnitude, x.length, 0, this.signum, this.magnitude, this.length, 0);
   };
-  BigInteger.prototype[ADD_BIG_INTEGER] = function (x) {
+  BigInteger.prototype["BigInteger.addBigInteger"] = function (x) {
     return add(x.signum, x.magnitude, x.length, 0, this.signum, this.magnitude, this.length, 0);
   };
-  BigInteger.prototype[SUBTRACT_BIG_INTEGER] = function (x) {
+  BigInteger.prototype["BigInteger.subtractBigInteger"] = function (x) {
     return add(x.signum, x.magnitude, x.length, 0, 0 - this.signum, this.magnitude, this.length, 0);
   };
-  BigInteger.prototype[MULTIPLY_BIG_INTEGER] = function (x) {
+  BigInteger.prototype["BigInteger.multiplyBigInteger"] = function (x) {
     return multiply(x.signum, x.magnitude, x.length, 0, this.signum, this.magnitude, this.length, 0);
   };
-  BigInteger.prototype[DIVIDE_BIG_INTEGER] = function (x) {
+  BigInteger.prototype["BigInteger.divideBigInteger"] = function (x) {
     return divideAndRemainder(x.signum, x.magnitude, x.length, 0, this.signum, this.magnitude, this.length, 0, 1);
   };
-  BigInteger.prototype[REMAINDER_BIG_INTEGER] = function (x) {
+  BigInteger.prototype["BigInteger.remainderBigInteger"] = function (x) {
     return divideAndRemainder(x.signum, x.magnitude, x.length, 0, this.signum, this.magnitude, this.length, 0, 0);
   };
 
-  BigInteger.prototype[COMPARE_TO_NUMBER] = function (x) {
+  BigInteger.prototype["BigInteger.compareToNumber"] = function (x) {
     return compareTo(sign(x), undefined, sign(abs(x)), abs(x), this.signum, this.magnitude, this.length, 0);
   };
-  BigInteger.prototype[ADD_NUMBER] = function (x) {
+  BigInteger.prototype["BigInteger.addNumber"] = function (x) {
     return add(sign(x), undefined, sign(abs(x)), abs(x), this.signum, this.magnitude, this.length, 0);
   };
-  BigInteger.prototype[SUBTRACT_NUMBER] = function (x) {
+  BigInteger.prototype["BigInteger.subtractNumber"] = function (x) {
     return add(sign(x), undefined, sign(abs(x)), abs(x), 0 - this.signum, this.magnitude, this.length, 0);
   };
-  BigInteger.prototype[MULTIPLY_NUMBER] = function (x) {
+  BigInteger.prototype["BigInteger.multiplyNumber"] = function (x) {
     return multiply(sign(x), undefined, sign(abs(x)), abs(x), this.signum, this.magnitude, this.length, 0);
   };
-  BigInteger.prototype[DIVIDE_NUMBER] = function (x) {
+  BigInteger.prototype["BigInteger.divideNumber"] = function (x) {
     return divideAndRemainder(sign(x), undefined, sign(abs(x)), abs(x), this.signum, this.magnitude, this.length, 0, 1);
   };
-  BigInteger.prototype[REMAINDER_NUMBER] = function (x) {
+  BigInteger.prototype["BigInteger.remainderNumber"] = function (x) {
     return divideAndRemainder(sign(x), undefined, sign(abs(x)), abs(x), this.signum, this.magnitude, this.length, 0, 0);
   };
 

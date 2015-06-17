@@ -40,13 +40,14 @@
     return x;
   };
 
-  var trunc = Math.trunc !== undefined ? Math.trunc : function (x) {
+  // native `Math.trunc` is slow in Chrome
+  var trunc = function (x) {
     return x < 0 ? -Math.floor(0 - x) : Math.floor(x);
   };
 
   var pow = Math.pow;
 
-  var sign = Math.sign !== undefined ? Math.sign : function (x) {
+  var sign = function (x) {
     return (x < 0 ? -1 : (x > 0 ? +1 : 0 * x));
   };
 
@@ -596,12 +597,11 @@
     }
     return multiply(sign(x), undefined, sign(abs(x)), abs(x), sign(this), undefined, sign(abs(this)), abs(this));
   };
-  // Math.floor is for Chrome
   Number.prototype["BigInteger.divideNumber"] = function (x) {
     if (0 + this === 0) {
       throw new RangeError();
     }
-    return Math.floor(0 + trunc(x / this));
+    return 0 + trunc(x / this);
   };
   Number.prototype["BigInteger.remainderNumber"] = function (x) {
     if (0 + this === 0) {

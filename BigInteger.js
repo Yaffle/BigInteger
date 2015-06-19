@@ -139,8 +139,7 @@
     if (radix === undefined) {
       radix = 10;
     }
-    radix = trunc(Number(radix));
-    if (radix < 2 || radix > 36) {
+    if (trunc(radix) !== radix || !(radix >= 2 && radix <= 36)) {
       throw new RangeError("radix argument must be an integer between 2 and 36");
     }
     var length = s.length;
@@ -162,11 +161,11 @@
     if (length === 0) {
       throw new RangeError();
     }
-    var groupLength = trunc(LNBASE / log(radix) - 0.25);
-    if (length <= groupLength) {
+    if (pow(radix, length) <= BASE) {
       var value = parseInteger(s, from, from + length, radix);
       return signum < 0 ? 0 - value : value;
     }
+    var groupLength = trunc(LNBASE / log(radix) - 0.25);
     var groupRadix = pow(radix, groupLength);
     if (groupRadix * radix <= BASE) {
       groupLength += 1;
@@ -620,8 +619,7 @@
     if (radix === undefined) {
       radix = 10;
     }
-    radix = trunc(Number(radix));
-    if (radix < 2 || radix > 36) {
+    if (trunc(radix) !== radix || !(radix >= 2 && radix <= 36)) {
       throw new RangeError("radix argument must be an integer between 2 and 36");
     }
     return toString(this.signum, this.magnitude, this.length, radix);

@@ -3,6 +3,24 @@
 (function (exports) {
   "use strict";
 
+  if (Math.trunc == undefined) {
+    Math.trunc = function (x) {
+      return x < 0 ? Math.ceil(x) : Math.floor(x);
+    };
+  }
+  if (Math.sign == undefined) {
+    Math.sign = function (x) {
+      return x < 0 ? -1 : (x > 0 ? +1 : 0 * x);
+    };
+  }
+  if (Number.EPSILON == undefined) {
+    Number.EPSILON = (function (x) {
+      return x(x, 1 / 4503599627370496);
+    }(function (f, epsilon) {
+      return (1 + epsilon / 2) !== 1 ? f(f, epsilon / 2) : epsilon;
+    }));
+  }
+
   // BigInteger.js
   // Available under Public Domain
   // https://github.com/Yaffle/BigInteger/
@@ -40,29 +58,24 @@
     return x;
   };
 
-  // native `Math.trunc` is slow in Chrome
-  var trunc = function (x) {
-    return x < 0 ? -Math.floor(0 - x) : Math.floor(x);
+  // count >= 1
+  var pow = function (x, count) {
+    var accumulator = 1;
+    var v = x;
+    var c = count;
+    while (c > 1) {
+      var q = Math.trunc(c / 2);
+      if (q * 2 !== c) {
+        accumulator *= v;
+      }
+      v *= v;
+      c = q;
+    }
+    return accumulator * v;
   };
 
-  var pow = Math.pow;
-
-  var sign = function (x) {
-    return (x < 0 ? -1 : (x > 0 ? +1 : 0 * x));
-  };
-
-  var abs = Math.abs;
-
-  var log = Math.log;
-
-  var epsilon = Number.EPSILON !== undefined ? Number.EPSILON : 1 / 4503599627370496;
-  while ((1 + epsilon / 2) !== 1) {
-    epsilon /= 2;
-  }
-
-  var BASE = 2 / epsilon;
-  var LNBASE = log(BASE);
-  var SPLIT = 67108864 * pow(2, trunc((trunc(LNBASE / log(2) + 0.25) - 53) / 2) + 1) + 1;
+  var BASE = 2 / Number.EPSILON;
+  var SPLIT = 67108864 * pow(2, Math.trunc((Math.trunc(Math.log(BASE) / Math.log(2) + 0.5) - 53) / 2) + 1) + 1;
 
   var fastTrunc = function (x) {
     var v = (x - BASE) + BASE;
@@ -139,7 +152,7 @@
     if (radix === undefined) {
       radix = 10;
     }
-    if (trunc(radix) !== radix || !(radix >= 2 && radix <= 36)) {
+    if (Math.trunc(radix) !== radix || !(radix >= 2 && radix <= 36)) {
       throw new RangeError("radix argument must be an integer between 2 and 36");
     }
     var length = s.length;
@@ -165,13 +178,14 @@
       var value = parseInteger(s, from, from + length, radix);
       return signum < 0 ? 0 - value : value;
     }
-    var groupLength = trunc(LNBASE / log(radix) - 0.25);
-    var groupRadix = pow(radix, groupLength);
-    if (groupRadix * radix <= BASE) {
+    var groupLength = 0;
+    var groupRadix = 1;
+    var limit = fastTrunc(BASE / radix);
+    while (groupRadix <= limit) {
       groupLength += 1;
       groupRadix *= radix;
     }
-    var size = trunc((length - 1) / groupLength) + 1;
+    var size = Math.trunc((length - 1) / groupLength) + 1;
 
     var magnitude = createArray(size);
     var k = size;
@@ -482,9 +496,10 @@
       result += magnitude[0].toString(radix);
       return result;
     }
-    var groupLength = trunc(LNBASE / log(radix) - 0.25);
-    var groupRadix = pow(radix, groupLength);
-    if (groupRadix * radix <= BASE) {
+    var groupLength = 0;
+    var groupRadix = 1;
+    var limit = fastTrunc(BASE / radix);
+    while (groupRadix <= limit) {
       groupLength += 1;
       groupRadix *= radix;
     }
@@ -492,7 +507,7 @@
     if (groupRadix * radix <= BASE) {
       throw new RangeError();
     }
-    var size = remainderLength + trunc((remainderLength - 1) / groupLength) + 1;
+    var size = remainderLength + Math.trunc((remainderLength - 1) / groupLength) + 1;
     var remainder = createArray(size);
     var n = -1;
     while (++n < remainderLength) {
@@ -554,22 +569,22 @@
   };
 
   Number.prototype["BigInteger.compareToBigInteger"] = function (x) {
-    return compareTo(x.signum, x.magnitude, x.length, 0, sign(this), undefined, sign(abs(this)), abs(this));
+    return compareTo(x.signum, x.magnitude, x.length, 0, Math.sign(this), undefined, Math.sign(Math.abs(this)), Math.abs(this));
   };
   Number.prototype["BigInteger.addBigInteger"] = function (x) {
-    return add(x.signum, x.magnitude, x.length, 0, sign(this), undefined, sign(abs(this)), abs(this));
+    return add(x.signum, x.magnitude, x.length, 0, Math.sign(this), undefined, Math.sign(Math.abs(this)), Math.abs(this));
   };
   Number.prototype["BigInteger.subtractBigInteger"] = function (x) {
-    return add(x.signum, x.magnitude, x.length, 0, 0 - sign(this), undefined, sign(abs(this)), abs(this));
+    return add(x.signum, x.magnitude, x.length, 0, 0 - Math.sign(this), undefined, Math.sign(Math.abs(this)), Math.abs(this));
   };
   Number.prototype["BigInteger.multiplyBigInteger"] = function (x) {
-    return multiply(x.signum, x.magnitude, x.length, 0, sign(this), undefined, sign(abs(this)), abs(this));
+    return multiply(x.signum, x.magnitude, x.length, 0, Math.sign(this), undefined, Math.sign(Math.abs(this)), Math.abs(this));
   };
   Number.prototype["BigInteger.divideBigInteger"] = function (x) {
-    return divideAndRemainder(x.signum, x.magnitude, x.length, 0, sign(this), undefined, sign(abs(this)), abs(this), 1);
+    return divideAndRemainder(x.signum, x.magnitude, x.length, 0, Math.sign(this), undefined, Math.sign(Math.abs(this)), Math.abs(this), 1);
   };
   Number.prototype["BigInteger.remainderBigInteger"] = function (x) {
-    return divideAndRemainder(x.signum, x.magnitude, x.length, 0, sign(this), undefined, sign(abs(this)), abs(this), 0);
+    return divideAndRemainder(x.signum, x.magnitude, x.length, 0, Math.sign(this), undefined, Math.sign(Math.abs(this)), Math.abs(this), 0);
   };
 
   Number.prototype["BigInteger.compareToNumber"] = function (x) {
@@ -580,27 +595,28 @@
     if (value > -BASE && value < +BASE) {
       return value;
     }
-    return add(sign(x), undefined, sign(abs(x)), abs(x), sign(this), undefined, sign(abs(this)), abs(this));
+    return add(Math.sign(x), undefined, Math.sign(Math.abs(x)), Math.abs(x), Math.sign(this), undefined, Math.sign(Math.abs(this)), Math.abs(this));
   };
   Number.prototype["BigInteger.subtractNumber"] = function (x) {
     var value = x - this;
     if (value > -BASE && value < +BASE) {
       return value;
     }
-    return add(sign(x), undefined, sign(abs(x)), abs(x), 0 - sign(this), undefined, sign(abs(this)), abs(this));
+    return add(Math.sign(x), undefined, Math.sign(Math.abs(x)), Math.abs(x), 0 - Math.sign(this), undefined, Math.sign(Math.abs(this)), Math.abs(this));
   };
   Number.prototype["BigInteger.multiplyNumber"] = function (x) {
     var value = 0 + x * this;
     if (value > -BASE && value < +BASE) {
       return value;
     }
-    return multiply(sign(x), undefined, sign(abs(x)), abs(x), sign(this), undefined, sign(abs(this)), abs(this));
+    return multiply(Math.sign(x), undefined, Math.sign(Math.abs(x)), Math.abs(x), Math.sign(this), undefined, Math.sign(Math.abs(this)), Math.abs(this));
   };
   Number.prototype["BigInteger.divideNumber"] = function (x) {
     if (0 + this === 0) {
       throw new RangeError();
     }
-    return 0 + trunc(x / this);
+    // `0 + Math.trunc(x / this)` is slow in Chrome
+    return 0 + Math.sign(x) * Math.sign(this) * Math.floor(Math.abs(x) / Math.abs(this));
   };
   Number.prototype["BigInteger.remainderNumber"] = function (x) {
     if (0 + this === 0) {
@@ -619,7 +635,7 @@
     if (radix === undefined) {
       radix = 10;
     }
-    if (trunc(radix) !== radix || !(radix >= 2 && radix <= 36)) {
+    if (Math.trunc(radix) !== radix || !(radix >= 2 && radix <= 36)) {
       throw new RangeError("radix argument must be an integer between 2 and 36");
     }
     return toString(this.signum, this.magnitude, this.length, radix);
@@ -667,22 +683,22 @@
   };
 
   BigInteger.prototype["BigInteger.compareToNumber"] = function (x) {
-    return compareTo(sign(x), undefined, sign(abs(x)), abs(x), this.signum, this.magnitude, this.length, 0);
+    return compareTo(Math.sign(x), undefined, Math.sign(Math.abs(x)), Math.abs(x), this.signum, this.magnitude, this.length, 0);
   };
   BigInteger.prototype["BigInteger.addNumber"] = function (x) {
-    return add(sign(x), undefined, sign(abs(x)), abs(x), this.signum, this.magnitude, this.length, 0);
+    return add(Math.sign(x), undefined, Math.sign(Math.abs(x)), Math.abs(x), this.signum, this.magnitude, this.length, 0);
   };
   BigInteger.prototype["BigInteger.subtractNumber"] = function (x) {
-    return add(sign(x), undefined, sign(abs(x)), abs(x), 0 - this.signum, this.magnitude, this.length, 0);
+    return add(Math.sign(x), undefined, Math.sign(Math.abs(x)), Math.abs(x), 0 - this.signum, this.magnitude, this.length, 0);
   };
   BigInteger.prototype["BigInteger.multiplyNumber"] = function (x) {
-    return multiply(sign(x), undefined, sign(abs(x)), abs(x), this.signum, this.magnitude, this.length, 0);
+    return multiply(Math.sign(x), undefined, Math.sign(Math.abs(x)), Math.abs(x), this.signum, this.magnitude, this.length, 0);
   };
   BigInteger.prototype["BigInteger.divideNumber"] = function (x) {
-    return divideAndRemainder(sign(x), undefined, sign(abs(x)), abs(x), this.signum, this.magnitude, this.length, 0, 1);
+    return divideAndRemainder(Math.sign(x), undefined, Math.sign(Math.abs(x)), Math.abs(x), this.signum, this.magnitude, this.length, 0, 1);
   };
   BigInteger.prototype["BigInteger.remainderNumber"] = function (x) {
-    return divideAndRemainder(sign(x), undefined, sign(abs(x)), abs(x), this.signum, this.magnitude, this.length, 0, 0);
+    return divideAndRemainder(Math.sign(x), undefined, Math.sign(Math.abs(x)), Math.abs(x), this.signum, this.magnitude, this.length, 0, 0);
   };
 
   exports.BigInteger = BigInteger;

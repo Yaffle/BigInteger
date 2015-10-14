@@ -20,6 +20,13 @@
       return (1 + epsilon / 2) !== 1 ? f(f, epsilon / 2) : epsilon;
     }));
   }
+  if ((-2147483649).toString(16) === "-0") { // Opera 12
+    var numberToString = Number.prototype.toString;
+    Number.prototype.toString = function (radix) {
+      "use strict";
+      return (this < 0 ? "-" : "") + numberToString.call(this < 0 ? 0 - this : this, radix);
+    };
+  }
 
   // BigInteger.js
   // Available under Public Domain

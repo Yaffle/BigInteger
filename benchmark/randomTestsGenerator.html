@@ -1,0 +1,115 @@
+<script src="../libs/http___www_cs_students_stanford_edu__tjw_jsbn_.js"></script>
+<textarea></textarea>
+<script>
+
+var array = new Int32Array(1024 * 16);
+var available = 0;
+
+var random = function (n) {
+  if (available === 0) {
+    window.crypto.getRandomValues(array);
+    available = array.length;
+  }
+  available -= 1;
+  return (array[available] % n + n) % n;
+};
+
+//var random = function (n) {
+//  return Math.floor(Math.random() * n);
+//};
+
+var getRandomRadix = function () {
+  return 10;
+};
+
+var createRandomIntegerString = function (length) {
+  var sign = random(2);
+  var radix = getRandomRadix();
+  var i = -1;
+  var result = sign === 0 ? "" : "-";
+  while (++i < length) {
+    result += random(radix).toString(radix);
+  }
+  return {
+    value: result,
+    radix: radix
+  };
+};
+
+var calculate = function (a, b, operator) {
+  if (operator === "+") {
+    return a.add(b);
+  }
+  if (operator === "-") {
+    return a.subtract(b);
+  }
+  if (operator === "*") {
+    return a.multiply(b);
+  }
+  if (operator === "/") {
+    return a.divide(b);
+  }
+  if (operator === "%") {
+    return a.remainder(b);
+  }
+  throw new Error();
+};
+
+function Node(value, operator) {
+  this.value = value;
+  this.bigInteger = value !== null ? new BigInteger(value.value, value.radix) : null;
+  this.operator = operator;
+  this.left = null;
+  this.right = null;
+}
+
+Node.prototype.toString = function () {
+  if (this.value !== null) {
+    var value = this.value.value;
+    var radix = this.value.radix;
+    return (radix === 16 ? "0x" : "") + value;
+  } else {
+    return "(" + this.left.toString() + ")" + this.operator + "(" + this.right.toString() + ")";
+  }
+};
+
+var operators = ["+", "-", "*", "/", "%"];
+
+var getRandomOperatorsTree = function (depth) {
+  if (depth === 0) {
+    return new Node(createRandomIntegerString(1 + random(31)));
+  }
+  var node = new Node(null, operators[random(operators.length)]);
+  node.left = getRandomOperatorsTree(depth - 1);
+  node.right = getRandomOperatorsTree(depth - 1);
+  // (!)
+  if (node.operator === "/" || node.operator === "%") {
+    if (node.right.bigInteger.compareTo(new BigInteger("0", 10)) === 0) {
+      return node.right;
+    }
+    if (node.right.bigInteger.compareTo(new BigInteger("0", 10)) < 0) {
+      return node.right;
+    }
+    if (node.left.bigInteger.compareTo(new BigInteger("0", 10)) < 0) {
+      return node.left;
+    }
+  }
+  //
+  node.bigInteger = calculate(node.left.bigInteger, node.right.bigInteger, node.operator);
+  return node;
+};
+
+var generateTests = function (n) {
+  var tests = [];
+  for (var i = 0; i < n; i += 1) {
+    var tree = getRandomOperatorsTree(random(3));
+    var radix = getRandomRadix();
+    var test = "\"" + tree.toString() + "=" + (radix === 16 ? "0x" : "") + tree.bigInteger.toString(radix) + "\"";
+    tests.push(test);
+  }
+  return "var randomTests = [" + tests.join(",\n ") + "];\n";
+};
+
+document.querySelector("textarea").value = generateTests(1024);
+
+</script>

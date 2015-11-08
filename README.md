@@ -26,24 +26,26 @@ var a = BigInteger.parseInt("42", 13);
 var b = BigInteger.parseInt("CAFE", 16);
 var c = 0;
 
-c = a["BigInteger.compareTo"](b) < 0; // c = a < b;
-c = a["BigInteger.compareTo"](b) === 0; // c = a === b;
-c = a["BigInteger.compareTo"](b) > 0; // c = a > b;
+c = BigInteger.compareTo(b) < 0; // c = a < b;
+c = BigInteger.compareTo(b) <= 0; // c = a <= b;
+c = BigInteger.compareTo(b) === 0; // c = a === b;
+c = BigInteger.compareTo(b) !== 0; // c = a !== b;
+c = BigInteger.compareTo(b) > 0; // c = a > b;
+c = BigInteger.compareTo(b) >= 0; // c = a > b;
 
-a = a["BigInteger.negate"](); // a = 0 - a;
+a = BigInteger.negate(a); // a = 0 - a;
 
-a = a["BigInteger.add"](b); // a = a + b;
+a = BigInteger.add(a, b); // a = a + b;
 
-a = a["BigInteger.subtract"](b); // a = a - b;
+a = BigInteger.subtract(a, b); // a = a - b;
 
-a = a["BigInteger.multiply"](b); // a = a * b;
+a = BigInteger.multiply(a, b); // a = 0 + a * b;
 
-a = a["BigInteger.divide"](b); // a = Math.trunc(a / b);
+a = BigInteger.divide(a, b); // a = 0 + Math.trunc(a / b);
 
-a = a["BigInteger.remainder"](b); // a = a % b;
+a = BigInteger.remainder(a, b); // a = 0 + a % b;
 
-// `BigInteger.prototype["BigInteger.toString"]` converts the integer into a string representation in specified radix
-var s = a["BigInteger.toString"](10); // s = a.toString(10);
+var s = a.toString(10); // s = a.toString(10);
 ```
 
 Example
@@ -54,12 +56,12 @@ var factorial = function (n) {
   var result = 1;
   var i = 0;
   while (++i <= n) {
-    result = result["BigInteger.multiply"](i);
+    result = BigInteger.multiply(result, i);
   }
   return result;
 };
 
-console.log(factorial(30)["BigInteger.toString"]());
+console.log(factorial(30).toString(10));
 
 ```
 

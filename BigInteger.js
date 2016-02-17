@@ -5,20 +5,8 @@
 
   if (Math.trunc == undefined) {
     Math.trunc = function (x) {
-      return x < 0 ? Math.ceil(x) : Math.floor(x);
+      return x < 0 ? 0 - Math.floor(0 - x) : Math.floor(x);
     };
-  }
-  if (Math.sign == undefined) {
-    Math.sign = function (x) {
-      return x < 0 ? -1 : (x > 0 ? +1 : 0 * x);
-    };
-  }
-  if (Number.EPSILON == undefined) {
-    Number.EPSILON = (function (x) {
-      return x(x, 1 / 4503599627370496);
-    }(function (f, epsilon) {
-      return (1 + epsilon / 2) !== 1 ? f(f, epsilon / 2) : epsilon;
-    }));
   }
   if ((-2147483649).toString(16) === "-0") { // Opera 12
     var numberToString = Number.prototype.toString;
@@ -81,7 +69,12 @@
     return accumulator * v;
   };
 
-  var BASE = 2 / Number.EPSILON;
+  var EPSILON = (function (x) {
+    return x(x, 1 / 4503599627370496);
+  }(function (f, epsilon) {
+    return (1 + epsilon / 2) !== 1 ? f(f, epsilon / 2) : epsilon;
+  }));
+  var BASE = 2 / EPSILON;
   var SPLIT = 67108864 * pow(2, Math.trunc((Math.trunc(Math.log(BASE) / Math.log(2) + 0.5) - 53) / 2) + 1) + 1;
 
   var fastTrunc = function (x) {
@@ -145,14 +138,14 @@
     return {q: q, r: r};
   };
 
-  function BigInteger(signum, magnitude, length) {
-    this.signum = signum;
+  function BigInteger(sign, magnitude, length) {
+    this.sign = sign;
     this.magnitude = magnitude;
     this.length = length;
   }
 
-  var createBigInteger = function (signum, magnitude, length) {
-    return length < 2 ? (length === 0 ? 0 : (signum < 0 ? 0 - magnitude[0] : magnitude[0])) : new BigInteger(signum, magnitude, length);
+  var createBigInteger = function (sign, magnitude, length) {
+    return length === 0 ? 0 : (length === 1 ? (sign === 1 ? 0 - magnitude[0] : magnitude[0]) : new BigInteger(sign, magnitude, length));
   };
 
   var parseBigInteger = function (s, radix) {
@@ -166,7 +159,7 @@
     if (length === 0) {
       throw new RangeError();
     }
-    var signum = 1;
+    var sign = 0;
     var signCharCode = s.charCodeAt(0);
     var from = 0;
     if (signCharCode === 43) { // "+"
@@ -174,7 +167,7 @@
     }
     if (signCharCode === 45) { // "-"
       from = 1;
-      signum = -1;
+      sign = 1;
     }
 
     length -= from;
@@ -183,7 +176,7 @@
     }
     if (pow(radix, length) <= BASE) {
       var value = parseInteger(s, from, from + length, radix);
-      return signum < 0 ? 0 - value : value;
+      return sign === 1 ? 0 - value : value;
     }
     var groupLength = 0;
     var groupRadix = 1;
@@ -221,7 +214,7 @@
       size -= 1;
     }
 
-    return createBigInteger(size === 0 ? 0 : signum, magnitude, size);
+    return createBigInteger(size === 0 ? 0 : sign, magnitude, size);
   };
 
   var compareMagnitude = function (aMagnitude, aLength, aValue, bMagnitude, bLength, bValue) {
@@ -237,35 +230,32 @@
     return 0;
   };
 
-  var compareTo = function (aSignum, aMagnitude, aLength, aValue, bSignum, bMagnitude, bLength, bValue) {
-    if (aSignum === bSignum) {
+  var compareTo = function (aSign, aMagnitude, aLength, aValue, bSign, bMagnitude, bLength, bValue) {
+    if (aSign === bSign) {
       var c = compareMagnitude(aMagnitude, aLength, aValue, bMagnitude, bLength, bValue);
-      return aSignum < 0 ? 0 - c : c; // positive zero will be returned for c === 0
+      return aSign === 1 ? 0 - c : c; // positive zero will be returned for c === 0
     }
-    if (aSignum === 0) {
-      return 0 - bSignum;
-    }
-    return aSignum;
+    return aSign === 1 ? -1 : +1;
   };
 
-  var add = function (aSignum, aMagnitude, aLength, aValue, bSignum, bMagnitude, bLength, bValue) {
+  var add = function (aSign, aMagnitude, aLength, aValue, bSign, bMagnitude, bLength, bValue) {
     var z = compareMagnitude(aMagnitude, aLength, aValue, bMagnitude, bLength, bValue);
-    var minSignum = z < 0 ? aSignum : bSignum;
+    var minSign = z < 0 ? aSign : bSign;
     var minMagnitude = z < 0 ? aMagnitude : bMagnitude;
     var minLength = z < 0 ? aLength : bLength;
     var minValue = z < 0 ? aValue : bValue;
-    var maxSignum = z < 0 ? bSignum : aSignum;
+    var maxSign = z < 0 ? bSign : aSign;
     var maxMagnitude = z < 0 ? bMagnitude : aMagnitude;
     var maxLength = z < 0 ? bLength : aLength;
     var maxValue = z < 0 ? bValue : aValue;
 
     // |a| <= |b|
-    if (minSignum === 0) {
-      return maxMagnitude === undefined ? (maxSignum < 0 ? 0 - maxValue : maxValue) : createBigInteger(maxSignum, maxMagnitude, maxLength);
+    if (minLength === 0) {
+      return maxMagnitude === undefined ? (maxSign === 1 ? 0 - maxValue : maxValue) : createBigInteger(maxSign, maxMagnitude, maxLength);
     }
     var subtract = 0;
     var resultLength = maxLength;
-    if (minSignum !== maxSignum) {
+    if (minSign !== maxSign) {
       subtract = 1;
       if (minLength === resultLength) {
         while (resultLength > 0 && (minMagnitude === undefined ? minValue : minMagnitude[resultLength - 1]) === (maxMagnitude === undefined ? maxValue : maxMagnitude[resultLength - 1])) {
@@ -298,19 +288,19 @@
     while (resultLength > 0 && result[resultLength - 1] === 0) {
       resultLength -= 1;
     }
-    return createBigInteger(maxSignum, result, resultLength);
+    return createBigInteger(maxSign, result, resultLength);
   };
 
-  var multiply = function (aSignum, aMagnitude, aLength, aValue, bSignum, bMagnitude, bLength, bValue) {
+  var multiply = function (aSign, aMagnitude, aLength, aValue, bSign, bMagnitude, bLength, bValue) {
     if (aLength === 0 || bLength === 0) {
       return createBigInteger(0, createArray(0), 0);
     }
-    var resultSign = aSignum < 0 ? 0 - bSignum : bSignum;
+    var resultSign = aSign === 1 ? 1 - bSign : bSign;
     if (aLength === 1 && (aMagnitude === undefined ? aValue : aMagnitude[0]) === 1) {
-      return bMagnitude === undefined ? (resultSign < 0 ? 0 - bValue : bValue) : createBigInteger(resultSign, bMagnitude, bLength);
+      return bMagnitude === undefined ? (resultSign === 1 ? 0 - bValue : bValue) : createBigInteger(resultSign, bMagnitude, bLength);
     }
     if (bLength === 1 && (bMagnitude === undefined ? bValue : bMagnitude[0]) === 1) {
-      return aMagnitude === undefined ? (resultSign < 0 ? 0 - aValue : aValue) : createBigInteger(resultSign, aMagnitude, aLength);
+      return aMagnitude === undefined ? (resultSign === 1 ? 0 - aValue : aValue) : createBigInteger(resultSign, aMagnitude, aLength);
     }
     var resultLength = aLength + bLength;
     var result = createArray(resultLength);
@@ -340,17 +330,17 @@
     return createBigInteger(resultSign, result, resultLength);
   };
 
-  var divideAndRemainder = function (aSignum, aMagnitude, aLength, aValue, bSignum, bMagnitude, bLength, bValue, divide) {
+  var divideAndRemainder = function (aSign, aMagnitude, aLength, aValue, bSign, bMagnitude, bLength, bValue, divide) {
     if (bLength === 0) {
       throw new RangeError();
     }
     if (aLength === 0) {
       return createBigInteger(0, createArray(0), 0);
     }
-    var quotientSign = aSignum < 0 ? 0 - bSignum : bSignum;
+    var quotientSign = aSign === 1 ? 1 - bSign : bSign;
     if (bLength === 1 && (bMagnitude === undefined ? bValue : bMagnitude[0]) === 1) {
       if (divide === 1) {
-        return aMagnitude === undefined ? (quotientSign < 0 ? 0 - aValue : aValue) : createBigInteger(quotientSign, aMagnitude, aLength);
+        return aMagnitude === undefined ? (quotientSign === 1 ? 0 - aValue : aValue) : createBigInteger(quotientSign, aMagnitude, aLength);
       }
       return createBigInteger(0, createArray(0), 0);
     }
@@ -489,11 +479,11 @@
     while (++o < remainderLength) {
       result[o] = remainder[o];
     }
-    return createBigInteger(aSignum, result, remainderLength);
+    return createBigInteger(aSign, result, remainderLength);
   };
 
-  var toString = function (signum, magnitude, length, radix) {
-    var result = signum < 0 ? "-" : "";
+  var toString = function (sign, magnitude, length, radix) {
+    var result = sign === 1 ? "-" : "";
 
     var remainderLength = length;
     if (remainderLength === 0) {
@@ -557,7 +547,19 @@
     if (Math.trunc(radix) !== radix || !(radix >= 2 && radix <= 36)) {
       throw new RangeError("radix argument must be an integer between 2 and 36");
     }
-    return toString(this.signum, this.magnitude, this.length, radix);
+    return toString(this.sign, this.magnitude, this.length, radix);
+  };
+
+  var sign = function (x) {
+    return x < 0 ? 1 : 0;
+  };
+
+  var length = function (x) {
+    return x === 0 ? 0 : 1;
+  };
+
+  var abs = function (x) {
+    return x < 0 ? 0 - x : 0 + x;
   };
 
   var compareTo0 = function (x, y) {
@@ -565,13 +567,13 @@
       if (typeof y === "number") {
         return x < y ? -1 : (y < x ? +1 : 0);
       } else {
-        return compareTo(Math.sign(x), undefined, Math.sign(Math.abs(x)), Math.abs(x), y.signum, y.magnitude, y.length, 0);
+        return compareTo(sign(x), undefined, length(x), abs(x), y.sign, y.magnitude, y.length, 0);
       }
     } else {
       if (typeof y === "number") {
-        return compareTo(x.signum, x.magnitude, x.length, 0, Math.sign(y), undefined, Math.sign(Math.abs(y)), Math.abs(y));
+        return compareTo(x.sign, x.magnitude, x.length, 0, sign(y), undefined, length(y), abs(y));
       } else {
-        return compareTo(x.signum, x.magnitude, x.length, 0, y.signum, y.magnitude, y.length, 0);
+        return compareTo(x.sign, x.magnitude, x.length, 0, y.sign, y.magnitude, y.length, 0);
       }
     }
   };
@@ -582,15 +584,15 @@
         if (value > -BASE && value < +BASE) {
           return value;
         }
-        return add(Math.sign(x), undefined, Math.sign(Math.abs(x)), Math.abs(x), Math.sign(y), undefined, Math.sign(Math.abs(y)), Math.abs(y));
+        return add(sign(x), undefined, length(x), abs(x), sign(y), undefined, length(y), abs(y));
       } else {
-        return add(Math.sign(x), undefined, Math.sign(Math.abs(x)), Math.abs(x), y.signum, y.magnitude, y.length, 0);
+        return add(sign(x), undefined, length(x), abs(x), y.sign, y.magnitude, y.length, 0);
       }
     } else {
       if (typeof y === "number") {
-        return add(x.signum, x.magnitude, x.length, 0, Math.sign(y), undefined, Math.sign(Math.abs(y)), Math.abs(y));
+        return add(x.sign, x.magnitude, x.length, 0, sign(y), undefined, length(y), abs(y));
       } else {
-        return add(x.signum, x.magnitude, x.length, 0, y.signum, y.magnitude, y.length, 0);
+        return add(x.sign, x.magnitude, x.length, 0, y.sign, y.magnitude, y.length, 0);
       }
     }
   };
@@ -601,15 +603,15 @@
         if (value > -BASE && value < +BASE) {
           return value;
         }
-        return add(Math.sign(x), undefined, Math.sign(Math.abs(x)), Math.abs(x), 0 - Math.sign(y), undefined, Math.sign(Math.abs(y)), Math.abs(y));
+        return add(sign(x), undefined, length(x), abs(x), 1 - sign(y), undefined, length(y), abs(y));
       } else {
-        return add(Math.sign(x), undefined, Math.sign(Math.abs(x)), Math.abs(x), 0 - y.signum, y.magnitude, y.length, 0);
+        return add(sign(x), undefined, length(x), abs(x), 1 - y.sign, y.magnitude, y.length, 0);
       }
     } else {
       if (typeof y === "number") {
-        return add(x.signum, x.magnitude, x.length, 0, 0 - Math.sign(y), undefined, Math.sign(Math.abs(y)), Math.abs(y));
+        return add(x.sign, x.magnitude, x.length, 0, 1 - sign(y), undefined, length(y), abs(y));
       } else {
-        return add(x.signum, x.magnitude, x.length, 0, 0 - y.signum, y.magnitude, y.length, 0);
+        return add(x.sign, x.magnitude, x.length, 0, 1 - y.sign, y.magnitude, y.length, 0);
       }
     }
   };
@@ -620,15 +622,15 @@
         if (value > -BASE && value < +BASE) {
           return value;
         }
-        return multiply(Math.sign(x), undefined, Math.sign(Math.abs(x)), Math.abs(x), Math.sign(y), undefined, Math.sign(Math.abs(y)), Math.abs(y));
+        return multiply(sign(x), undefined, length(x), abs(x), sign(y), undefined, length(y), abs(y));
       } else {
-        return multiply(Math.sign(x), undefined, Math.sign(Math.abs(x)), Math.abs(x), y.signum, y.magnitude, y.length, 0);
+        return multiply(sign(x), undefined, length(x), abs(x), y.sign, y.magnitude, y.length, 0);
       }
     } else {
       if (typeof y === "number") {
-        return multiply(x.signum, x.magnitude, x.length, 0, Math.sign(y), undefined, Math.sign(Math.abs(y)), Math.abs(y));
+        return multiply(x.sign, x.magnitude, x.length, 0, sign(y), undefined, length(y), abs(y));
       } else {
-        return multiply(x.signum, x.magnitude, x.length, 0, y.signum, y.magnitude, y.length, 0);
+        return multiply(x.sign, x.magnitude, x.length, 0, y.sign, y.magnitude, y.length, 0);
       }
     }
   };
@@ -639,15 +641,15 @@
           throw new RangeError();
         }
         // `0 + Math.trunc(x / y)` is slow in Chrome
-        return 0 + Math.sign(x) * Math.sign(y) * Math.floor(Math.abs(x) / Math.abs(y));
+        return x < 0 ? (y < 0 ? 0 + Math.floor((0 - x) / (0 - y)) : 0 - Math.floor((0 - x) / y)) : (y < 0 ? 0 - Math.floor(x / (0 - y)) : 0 + Math.floor(x / y));
       } else {
-        return divideAndRemainder(Math.sign(x), undefined, Math.sign(Math.abs(x)), Math.abs(x), y.signum, y.magnitude, y.length, 0, 1);
+        return divideAndRemainder(sign(x), undefined, length(x), abs(x), y.sign, y.magnitude, y.length, 0, 1);
       }
     } else {
       if (typeof y === "number") {
-        return divideAndRemainder(x.signum, x.magnitude, x.length, 0, Math.sign(y), undefined, Math.sign(Math.abs(y)), Math.abs(y), 1);
+        return divideAndRemainder(x.sign, x.magnitude, x.length, 0, sign(y), undefined, length(y), abs(y), 1);
       } else {
-        return divideAndRemainder(x.signum, x.magnitude, x.length, 0, y.signum, y.magnitude, y.length, 0, 1);
+        return divideAndRemainder(x.sign, x.magnitude, x.length, 0, y.sign, y.magnitude, y.length, 0, 1);
       }
     }
   };
@@ -659,13 +661,13 @@
         }
         return 0 + x % y;
       } else {
-        return divideAndRemainder(Math.sign(x), undefined, Math.sign(Math.abs(x)), Math.abs(x), y.signum, y.magnitude, y.length, 0, 0);
+        return divideAndRemainder(sign(x), undefined, length(x), abs(x), y.sign, y.magnitude, y.length, 0, 0);
       }
     } else {
       if (typeof y === "number") {
-        return divideAndRemainder(x.signum, x.magnitude, x.length, 0, Math.sign(y), undefined, Math.sign(Math.abs(y)), Math.abs(y), 0);
+        return divideAndRemainder(x.sign, x.magnitude, x.length, 0, sign(y), undefined, length(y), abs(y), 0);
       } else {
-        return divideAndRemainder(x.signum, x.magnitude, x.length, 0, y.signum, y.magnitude, y.length, 0, 0);
+        return divideAndRemainder(x.sign, x.magnitude, x.length, 0, y.sign, y.magnitude, y.length, 0, 0);
       }
     }
   };
@@ -673,7 +675,7 @@
     if (typeof x === "number") {
       return 0 - x;
     } else {
-      return createBigInteger(0 - x.signum, x.magnitude, x.length);
+      return createBigInteger(1 - x.sign, x.magnitude, x.length);
     }
   };
 
@@ -717,7 +719,7 @@
         throw new RangeError();
       }
       // `0 + Math.trunc(x / y)` is slow in Chrome
-      return 0 + Math.sign(x) * Math.sign(y) * Math.floor(Math.abs(x) / Math.abs(y));
+      return x < 0 ? (y < 0 ? 0 + Math.floor((0 - x) / (0 - y)) : 0 - Math.floor((0 - x) / y)) : (y < 0 ? 0 - Math.floor(x / (0 - y)) : 0 + Math.floor(x / y));
     }
     return divide0(x, y);
   };

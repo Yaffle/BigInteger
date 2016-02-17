@@ -555,7 +555,7 @@
   };
 
   var length = function (x) {
-    return x === 0 ? 0 : 1;
+    return 0 + x === 0 ? 0 : 1;
   };
 
   var abs = function (x) {
@@ -641,7 +641,7 @@
           throw new RangeError();
         }
         // `0 + Math.trunc(x / y)` is slow in Chrome
-        return x < 0 ? (y < 0 ? 0 + Math.floor((0 - x) / (0 - y)) : 0 - Math.floor((0 - x) / y)) : (y < 0 ? 0 - Math.floor(x / (0 - y)) : 0 + Math.floor(x / y));
+        return x < 0 ? (y < 0 ? 0 + Math.floor((0 - x) / (0 - y)) : 0 - Math.floor((0 - x) / (0 + y))) : (y < 0 ? 0 - Math.floor((0 + x) / (0 - y)) : 0 + Math.floor((0 + x) / (0 + y)));
       } else {
         return divideAndRemainder(sign(x), undefined, length(x), abs(x), y.sign, y.magnitude, y.length, 0, 1);
       }
@@ -719,7 +719,7 @@
         throw new RangeError();
       }
       // `0 + Math.trunc(x / y)` is slow in Chrome
-      return x < 0 ? (y < 0 ? 0 + Math.floor((0 - x) / (0 - y)) : 0 - Math.floor((0 - x) / y)) : (y < 0 ? 0 - Math.floor(x / (0 - y)) : 0 + Math.floor(x / y));
+      return x < 0 ? (y < 0 ? 0 + Math.floor((0 - x) / (0 - y)) : 0 - Math.floor((0 - x) / (0 + y))) : (y < 0 ? 0 - Math.floor((0 + x) / (0 - y)) : 0 + Math.floor((0 + x) / (0 + y)));
     }
     return divide0(x, y);
   };

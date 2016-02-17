@@ -182,7 +182,7 @@ test = function () {
       lastIndex = i;
       var src = libs[i].src;
       if (self.Worker !== undefined && location.protocol !== "file:") {
-        var w = new Worker("iframe.js?src=" + encodeURIComponent(src));
+        var w = new self.Worker("iframe.js?src=" + encodeURIComponent(src));
         w.onmessage = function (event) {
           self.postMessage(event.data, "*");
         };
@@ -329,7 +329,7 @@ var generateTable = function () {
   ];
   for (var i = 0; i < benchmarks.length; i += 1) {
     var benchmark = benchmarks[i];
-    html += "\n    <td tabindex=\"0\" id=\"${id}\"><a href=\"${url}\">${id}</a></td>".replace("${id}", benchmark.id).replace("${url}", benchmark.url).replace("${id}", benchmark.id);
+    html += "\n    <td tabindex=\"0\" id=\"${id}\"><a target=\"_blank\" href=\"${url}\">${id}</a></td>".replace("${id}", benchmark.id).replace("${url}", benchmark.url).replace("${id}", benchmark.id);
   }
   html += "\n  </tr>";
   html += "\n</thead>";
@@ -338,7 +338,7 @@ var generateTable = function () {
     var lib = libs[i];
     html += "\n  <tr class=\"result\">";
     html += "\n    <td><input type=checkbox " + (lib.checked ? "checked=\"checked\"" : "") + " /></td>";
-    html += "\n    <td><a href=\"${url}\">${url}</a></td>".replace("${url}", lib.url).replace("${url}", lib.url);
+    html += "\n    <td><a target=\"_blank\" href=\"${url}\">${url}</a></td>".replace("${url}", lib.url).replace("${url}", lib.url);
     for (var j = 0; j < benchmarks.length; j += 1) {
       html += "\n    <td></td>";
     }

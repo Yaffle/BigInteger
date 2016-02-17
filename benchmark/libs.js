@@ -1,5 +1,21 @@
 "use strict";
 
+if (Object.assign == undefined) {
+  Object.assign = function (target) {
+    for (var i = 1; i < arguments.length; i += 1) {
+      var nextSource = arguments[i];
+      if (nextSource != undefined) {
+        var keys = Object.keys(nextSource);
+        for (var j = 0; j < keys.length; j += 1) {
+          var key = keys[j];
+          target[key] = nextSource[key];
+        }
+      }
+    }
+    return target;
+  };
+}
+
 if (Math.sign == undefined) {
   Math.sign = function (x) {
     return x < 0 ? -1 : (x > 0 ? 1 : x);
@@ -59,7 +75,7 @@ var NumberInteger = {
   divide: "0 + Math.trunc(a / b)",
   remainder: "0 + a % b",
   negate: "0 - a",
-  compareTo: "a < b ? -1 : (b < a ? +1 : 0)",
+  compareTo: "(a < b ? -1 : (b < a ? +1 : 0))",
   parseInt: "Number.parseInt(a, b)",
   toString: "a.toString(b)",
   and: "a & b",
@@ -76,7 +92,6 @@ var NumberInteger = {
 var MikeMclBigNumber = {
   add: "a.plus(b)",
   subtract: "a.minus(b)",
-  add: "a.plus(b)",
   multiply: "a.times(b)",
   divide: "a.div(b)",
   remainder: "a.mod(b)",
@@ -87,7 +102,7 @@ var MikeMclBigNumber = {
 };
 
 var libs = [
-  {
+  Object.assign({}, JavaBigInteger, {
     url: "http://www.leemon.com/crypto/BigInt.html",
     source: "http://www.leemon.com/crypto/BigInt.js",
     setup: function () {
@@ -179,26 +194,27 @@ var libs = [
         var data = str2bigInt(string, radix == undefined ? 10 : radix, 0);
         return new BigInt(sign, data);
       };
-      BigInt.prototype["BigInteger.negate"] = BigInt_negate;
-      BigInt.prototype["BigInteger.compareTo"] = BigInt_compare;
-      BigInt.prototype["BigInteger.compareTo"] = BigInt_compare;
-      BigInt.prototype["BigInteger.add"] = BigInt_add;
-      BigInt.prototype["BigInteger.subtract"] = function (y) {
-        return this["BigInteger.add"](y["BigInteger.negate"]());
+      BigInt.prototype.negate = BigInt_negate;
+      BigInt.prototype.compareTo = BigInt_compare;
+      
+      BigInt.prototype.add = BigInt_add;
+      BigInt.prototype.subtract = function (y) {
+        return this.add(y.negate());
       };
-      BigInt.prototype["BigInteger.multiply"] = BigInt_multiply;
-      BigInt.prototype["BigInteger.divide"] = BigInt_div;
-      BigInt.prototype["BigInteger.remainder"] = BigInt_mod;
-      BigInt.prototype["BigInteger.toString"] = BigInt_numberToString;
-      BigInt.prototype["BigInteger.bitLength"] = function () {
+      BigInt.prototype.multiply = BigInt_multiply;
+      BigInt.prototype.divide = BigInt_div;
+      BigInt.prototype.remainder = BigInt_mod;
+      BigInt.prototype.toString = BigInt_numberToString;
+      BigInt.prototype.bitLength = function () {
         return bitSize(this._b);
       };
-      BigInt.prototype["BigInteger.modPow"] = function (y, n) {
+      BigInt.prototype.modPow = function (y, n) {
         return new BigInt(1, powMod(this._b, y._b, n._b));
       };
-      return BigInt;
-    }
-  },
+      self.BigInteger = BigInt;
+    },
+    parseInt: "BigInteger.parseInt(a, b)",
+  }),
   {
     url: "https://github.com/jtobey/javascript-bignum",
     source: "https://raw.githubusercontent.com/jtobey/javascript-bignum/master/biginteger.js https://raw.githubusercontent.com/jtobey/javascript-bignum/master/schemeNumber.js https://raw.githubusercontent.com/jtobey/javascript-bignum/master/lib/hybridBigInteger.js",
@@ -215,8 +231,8 @@ var libs = [
     or: "SchemeNumber.plugins.get(\"bitwiseIor\")(a, b)",
     xor: "SchemeNumber.plugins.get(\"bitwiseXor\")(a, b)",
     not: "SchemeNumber.plugins.get(\"bitwiseNot\")(a)",
-    shiftLeft: "",
-    shiftRight: "",
+    //shiftLeft: "",
+    //shiftRight: "",
     bitLength: "SchemeNumber.plugins.get(\"bitLength\")(a)",
   },
   Object.assign({}, JavaBigInteger, {
@@ -224,18 +240,18 @@ var libs = [
     source: "https://raw.githubusercontent.com/node-modules/node-biginteger/master/lib/BigInteger.js",
     parseInt: "BigInteger.fromString(a, b)",
   }),
-  {
+  /*{
     url: "https://github.com/vukicevic/crunch",
     source: "https://raw.githubusercontent.com/vukicevic/crunch/master/crunch.js",
     add: "crunch.add(a, b)",
     subtract: "crunch.sub(a, b)",
     multiply: "crunch.mul(a, b)",
     divide: "crunch.div(a, b)",
-    //remainder: "crunch.mod(a, b)",
+    remainder: "crunch.mod(a, b)",
     negate: "crunch.mul(crunch.parse(\"-1\"), a)",
     compareTo: "crunch.compare(a, b)",
     parseInt: "crunch.parse(a)",
-    toString: "crunch.stringify(a)",
+    toString: "(a.length === 0 ? \"0\" : (a[0] < 0 ? \"-\" + crunch.stringify(crunch.mul(crunch.parse(\"-1\"), a)) : crunch.stringify(a)))",
     and: "crunch.and(a, b)",
     or: "crunch.or(a, b)",
     xor: "crunch.xor(a, b)",
@@ -247,7 +263,7 @@ var libs = [
     setup: function () {
       self.crunch = self.Crunch();
     }
-  },
+  },*/
   Object.assign({}, MikeMclBigNumber, {
     url: "https://github.com/MikeMcl/bignumber.js",
     source: "https://raw.githubusercontent.com/MikeMcl/bignumber.js/master/bignumber.js",
@@ -262,6 +278,7 @@ var libs = [
   Object.assign({}, MikeMclBigNumber, {
     url: "https://github.com/MikeMcl/big.js",
     source: "https://raw.githubusercontent.com/MikeMcl/big.js/master/big.js",
+    parseInt: "(b === 10 ? new BigNumber(a, b) : new BigNumber(\"0\"))",
     setup: function () {
       self.BigNumber = self.Big;
       //BigNumber.config({precision: 2048, rounding: 1, toExpPos: 2048});
@@ -277,6 +294,7 @@ var libs = [
   }),
   Object.assign({}, MikeMclBigNumber, {
     url: "https://github.com/MikeMcl/decimal.js",
+    parseInt: "(b === 10 ? new BigNumber(a, b) : new BigNumber(\"0\"))",
     source: "https://raw.githubusercontent.com/MikeMcl/decimal.js/master/decimal.js",
     divide: "a.div(b).trunc()",
     remainder: "a.minus(a.div(b).trunc().times(b))",
@@ -361,7 +379,7 @@ var libs = [
         if (prefix !== "") {
           string = string.replace(/^(\-)?/, "$1" + prefix);
         }
-        return Math.BigInt(string);
+        return self.bigint(string);
       };
     }
   }),
@@ -373,7 +391,7 @@ var libs = [
   Object.assign({}, JavaBigInteger, {
     url: "https://github.com/dtrebbien/BigDecimal.js",
     source: "https://rawgit.com/dtrebbien/BigDecimal.js/master/build/BigDecimal-all-last.js",
-    parseInt: "new BigDecimal(a)",
+    parseInt: "(b === 10 ? new BigDecimal(a) : new BigDecimal(\"0\"))",
     setup: function () {
       var BigDecimal = self.BigDecimal;
       var divideFunction = BigDecimal.prototype.divide;
@@ -385,7 +403,7 @@ var libs = [
   }),
   Object.assign({}, JavaBigInteger, {
     url: "https://github.com/iriscouch/bigdecimal.js",
-    source: "http://jhs.iriscouch.com/demo/_design/bigdecimal/bigdecimal.js",
+    source: "http://jhs.iriscouch.com/demo/_design/bigdecimal/bigdecimal.js"
   }),
   Object.assign({}, JavaBigInteger, {
     url: "http://ofmind.net/doc/hapint",
@@ -451,8 +469,13 @@ if (this.self == undefined) {
     }, index * 300);
   });
 } else {
-  this.require = function () {
-    return {};
-  };
+  // will not work with jtobey
+  //this.require = function () {
+  //  return {};
+  //};
+  //iriscouch
+  if (this.window == undefined) {
+    this.window = this;
+  }
   this.module = this;
 }

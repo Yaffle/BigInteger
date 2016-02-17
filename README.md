@@ -4,12 +4,11 @@ BigInteger
 Yet another BigInteger class in JavaScript
 This library performs arithmetic operations on integers of arbitrary size.
 
-To use it from browser:
+To use it from a web browser:
 ```
 <script src="BigInteger.js"></script>
 ```
-
-To use it from node.js:
+To use it from the node.js:
 ```
 npm install js-big-integer
 ```
@@ -20,33 +19,17 @@ var BigInteger = require("BigInteger").BigInteger;
 
 The API is terrible, but small integers are stored as primitive numbers, so operations on small integers are faster.
 
-```javascript
-// `BigInteger.parseInt` converts the string representation with specified radix into an integer
-var a = BigInteger.parseInt("42", 13);
-var b = BigInteger.parseInt("CAFE", 16);
-var c = 0;
-
-c = BigInteger.compareTo(b) < 0; // c = a < b;
-c = BigInteger.compareTo(b) <= 0; // c = a <= b;
-c = BigInteger.compareTo(b) === 0; // c = a === b;
-c = BigInteger.compareTo(b) !== 0; // c = a !== b;
-c = BigInteger.compareTo(b) > 0; // c = a > b;
-c = BigInteger.compareTo(b) >= 0; // c = a > b;
-
-a = BigInteger.negate(a); // a = 0 - a;
-
-a = BigInteger.add(a, b); // a = a + b;
-
-a = BigInteger.subtract(a, b); // a = a - b;
-
-a = BigInteger.multiply(a, b); // a = 0 + a * b;
-
-a = BigInteger.divide(a, b); // a = 0 + Math.trunc(a / b);
-
-a = BigInteger.remainder(a, b); // a = 0 + a % b;
-
-var s = a.toString(10); // s = a.toString(10);
-```
+  `BigInteger`                        | `Number`
+--------------------------------------|----------------------------------
+ `BigInteger.parseInt(string, radix)` | `Number.parseInt(string, radix)`
+ `BigInteger.compareTo(a, b)`         | `Math.sign(a - b)`              
+ `BigInteger.negate(a)`               | `0 - a`                         
+ `BigInteger.add(a, b)`               | `a + b`                         
+ `BigInteger.subtract(a, b)`          | `a - b`                         
+ `BigInteger.multiply(a, b)`          | `0 + a * b`                     
+ `BigInteger.divide(a, b)`            | `0 + Math.trunc(a / b)`         
+ `BigInteger.remainder(a, b)`         | `0 + a % b`                     
+ `BigInteger.toString(a, radix)`      | `a.toString(radix)`             
 
 Example
 =======
@@ -84,4 +67,4 @@ Other pure JavaScript implementations:
  16. http://ofmind.net/doc/hapint
 
 Benchmark:
-  http://yaffle.github.io/BigInteger/
+  http://yaffle.github.io/BigInteger/benchmark/

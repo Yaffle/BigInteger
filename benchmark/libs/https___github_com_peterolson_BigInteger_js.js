@@ -306,7 +306,9 @@ var bigInt = (function (undefined) {
             bd = multiplyKaratsuba(b, d),
             abcd = multiplyKaratsuba(addAny(a, b), addAny(c, d));
 
-        return addAny(addAny(ac, shiftLeft(subtract(subtract(abcd, ac), bd), n)), shiftLeft(bd, 2 * n));
+        var product = addAny(addAny(ac, shiftLeft(subtract(subtract(abcd, ac), bd), n)), shiftLeft(bd, 2 * n));
+        trim(product);
+        return product;
     }
 
     BigInteger.prototype.multiply = function (v) {
@@ -402,6 +404,7 @@ var bigInt = (function (undefined) {
             if (remainder[shift + b_l] !== divisorMostSignificantDigit) {
               quotientDigit = Math.floor((remainder[shift + b_l] * base + remainder[shift + b_l - 1]) / divisorMostSignificantDigit);
             }
+            // quotientDigit <= base - 1
             carry = 0;
             borrow = 0;
             l = divisor.length;
@@ -597,8 +600,8 @@ var bigInt = (function (undefined) {
         if (mod.isZero()) throw new Error("Cannot take modPow with modulus 0");
         var r = CACHE[1],
             base = this.mod(mod);
-        if (base.isZero()) return CACHE[0];
         while (exp.isPositive()) {
+            if (base.isZero()) return CACHE[0];
             if (exp.isOdd()) r = r.multiply(base).mod(mod);
             exp = exp.divide(2);
             base = base.square().mod(mod);
@@ -636,6 +639,15 @@ var bigInt = (function (undefined) {
     };
 
     BigInteger.prototype.compare = function (v) {
+        // See discussion about comparison with Infinity:
+        // https://github.com/peterolson/BigInteger.js/issues/61
+        if (v === Infinity) {
+            return -1;
+        }
+        if (v === -Infinity) {
+            return 1;
+        }
+
         var n = parseValue(v),
             a = this.value,
             b = n.value;
@@ -650,6 +662,13 @@ var bigInt = (function (undefined) {
     BigInteger.prototype.compareTo = BigInteger.prototype.compare;
 
     SmallInteger.prototype.compare = function (v) {
+        if (v === Infinity) {
+            return -1;
+        }
+        if (v === -Infinity) {
+            return 1;
+        }
+
         var n = parseValue(v),
             a = this.value,
             b = n.value;
@@ -826,8 +845,7 @@ var bigInt = (function (undefined) {
 
     BigInteger.prototype.shiftLeft = function (n) {
         if (!shift_isSmall(n)) {
-            if (n.isNegative()) return this.shiftRight(n.abs());
-            return this.times(CACHE[2].pow(n));
+            throw new Error(String(n) + " is too large for shifting.");
         }
         n = +n;
         if (n < 0) return this.shiftRight(-n);
@@ -843,9 +861,7 @@ var bigInt = (function (undefined) {
     BigInteger.prototype.shiftRight = function (n) {
         var remQuo;
         if (!shift_isSmall(n)) {
-            if (n.isNegative()) return this.shiftLeft(n.abs());
-            remQuo = this.divmod(CACHE[2].pow(n));
-            return remQuo.remainder.isNegative() ? remQuo.quotient.prev() : remQuo.quotient;
+            throw new Error(String(n) + " is too large for shifting.");
         }
         n = +n;
         if (n < 0) return this.shiftLeft(-n);
@@ -980,7 +996,7 @@ var bigInt = (function (undefined) {
             if (digit < top) restricted = false;
         }
         result = arrayToSmall(result);
-        return low.add(new BigInteger(result, false, typeof result === "number"));
+        return low.add(typeof result === "number" ? new SmallInteger(result) : new BigInteger(result, false));
     }
     var parseBase = function (text, base) {
         var val = CACHE[0], pow = CACHE[1],
@@ -1017,7 +1033,7 @@ var bigInt = (function (undefined) {
     function stringify(digit) {
         var v = digit.value;
         if (typeof v === "number") v = [v];
-        if (v.length === 1 && v[0] <= 36) {
+        if (v.length === 1 && v[0] <= 35) {
             return "0123456789abcdefghijklmnopqrstuvwxyz".charAt(v[0]);
         }
         return "<" + v + ">";
@@ -1104,7 +1120,7 @@ var bigInt = (function (undefined) {
                 var text = split[0];
                 var decimalPlace = text.indexOf(".");
                 if (decimalPlace >= 0) {
-                    exp -= text.length - decimalPlace;
+                    exp -= text.length - decimalPlace - 1;
                     text = text.slice(0, decimalPlace) + text.slice(decimalPlace + 1);
                 }
                 if (exp < 0) throw new Error("Cannot include negative exponent part for integers");

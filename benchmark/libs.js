@@ -441,20 +441,23 @@ if (this.self == undefined) {
           var source = sources[i];
           i += 1;
           console.log(x.source);
-
-          (source.slice(0, 6) === "https:" ? https : http).get(source, function (response) {
-            if (response.statusCode === 200) {
-              response.on("data", function (chunk) {
-                fileData += chunk;
-              });
-              response.on("end", function () {
-                download();
-              });
-            }
-          }).on("error", function (error) {
-            console.log(error);
-          });
-
+          
+          if (source.slice(0, 5) === "data:") {
+            download();
+          } else {
+            (source.slice(0, 6) === "https:" ? https : http).get(source, function (response) {
+              if (response.statusCode === 200) {
+                response.on("data", function (chunk) {
+                  fileData += chunk;
+                });
+                response.on("end", function () {
+                  download();
+                });
+              }
+            }).on("error", function (error) {
+              console.log(error);
+            });
+          }
         } else {
           var fs = require("fs");
           fs.writeFile(x.src, fileData, function (error) {

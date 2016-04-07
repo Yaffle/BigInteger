@@ -201,7 +201,7 @@
       var c = magnitude[j];
       var l = -1;
       while (++l < j) {
-        var tmp = performMultiplication(c, magnitude[l], groupRadix, magnitude, l);
+        var tmp = performMultiplication(c, magnitude[l], groupRadix);
         var lo = tmp.lo;
         var hi = tmp.hi;
         magnitude[l] = lo;

@@ -114,6 +114,38 @@ var wrapper = function () {
       return I.remainder(as, b);
     }, { setup: initialize });
   }());
+  (function () {
+    var a = undefined;
+    var b = undefined;
+    var initialize = function () {
+      var a = I.parseInt("134217727", 10);
+      var b = I.parseInt("134217729", 10);
+      var c = I.multiply(a, b);
+      if (I.toString(c, 10) !== "18014398509481983") {
+        a = undefined;
+        b = undefined;
+      }
+    };
+    benchmarkSuite.add("27*27==54", function () {
+      return I.multiply(a, b);
+    }, { setup: initialize });
+  }());
+  (function () {
+    var a = undefined;
+    var b = undefined;
+    var initialize = function () {
+      var a = I.parseInt("1023", 10);
+      var b = I.parseInt("1025", 10);
+      var c = I.multiply(a, b);
+      if (I.toString(c, 10) !== "1048575") {
+        a = undefined;
+        b = undefined;
+      }
+    };
+    benchmarkSuite.add("10*10==20", function () {
+      return I.multiply(a, b);
+    }, { setup: initialize });
+  }());
   benchmarkSuite.add("joseprio", function () {
     //var params = ["1", "100000000", "7070"];
     var params = [

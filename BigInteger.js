@@ -69,13 +69,16 @@
     return accumulator * v;
   };
 
-  var EPSILON = (function (x) {
-    return x(x, 1 / 4503599627370496);
-  }(function (f, epsilon) {
-    return (1 + epsilon / 2) !== 1 ? f(f, epsilon / 2) : epsilon;
-  }));
-  var BASE = 2 / EPSILON;
-  var SPLIT = 67108864 * pow(2, Math.trunc((Math.trunc(Math.log(BASE) / Math.log(2) + 0.5) - 53) / 2) + 1) + 1;
+  var epsilon = 1 / 4503599627370496;
+  while (1 + epsilon / 2 !== 1) {
+    epsilon /= 2;
+  }
+  var BASE = 2 / epsilon;
+  var s = 134217728;
+  while (s * s < 2 / epsilon) {
+    s *= 2;
+  }
+  var SPLIT = s + 1;
 
   var fastTrunc = function (x) {
     var v = (x - BASE) + BASE;
@@ -607,8 +610,7 @@
       if (0 + y === 0) {
         throw new RangeError();
       }
-      // `0 + Math.trunc(x / y)` is slow in Chrome
-      return x < 0 ? (y < 0 ? 0 + Math.floor((0 - x) / (0 - y)) : 0 - Math.floor((0 - x) / (0 + y))) : (y < 0 ? 0 - Math.floor((0 + x) / (0 - y)) : 0 + Math.floor((0 + x) / (0 + y)));
+      return 0 + Math.trunc(x / y);
     }
     return divideAndRemainder(x, y, 1);
   };

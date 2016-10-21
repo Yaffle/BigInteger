@@ -141,7 +141,7 @@ var libs = [
               return [new BigInt(y._s, dm[0]), new BigInt(1, dm[1])];
           var q = dm[0], r = dm[1];
           if (isZero(r))
-              return [new BigInt(-y._s, q), ZERO];
+              return [new BigInt(-y._s, q), BigInt.ZERO];
           q.push(0);
           addInt_(q, 1);
           return [new BigInt(-y._s, trim(q, 1)), new BigInt(1, sub(y._b, r))];
@@ -182,7 +182,11 @@ var libs = [
       }
 
       function BigInt_multiply(n) {
-          return new BigInt(this._s * n._s, mult(this._b, n._b));
+          var data = mult(this._b, n._b);
+          if (isZero(data)) {
+            return BigInt.ZERO;
+          }
+          return new BigInt(this._s * n._s, x);
       }
 
       BigInt.parseInt = function (string, radix) {
@@ -192,6 +196,9 @@ var libs = [
           string = string.slice(1);
         }
         var data = str2bigInt(string, radix == undefined ? 10 : radix, 0);
+        if (isZero(data)) {
+          return BigInt.ZERO;
+        }
         return new BigInt(sign, data);
       };
       BigInt.prototype.negate = BigInt_negate;
@@ -211,6 +218,7 @@ var libs = [
       BigInt.prototype.modPow = function (y, n) {
         return new BigInt(1, powMod(this._b, y._b, n._b));
       };
+      BigInt.ZERO = new BigInt(1, zero);
       self.BigInteger = BigInt;
     },
     parseInt: "BigInteger.parseInt(a, b)",

@@ -235,7 +235,7 @@ var libs = [
     divide: "SchemeNumber.fn[\"div\"](a, b)",
     remainder: "SchemeNumber.fn[\"mod\"](a, b)",
     negate: "SchemeNumber.fn[\"-\"](a)",
-    compareTo: "SchemeNumber.fn[\"<\"](a, b) ? -1 : (SchemeNumber.fn[\"<\"](b, a) ? +1 : 0)",
+    compareTo: "(SchemeNumber.fn[\"<\"](a, b) ? -1 : (SchemeNumber.fn[\"<\"](b, a) ? +1 : 0))",
     parseInt: "SchemeNumber.plugins.get(\"parseExactInteger\")(1, a, b)",
     toString: "SchemeNumber.plugins.get(\"numberToString\")(a, b, 0)",
     and: "SchemeNumber.plugins.get(\"bitwiseAnd\")(a, b)",

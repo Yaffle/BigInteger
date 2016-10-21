@@ -25,6 +25,7 @@ var hardwareConcurrency = 1;//navigator.hardwareConcurrency != undefined ? navig
 var lastIndex = -1;
 var running = 0;
 var test = undefined;
+var type = undefined;
 
 self.onmessage = function (e) {
   e = e || window.event;
@@ -154,7 +155,9 @@ self.onmessage = function (e) {
 
   } else {
     running -= 1;
-    setTimeout(test, 0);
+    window.setTimeout(function () {
+      test();
+    }, 0);
   }
 };
 
@@ -173,7 +176,7 @@ test = function () {
         w.onerror = function (src, e) {
           console.log(e, src);
         }.bind(undefined, src);
-        w.postMessage("start");
+        w.postMessage("start:" + type);
       } else {
         var w = document.createElement("iframe");
         w.style.visibility = "hidden";
@@ -182,7 +185,7 @@ test = function () {
         document.body.appendChild(w);
         w.setAttribute("src", "iframe.html?src=" + encodeURIComponent(src));
         w.onload = function () {
-          w.contentWindow.postMessage("start", "*");
+          w.contentWindow.postMessage("start:" + type, "*");
         };
       }
     }
@@ -190,7 +193,6 @@ test = function () {
 };
 
 setTimeout(function () {
-  //test();
   var c = document.querySelector("input[type=checkbox]");
   c.onchange = function () {
     var value = c.checked;
@@ -199,7 +201,14 @@ setTimeout(function () {
       elements[i].checked = value;
     }
   };
-  document.querySelector("button").onclick = test;
+  document.querySelector("button.tests").onclick = function () {
+    type = "tests";
+    test();    
+  };
+  document.querySelector("button.benchmarks").onclick = function () {
+    type = "benchmarks";
+    test();
+  };
   window.addEventListener("message", function (e) {
     if (running > 0) {
       document.querySelector("span.working").removeAttribute("hidden");

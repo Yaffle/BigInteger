@@ -49,7 +49,8 @@ var invervalId = setInterval(function () {
 }, 10000);
 
 self.onmessage = function (event) {
-  if (event.data === "start") {
+  if (event.data === "start:benchmarks" || event.data === "start:tests") {
+    var type = event.data;
     var src = decodeURIComponent(/src\=([^&]*)/.exec(location.search)[1]);
     loadScripts("benchmark.js", function () {
       Benchmark.options.minTime = 1 / 128;
@@ -66,19 +67,7 @@ self.onmessage = function (event) {
         }), "*");
       });
       var complete = false;
-      benchmarkSuite.on("error", function (event) {
-        if (!complete) {
-          complete = true;
-          console.log(event.target.error);
-          base.postMessage(JSON.stringify({
-            message: "",
-            url: url,
-            name: "complete",
-            result: 0
-          }), "*");
-        }
-      });
-      benchmarkSuite.on("complete", function (event) {
+      var finish = function () {
         if (!complete) {
           complete = true;
           base.postMessage(JSON.stringify({
@@ -89,6 +78,12 @@ self.onmessage = function (event) {
           }), "*");
           clearInterval(invervalId);
         }
+      };
+      benchmarkSuite.on("error", function (event) {
+        finish();
+      });
+      benchmarkSuite.on("complete", function (event) {
+        finish();
       });
       testSuite = {
         callbacks: [],
@@ -136,12 +131,17 @@ self.onmessage = function (event) {
             var f = transform(wrapper.toString());
             f();
             setTimeout(function () {
-              if (src !== "data:application/javascript,%3B") {
-                testSuite.run();
+              if (type === "start:tests") {
+                if (src !== "data:application/javascript,%3B") {
+                  testSuite.run();
+                }
+                finish();
               }
-              benchmarkSuite.run({
-                async: true
-              });
+              if (type === "start:benchmarks") {
+                benchmarkSuite.run({
+                  async: true
+                });
+              }
             }, 64);
           });
         });

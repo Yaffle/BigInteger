@@ -186,7 +186,7 @@ var libs = [
           if (isZero(data)) {
             return BigInt.ZERO;
           }
-          return new BigInt(this._s * n._s, x);
+          return new BigInt(this._s * n._s, data);
       }
 
       BigInt.parseInt = function (string, radix) {

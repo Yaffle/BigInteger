@@ -68,18 +68,25 @@ function Crunch (rawIn, rawOut) {
   }
 
   function cmp (x, y) {
-    var xl = x.length,
-        yl = y.length, i; //zero front pad problem
-
-    if (x.negative && !y.negative || xl < yl) {
+    if (x.negative && !y.negative) {
       return -1;
-    } else if (!x.negative && y.negative || xl > yl) {
+    } else if (!x.negative && y.negative) {
       return 1;
     }
 
+    var xl = x.length,
+        yl = y.length, i; //zero front pad problem
+
+    // We know x.negative == y.negative.
+    if (xl < yl) {
+      return x.negative ? 1 : -1;
+    } else if (xl > yl) {
+      return x.negative ? -1 : 1;
+    }
+
     for (i = 0; i < xl; i++) {
-      if (x[i] < y[i]) return -1;
-      if (x[i] > y[i]) return 1;
+      if (x[i] < y[i]) return x.negative ? 1 : -1;
+      if (x[i] > y[i]) return x.negative ? -1 : 1;
     }
 
     return 0;
@@ -403,30 +410,32 @@ function Crunch (rawIn, rawOut) {
 
     d  = u.length - v.length;
     q  = [0];
-    k  = v.concat(zeroes.slice(0, d));
-    yt = v[0]*268435456 + v[1];
+    if (d >= 0) {
+      k  = v.concat(zeroes.slice(0, d));
+      yt = v.slice(0, 2);
 
-    // only cmp as last resort
-    while (u[0] > k[0] || (u[0] === k[0] && cmp(u, k) > -1)) {
-      q[0]++;
-      u = sub(u, k, false);
-    }
-
-    for (i = 1; i <= d; i++) {
-      q[i] = u[i-1] === v[0] ? 268435455 : ~~((u[i-1]*268435456 + u[i])/v[0]);
-
-      xt = u[i-1]*72057594037927936 + u[i]*268435456 + u[i+1];
-
-      while (q[i]*yt > xt) { //condition check can fail due to precision problem at 28-bit
-        q[i]--;
+      // only cmp as last resort
+      while (u[0] > k[0] || (u[0] === k[0] && cmp(u.slice(0), k) > -1)) {
+        q[0]++;
+        u = sub(u, k, false);
       }
 
-      k = mul(v, [q[i]]).concat(zeroes.slice(0, d-i)); //concat after multiply, save cycles
-      u = sub(u, k, false);
+      for (i = 1; i <= d; i++) {
+        q[i] = u[i-1] === v[0] ? 268435455 : ~~((u[i-1]*268435456 + u[i])/v[0]);
 
-      if (u.negative) {
-        u = sub(v.concat(zeroes.slice(0, d-i)), u, false);
-        q[i]--;
+        xt = u.slice(i-1, i+2);
+
+        while (cmp(mul([q[i]], yt), xt) > 0) {
+          q[i]--;
+        }
+
+        k = mul(v, [q[i]]).concat(zeroes.slice(0, d-i)); //concat after multiply, save cycles
+        u = sub(u, k, false);
+
+        if (u.negative) {
+          u = sub(v.concat(zeroes.slice(0, d-i)), u, false);
+          q[i]--;
+        }
       }
     }
 
@@ -1100,7 +1109,8 @@ function Crunch (rawIn, rawOut) {
      *                 -1: x < y
      */
     compare: function (x, y) {
-      return cmp(x, y);
+      //return cmp(x, y);
+      return cmp.apply(null, transformIn(arguments));
     },
 
     /**

@@ -26,12 +26,6 @@ var lastIndex = -1;
 var running = 0;
 var test = undefined;
 
-var onchange = function () {
-  setTimeout(function () {
-    window.postMessage("change", "*");
-  }, 0);
-};
-
 self.onmessage = function (e) {
   e = e || window.event;
 
@@ -160,16 +154,7 @@ self.onmessage = function (e) {
 
   } else {
     running -= 1;
-    onchange();
     setTimeout(test, 0);
-    setTimeout(function () {
-      if (running === 0) {
-        var p = document.querySelector("p");
-        if (p != undefined) {
-          p.parentNode.removeChild(p);
-        }
-      }
-    }, 0);
   }
 };
 
@@ -178,7 +163,6 @@ test = function () {
   while (++i < libs.length) {
     if (running < hardwareConcurrency && filter(libs[i])) {
       running += 1;
-      onchange();
       lastIndex = i;
       var src = libs[i].src;
       if (self.Worker !== undefined && location.protocol !== "file:") {

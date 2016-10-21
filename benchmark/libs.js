@@ -240,7 +240,7 @@ var libs = [
     source: "https://raw.githubusercontent.com/node-modules/node-biginteger/master/lib/BigInteger.js",
     parseInt: "BigInteger.fromString(a, b)",
   }),
-  /*{
+  {
     url: "https://github.com/vukicevic/crunch",
     source: "https://raw.githubusercontent.com/vukicevic/crunch/master/crunch.js",
     add: "crunch.add(a, b)",
@@ -263,7 +263,7 @@ var libs = [
     setup: function () {
       self.crunch = self.Crunch();
     }
-  },*/
+  },
   Object.assign({}, MikeMclBigNumber, {
     url: "https://github.com/MikeMcl/bignumber.js",
     source: "https://raw.githubusercontent.com/MikeMcl/bignumber.js/master/bignumber.js",

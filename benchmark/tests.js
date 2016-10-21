@@ -228,12 +228,12 @@ var wrapper = function () {
     }
     throw new RangeError(s);
   });
-  var testDivision = function () {
+  var testDivide = function () {
     var THREE = I.parseInt("3", 10);
     var MINUS_THREE = I.parseInt("-3", 10);
     var FOUR = I.parseInt("4", 10);
     var MINUS_FOUR = I.parseInt("-4", 10);
-    
+
     var a = I.divide(FOUR, THREE);
     var b = I.divide(FOUR, MINUS_THREE);
     var c = I.divide(MINUS_FOUR, THREE);
@@ -247,6 +247,29 @@ var wrapper = function () {
       return "floored division";
     }
     if (s === "1, -1, -2, 2") {
+      return "Euclidean division";
+    }
+    return "?";
+  };
+  var testRemainder = function () {
+    var THREE = I.parseInt("3", 10);
+    var MINUS_THREE = I.parseInt("-3", 10);
+    var FOUR = I.parseInt("4", 10);
+    var MINUS_FOUR = I.parseInt("-4", 10);
+
+    var a = I.remainder(FOUR, THREE);
+    var b = I.remainder(FOUR, MINUS_THREE);
+    var c = I.remainder(MINUS_FOUR, THREE);
+    var d = I.remainder(MINUS_FOUR, MINUS_THREE);
+
+    var s = a + ", " + b + ", " + c + ", " + d;
+    if (s === "1, 1, -1, -1") {
+      return "truncated division";
+    }
+    if (s === "1, -2, 2, -1") {
+      return "floored division";
+    }
+    if (s === "1, 1, 2, 2") {
       return "Euclidean division";
     }
     return "?";
@@ -2138,7 +2161,12 @@ var wrapper = function () {
         "12345678901234567890123456789012345678901234567890123456789012345678901234567890/1234567890=10000000001000000000100000000010000000001000000000100000000010000000001"
       ];
     var run = function (input) {
-      if (testDivision() !== "truncated division") {
+      if (testDivide() !== "truncated division" && input.indexOf("/") !== -1) {
+        console.log("TODO:testDivide");
+        return;
+      }
+      if (testRemainder() !== "truncated division" && input.indexOf("%") !== -1) {
+        console.log("TODO:testRemainder");
         return;
       }
       var integerRegExp = /^(0b|0x)?([0-9a-fA-F]+)/;

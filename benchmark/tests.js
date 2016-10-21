@@ -2161,14 +2161,52 @@ var wrapper = function () {
         "12345678901234567890123456789012345678901234567890123456789012345678901234567890/1234567890=10000000001000000000100000000010000000001000000000100000000010000000001"
       ];
     var run = function (input) {
-      if (testDivide() !== "truncated division" && input.indexOf("/") !== -1) {
-        console.log("TODO:testDivide");
-        return;
-      }
-      if (testRemainder() !== "truncated division" && input.indexOf("%") !== -1) {
-        console.log("TODO:testRemainder");
-        return;
-      }
+      //if (testDivide() !== "truncated division" && input.indexOf("/") !== -1) {
+      //  console.log("TODO:testDivide");
+      //  return;
+      //}
+      //if (testRemainder() !== "truncated division" && input.indexOf("%") !== -1) {
+      //  console.log("TODO:testRemainder");
+      //  return;
+      //}
+      var ZERO = I.parseInt("0", 10);
+      var ONE = I.parseInt("1", 10);
+      var divideType = testDivide();
+      var divideInternal = function (a, b) {
+        var q = I.divide(a, b);
+        if (divideType === "truncated division") {
+          return q;
+        }
+        if (divideType === "floored division") {
+          if (I.compareTo(a, ZERO) * I.compareTo(b, ZERO) < 0 && I.compareTo(I.multiply(q, b), a) !== 0) {
+            q = I.add(q, ONE);
+          }
+        }
+        if (divideType === "Euclidean division") {
+          if (I.compareTo(a, ZERO) < 0 && I.compareTo(I.multiply(q, b), a) !== 0) {
+            q = I.compareTo(b, ZERO) < 0 ? I.subtract(q, ONE) : I.add(q, ONE);
+          }
+        }
+        throw new RangeError(divideType);
+      };
+      var remainderType = testRemainder();
+      var remainderInternal = function (a, b) {
+        var r = I.remainder(a, b);
+        if (remainderType === "truncated division") {
+          return r;
+        }
+        if (remainderType === "floored division") {
+          if (I.compareTo(a, ZERO) * I.compareTo(b, ZERO) < 0 && I.compareTo(r, ZERO) !== 0) {
+            r = I.add(r, b);
+          }
+        }
+        if (remainderType === "Euclidean division") {
+          if (I.compareTo(a, ZERO) < 0 && I.compareTo(r, ZERO) !== 0) {
+            r = I.compareTo(b, ZERO) < 0 ? I.subtract(r, b) : I.add(r, b);
+          }
+        }
+        throw new RangeError(divideType);
+      };
       var integerRegExp = /^(0b|0x)?([0-9a-fA-F]+)/;
       var operatorRegExp = /^(?:\*\*|[\+\-\*\/%]|<\=>|\!)/;
       var pow = function (x, count, accumulator) {
@@ -2237,12 +2275,12 @@ var wrapper = function () {
                   position += match[0].length;
                   tmp = evaluate(input, position, 2);
                   position = tmp[0];
-                  result = I.divide(result, tmp[1]);
+                  result = divideInternal(result, tmp[1]);
                 } else if (match[0] === "%" && p < 2) {
                   position += match[0].length;
                   tmp = evaluate(input, position, 2);
                   position = tmp[0];
-                  result = I.remainder(result, tmp[1]);
+                  result = remainderInternal(result, tmp[1]);
                 } else if (match[0] === "<=>" && p < 2) {
                   position += match[0].length;
                   tmp = evaluate(input, position, 2);

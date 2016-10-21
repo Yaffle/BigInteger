@@ -2178,12 +2178,14 @@ var wrapper = function () {
           return q;
         }
         if (divideType === "floored division") {
-          if (I.compareTo(a, ZERO) * I.compareTo(b, ZERO) < 0 && I.compareTo(I.multiply(q, b), a) !== 0) {
+          var p = I.multiply(q, b);
+          if (I.compareTo(a, ZERO) * I.compareTo(b, ZERO) < 0 && I.compareTo(p, a) !== 0) {
             q = I.add(q, ONE);
           }
         }
         if (divideType === "Euclidean division") {
-          if (I.compareTo(a, ZERO) < 0 && I.compareTo(I.multiply(q, b), a) !== 0) {
+          var p = I.multiply(q, b);
+          if (I.compareTo(a, ZERO) < 0 && I.compareTo(p, a) !== 0) {
             q = I.compareTo(b, ZERO) < 0 ? I.subtract(q, ONE) : I.add(q, ONE);
           }
         }

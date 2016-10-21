@@ -2169,6 +2169,12 @@ var wrapper = function () {
       //  console.log("TODO:testRemainder");
       //  return;
       //}
+      if (input.indexOf("0x") !== -1 && !supportsBase(I, 16)) {
+        return;
+      }
+      if (input.indexOf("0b") !== -1 && !supportsBase(I, 2)) {
+        return;
+      }
       var ZERO = I.parseInt("0", 10);
       var ONE = I.parseInt("1", 10);
       var divideType = testDivide();
@@ -2182,12 +2188,14 @@ var wrapper = function () {
           if (I.compareTo(a, ZERO) * I.compareTo(b, ZERO) < 0 && I.compareTo(p, a) !== 0) {
             q = I.add(q, ONE);
           }
+          return q;
         }
         if (divideType === "Euclidean division") {
           var p = I.multiply(q, b);
           if (I.compareTo(a, ZERO) < 0 && I.compareTo(p, a) !== 0) {
             q = I.compareTo(b, ZERO) < 0 ? I.subtract(q, ONE) : I.add(q, ONE);
           }
+          return q;
         }
         throw new RangeError(divideType);
       };
@@ -2199,13 +2207,15 @@ var wrapper = function () {
         }
         if (remainderType === "floored division") {
           if (I.compareTo(a, ZERO) * I.compareTo(b, ZERO) < 0 && I.compareTo(r, ZERO) !== 0) {
-            r = I.add(r, b);
+            r = I.subtract(r, b);
           }
+          return r;
         }
         if (remainderType === "Euclidean division") {
           if (I.compareTo(a, ZERO) < 0 && I.compareTo(r, ZERO) !== 0) {
-            r = I.compareTo(b, ZERO) < 0 ? I.subtract(r, b) : I.add(r, b);
+            r = I.compareTo(b, ZERO) < 0 ? I.add(r, b) : I.subtract(r, b);
           }
+          return r;
         }
         throw new RangeError(divideType);
       };

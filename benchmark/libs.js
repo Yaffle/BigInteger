@@ -124,6 +124,9 @@ var libs = [
           //assert(this instanceof BigInt);
           this._s = sign;
           this._b = bigInt;
+          if (isZero(bigInt) && sign !== 1) {
+            debugger;
+          }
       }
       function BigInt_numberToString(radix) {
           return (this._s === -1 ? "-" : "") + bigInt2str(this._b, radix || 10);
@@ -138,7 +141,7 @@ var libs = [
           var dm = _divMod(x._b, y._b);
           if (x._s > 0)
               // XXX any problem if n is negative and dm[0] is zero?
-              return [new BigInt(y._s, dm[0]), new BigInt(1, dm[1])];
+              return [isZero(dm[0]) ? BigInt.ZERO : new BigInt(y._s, dm[0]), new BigInt(1, dm[1])];
           var q = dm[0], r = dm[1];
           if (isZero(r))
               return [new BigInt(-y._s, q), BigInt.ZERO];
@@ -155,7 +158,7 @@ var libs = [
       function BigInt_mod(n) {
           return _divAndMod(this, n)[1];
       }
-      function BigInt_negate()     { return new BigInt(-this._s, this._b); }
+      function BigInt_negate()     { return isZero(this._b) ? BigInt.ZERO : new BigInt(-this._s, this._b); }
       function BigInt_compare(n) {
           if (isZero(n._b))
               return isZero(this._b) ? 0 : this._s;

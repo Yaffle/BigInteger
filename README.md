@@ -29,7 +29,7 @@ The API is terrible, but small integers are stored as primitive numbers, so oper
  `BigInteger.multiply(a, b)`          | `0 + a * b`                     
  `BigInteger.divide(a, b)`            | `0 + Math.trunc(a / b)`         
  `BigInteger.remainder(a, b)`         | `0 + a % b`                     
- `BigInteger.toString(a, radix)`      | `a.toString(radix)`             
+ `a.toString(radix)`                  | `a.toString(radix)`             
 
 Example
 =======

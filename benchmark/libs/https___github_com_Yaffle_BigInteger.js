@@ -1,6 +1,6 @@
 /*jslint plusplus: true, vars: true, indent: 2 */
 
-(function (exports) {
+(function (global) {
   "use strict";
 
   if (Math.trunc == undefined) {
@@ -163,7 +163,7 @@
     if (radix === undefined) {
       radix = 10;
     }
-    if (Math.trunc(radix) !== radix || !(radix >= 2 && radix <= 36)) {
+    if (radix !== 10 && (radix < 2 || radix > 36 || radix !== Math.trunc(radix))) {
       throw new RangeError("radix argument must be an integer between 2 and 36");
     }
     var length = s.length;
@@ -565,7 +565,7 @@
     if (radix === undefined) {
       radix = 10;
     }
-    if (Math.trunc(radix) !== radix || !(radix >= 2 && radix <= 36)) {
+    if (radix !== 10 && (radix < 2 || radix > 36 || radix !== Math.trunc(radix))) {
       throw new RangeError("radix argument must be an integer between 2 and 36");
     }
     return toString(this.sign, this.magnitude, this.length, radix);
@@ -630,6 +630,6 @@
     return negate(x);
   };
 
-  exports.BigInteger = BigInteger;
+  global.BigInteger = BigInteger;
 
 }(this));

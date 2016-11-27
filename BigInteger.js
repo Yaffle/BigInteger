@@ -607,19 +607,17 @@
   };
   BigInteger.divide = function (x, y) {
     if (typeof x === "number" && typeof y === "number") {
-      if (0 + y === 0) {
-        throw new RangeError();
+      if (y !== 0) {
+        return 0 + Math.trunc(x / y);
       }
-      return 0 + Math.trunc(x / y);
     }
     return divideAndRemainder(x, y, 1);
   };
   BigInteger.remainder = function (x, y) {
     if (typeof x === "number" && typeof y === "number") {
-      if (0 + y === 0) {
-        throw new RangeError();
+      if (y !== 0) {
+        return 0 + x % y;
       }
-      return 0 + x % y;
     }
     return divideAndRemainder(x, y, 0);
   };

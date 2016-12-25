@@ -3,19 +3,6 @@
 (function (global) {
   "use strict";
 
-  if (Math.trunc == undefined) {
-    Math.trunc = function (x) {
-      return x < 0 ? 0 - Math.floor(0 - x) : Math.floor(x);
-    };
-  }
-  if ((-2147483649).toString(16) === "-0") { // Opera 12
-    var numberToString = Number.prototype.toString;
-    Number.prototype.toString = function (radix) {
-      "use strict";
-      return (this < 0 ? "-" : "") + numberToString.call(this < 0 ? 0 - this : this, radix);
-    };
-  }
-
   // BigInteger.js
   // Available under Public Domain
   // https://github.com/Yaffle/BigInteger/
@@ -59,7 +46,7 @@
     var v = x;
     var c = count;
     while (c > 1) {
-      var q = Math.trunc(c / 2);
+      var q = Math.floor(c / 2);
       if (q * 2 !== c) {
         accumulator *= v;
       }
@@ -160,10 +147,10 @@
   };
 
   var parseBigInteger = function (s, radix) {
-    if (radix === undefined) {
+    if (radix == undefined) {
       radix = 10;
     }
-    if (radix !== 10 && (radix < 2 || radix > 36 || radix !== Math.trunc(radix))) {
+    if (radix !== 10 && (radix < 2 || radix > 36 || radix !== Math.floor(radix))) {
       throw new RangeError("radix argument must be an integer between 2 and 36");
     }
     var length = s.length;
@@ -196,7 +183,7 @@
       groupLength += 1;
       groupRadix *= radix;
     }
-    var size = Math.trunc((length - 1) / groupLength) + 1;
+    var size = Math.floor((length - 1) / groupLength) + 1;
 
     var magnitude = createArray(size);
     var k = size;
@@ -234,8 +221,8 @@
     }
     var i = a.length;
     while (--i >= 0) {
-      if ((a.magnitude === undefined ? a.value : a.magnitude[i]) !== (b.magnitude === undefined ? b.value : b.magnitude[i])) {
-        return (a.magnitude === undefined ? a.value : a.magnitude[i]) < (b.magnitude === undefined ? b.value : b.magnitude[i]) ? -1 : +1;
+      if ((a.magnitude == undefined ? a.value : a.magnitude[i]) !== (b.magnitude == undefined ? b.value : b.magnitude[i])) {
+        return (a.magnitude == undefined ? a.value : a.magnitude[i]) < (b.magnitude == undefined ? b.value : b.magnitude[i]) ? -1 : +1;
       }
     }
     return 0;
@@ -270,7 +257,7 @@
     if (minSign !== maxSign) {
       subtract = 1;
       if (minLength === resultLength) {
-        while (resultLength > 0 && (minMagnitude === undefined ? minValue : minMagnitude[resultLength - 1]) === (maxMagnitude === undefined ? maxValue : maxMagnitude[resultLength - 1])) {
+        while (resultLength > 0 && (minMagnitude == undefined ? minValue : minMagnitude[resultLength - 1]) === (maxMagnitude == undefined ? maxValue : maxMagnitude[resultLength - 1])) {
           resultLength -= 1;
         }
       }
@@ -283,8 +270,8 @@
     var i = -1;
     var c = 0;
     while (++i < resultLength) {
-      var aDigit = i < minLength ? (minMagnitude === undefined ? minValue : minMagnitude[i]) : 0;
-      c += (maxMagnitude === undefined ? maxValue : maxMagnitude[i]) + (subtract === 1 ? 0 - aDigit : aDigit - BASE);
+      var aDigit = i < minLength ? (minMagnitude == undefined ? minValue : minMagnitude[i]) : 0;
+      c += (maxMagnitude == undefined ? maxValue : maxMagnitude[i]) + (subtract === 1 ? 0 - aDigit : aDigit - BASE);
       if (c < 0) {
         result[i] = BASE + c;
         c = 0 - subtract;
@@ -310,10 +297,10 @@
       return createBigInteger(0, createArray(0), 0, 0);
     }
     var resultSign = a.sign === 1 ? 1 - b.sign : b.sign;
-    if (a.length === 1 && (a.magnitude === undefined ? a.value : a.magnitude[0]) === 1) {
+    if (a.length === 1 && (a.magnitude == undefined ? a.value : a.magnitude[0]) === 1) {
       return createBigInteger(resultSign, b.magnitude, b.length, b.value);
     }
-    if (b.length === 1 && (b.magnitude === undefined ? b.value : b.magnitude[0]) === 1) {
+    if (b.length === 1 && (b.magnitude == undefined ? b.value : b.magnitude[0]) === 1) {
       return createBigInteger(resultSign, a.magnitude, a.length, a.value);
     }
     var resultLength = a.length + b.length;
@@ -330,7 +317,7 @@
         } else {
           c += BASE;
         }
-        var tmp = performMultiplication(c, a.magnitude === undefined ? a.value : a.magnitude[j], b.magnitude === undefined ? b.value : b.magnitude[i]);
+        var tmp = performMultiplication(c, a.magnitude == undefined ? a.value : a.magnitude[j], b.magnitude == undefined ? b.value : b.magnitude[i]);
         var lo = tmp.lo;
         var hi = tmp.hi;
         result[j + i] = lo;
@@ -354,7 +341,7 @@
       return createBigInteger(0, createArray(0), 0, 0);
     }
     var quotientSign = a.sign === 1 ? 1 - b.sign : b.sign;
-    if (b.length === 1 && (b.magnitude === undefined ? b.value : b.magnitude[0]) === 1) {
+    if (b.length === 1 && (b.magnitude == undefined ? b.value : b.magnitude[0]) === 1) {
       if (isDivision === 1) {
         return createBigInteger(quotientSign, a.magnitude, a.length, a.value);
       }
@@ -367,11 +354,11 @@
     var remainder = divisorAndRemainder;
     var n = -1;
     while (++n < a.length) {
-      remainder[n] = a.magnitude === undefined ? a.value : a.magnitude[n];
+      remainder[n] = a.magnitude == undefined ? a.value : a.magnitude[n];
     }
     var m = -1;
     while (++m < b.length) {
-      divisor[divisorOffset + m] = b.magnitude === undefined ? b.value : b.magnitude[m];
+      divisor[divisorOffset + m] = b.magnitude == undefined ? b.value : b.magnitude[m];
     }
 
     var top = divisor[divisorOffset + b.length - 1];
@@ -525,7 +512,7 @@
     if (groupRadix * radix <= BASE) {
       throw new RangeError();
     }
-    var size = remainderLength + Math.trunc((remainderLength - 1) / groupLength) + 1;
+    var size = remainderLength + Math.floor((remainderLength - 1) / groupLength) + 1;
     var remainder = createArray(size);
     var n = -1;
     while (++n < remainderLength) {
@@ -562,10 +549,10 @@
   };
 
   BigInteger.prototype.toString = function (radix) {
-    if (radix === undefined) {
+    if (radix == undefined) {
       radix = 10;
     }
-    if (radix !== 10 && (radix < 2 || radix > 36 || radix !== Math.trunc(radix))) {
+    if (radix !== 10 && (radix < 2 || radix > 36 || radix !== Math.floor(radix))) {
       throw new RangeError("radix argument must be an integer between 2 and 36");
     }
     return toString(this.sign, this.magnitude, this.length, radix);
@@ -608,7 +595,7 @@
   BigInteger.divide = function (x, y) {
     if (typeof x === "number" && typeof y === "number") {
       if (y !== 0) {
-        return 0 + Math.trunc(x / y);
+        return (x > 0 && y > 0) || (x < 0 && y < 0) ? 0 + Math.floor(x / y) : 0 - Math.floor((0 - x) / y);
       }
     }
     return divideAndRemainder(x, y, 1);

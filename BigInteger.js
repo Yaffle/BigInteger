@@ -595,7 +595,7 @@
   BigInteger.divide = function (x, y) {
     if (typeof x === "number" && typeof y === "number") {
       if (y !== 0) {
-        return (x > 0 && y > 0) || (x < 0 && y < 0) ? 0 + Math.floor(x / y) : 0 - Math.floor((0 - x) / y);
+        return x === 0 ? 0 : (x > 0 && y > 0) || (x < 0 && y < 0) ? 0 + Math.floor(x / y) : 0 - Math.floor((0 - x) / y);
       }
     }
     return divideAndRemainder(x, y, 1);

@@ -327,10 +327,14 @@ var wrapper = function () {
     var FOUR = I.parseInt("4", 10);
     var MINUS_FOUR = I.parseInt("-4", 10);
     
-    var a = f0(FOUR, THREE);
-    var b = f0(FOUR, MINUS_THREE);
-    var c = f0(MINUS_FOUR, THREE);
-    var d = f0(MINUS_FOUR, MINUS_THREE);
+    var f1 = function (a, b) {
+      var c = f0(a, b);
+      return I.toString(c, 10);
+    };
+    var a = f1(FOUR, THREE);
+    var b = f1(FOUR, MINUS_THREE);
+    var c = f1(MINUS_FOUR, THREE);
+    var d = f1(MINUS_FOUR, MINUS_THREE);
 
     var s = a + ", " + b + ", " + c + ", " + d;
     if (operator === "/") {

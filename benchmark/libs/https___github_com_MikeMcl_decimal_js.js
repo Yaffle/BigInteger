@@ -1,14 +1,14 @@
-/*! decimal.js v6.0.0 https://github.com/MikeMcl/decimal.js/LICENCE */
+/*! decimal.js v7.1.1 https://github.com/MikeMcl/decimal.js/LICENCE */
 ;(function (globalScope) {
   'use strict';
 
 
   /*
-   *  decimal.js v6.0.0
+   *  decimal.js v7.1.1
    *  An arbitrary-precision Decimal type for JavaScript.
    *  https://github.com/MikeMcl/decimal.js
    *  Copyright (c) 2016 Michael Mclaughlin <M8ch88l@gmail.com>
-   *  MIT Expat Licence
+   *  MIT Licence
    */
 
 
@@ -37,7 +37,7 @@
     Decimal = {
 
       // These values must be integers within the stated ranges (inclusive).
-      // Most of these values can be changed at run-time using `Decimal.config`.
+      // Most of these values can be changed at run-time using the `Decimal.config` method.
 
       // The maximum number of significant digits of the result of a calculation or base conversion.
       // E.g. `Decimal.config({ precision: 20 });`
@@ -92,7 +92,7 @@
       maxE: EXP_LIMIT,                       // 1 to EXP_LIMIT
 
       // Whether to use cryptographically-secure random number generation, if available.
-      crypto: void 0                         // true/false/undefined
+      crypto: false                          // true/false
     },
 
 
@@ -100,12 +100,12 @@
 
 
     inexact, noConflict, quadrant,
-    cryptoObject = typeof crypto != 'undefined' ? crypto : null,
     external = true,
 
     decimalError = '[DecimalError] ',
     invalidArgument = decimalError + 'Invalid argument: ',
     precisionLimitExceeded = decimalError + 'Precision limit exceeded',
+    cryptoUnavailable = decimalError + 'crypto unavailable',
 
     mathfloor = Math.floor,
     mathpow = Math.pow,
@@ -1909,9 +1909,6 @@
     if (carry) ++e;
     else r.shift();
 
-    // Remove trailing zeros.
-    for (i = r.length; !r[--i];) r.pop();
-
     y.d = r;
     y.e = getBase10Exponent(r, e);
 
@@ -3127,14 +3124,15 @@
 
   // Calculate the base 10 exponent from the base 1e7 exponent.
   function getBase10Exponent(digits, e) {
+    var w = digits[0];
 
-    // First get the number of digits of the first word of the digits array.
-    for (var i = 1, w = digits[0]; w >= 10; w /= 10) i++;
-    return i + e * LOG_BASE - 1;
+    // Add the number of digits of the first word of the digits array.
+    for ( e *= LOG_BASE; w >= 10; w /= 10) e++;
+    return e;
   }
 
 
-   function getLn10(Ctor, sd, pr) {
+  function getLn10(Ctor, sd, pr) {
     if (sd > LN10_PRECISION) {
 
       // Reset global state in case the exception is caught.
@@ -3936,6 +3934,7 @@
    *  pow
    *  random
    *  round
+   *  set
    *  sign
    *  sin
    *  sinh
@@ -4146,7 +4145,7 @@
    *   maxE       {number}
    *   minE       {number}
    *   modulo     {number}
-   *   crypto     {boolean|number|undefined}
+   *   crypto     {boolean|number}
    *
    * E.g. Decimal.config({ precision: 20, rounding: 4 })
    *
@@ -4171,12 +4170,18 @@
       }
     }
 
-    if (obj.hasOwnProperty(p = 'crypto')) {
-      if ((v = obj[p]) === void 0) {
-        this[p] = v;
-      } else if (v === true || v === false || v === 0 || v === 1) {
-        this[p] = !!(v && cryptoObject &&
-            (cryptoObject.getRandomValues || cryptoObject.randomBytes));
+    if ((v = obj[p = 'crypto']) !== void 0) {
+      if (v === true || v === false || v === 0 || v === 1) {
+        if (v) {
+          if (typeof crypto != 'undefined' && crypto &&
+            (crypto.getRandomValues || crypto.randomBytes)) {
+            this[p] = true;
+          } else {
+            throw Error(cryptoUnavailable);
+          }
+        } else {
+          this[p] = false;
+        }
       } else {
         throw Error(invalidArgument + p + ': ' + v);
       }
@@ -4306,7 +4311,7 @@
     Decimal.ROUND_HALF_FLOOR = 8;
     Decimal.EUCLID = 9;
 
-    Decimal.config = config;
+    Decimal.config = Decimal.set = config;
     Decimal.clone = clone;
 
     Decimal.abs = abs;
@@ -4557,12 +4562,12 @@
 
     k = Math.ceil(sd / LOG_BASE);
 
-    if (this.crypto === false) {
+    if (!this.crypto) {
       for (; i < k;) rd[i++] = Math.random() * 1e7 | 0;
 
     // Browsers supporting crypto.getRandomValues.
-    } else if (cryptoObject && cryptoObject.getRandomValues) {
-      d = cryptoObject.getRandomValues(new Uint32Array(k));
+    } else if (crypto.getRandomValues) {
+      d = crypto.getRandomValues(new Uint32Array(k));
 
       for (; i < k;) {
         n = d[i];
@@ -4570,7 +4575,7 @@
         // 0 <= n < 4294967296
         // Probability n >= 4.29e9, is 4967296 / 4294967296 = 0.00116 (1 in 865).
         if (n >= 4.29e9) {
-          d[i] = cryptoObject.getRandomValues(new Uint32Array(1))[0];
+          d[i] = crypto.getRandomValues(new Uint32Array(1))[0];
         } else {
 
           // 0 <= n <= 4289999999
@@ -4580,10 +4585,10 @@
       }
 
     // Node.js supporting crypto.randomBytes.
-    } else if (cryptoObject && cryptoObject.randomBytes) {
+    } else if (crypto.randomBytes) {
 
       // buffer
-      d = cryptoObject.randomBytes(k *= 4);
+      d = crypto.randomBytes(k *= 4);
 
       for (; i < k;) {
 
@@ -4592,7 +4597,7 @@
 
         // Probability n >= 2.14e9, is 7483648 / 2147483648 = 0.0035 (1 in 286).
         if (n >= 2.14e9) {
-          cryptoObject.randomBytes(4).copy(d, i);
+          crypto.randomBytes(4).copy(d, i);
         } else {
 
           // 0 <= n <= 2139999999
@@ -4603,10 +4608,8 @@
       }
 
       i = k / 4;
-    } else if (this.crypto) {
-      throw Error(decimalError + 'crypto unavailable');
     } else {
-      for (; i < k;) rd[i++] = Math.random() * 1e7 | 0;
+      throw Error(cryptoUnavailable);
     }
 
     k = rd[--i];
@@ -4776,15 +4779,7 @@
 
   // Node and other environments that support module.exports.
   } else if (typeof module != 'undefined' && module.exports) {
-    module.exports = Decimal;
-
-    if (!cryptoObject) {
-      try {
-        cryptoObject = require('cry' + 'pto');
-      } catch (e) {
-        // Ignore.
-      }
-    }
+    module.exports = Decimal.default = Decimal.Decimal = Decimal;
 
   // Browser.
   } else {

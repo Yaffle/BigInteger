@@ -67,25 +67,27 @@
   }
   var SPLIT = s + 1;
 
-  var fastTrunc = function (x) {
-    var v = (x - BASE) + BASE;
-    return v > x ? v - 1 : v;
-  };
-
   // Veltkamp-Dekker's algorithm
   // see http://web.mit.edu/tabbott/Public/quaddouble-debian/qd-2.3.4-old/docs/qd.pdf
-  // with FMA:
-  // var product = a * b;
-  // var error = Math.fma(a, b, -product);
-  var performMultiplication = function (carry, a, b) {
+  var fma = function (a, b, product) {
     var at = SPLIT * a;
     var ahi = at - (at - a);
     var alo = a - ahi;
     var bt = SPLIT * b;
     var bhi = bt - (bt - b);
     var blo = b - bhi;
+    var error = ((ahi * bhi + product) + ahi * blo + alo * bhi) + alo * blo;
+    return error;
+  };
+
+  var fastTrunc = function (x) {
+    var v = (x - BASE) + BASE;
+    return v > x ? v - 1 : v;
+  };
+
+  var performMultiplication = function (carry, a, b) {
     var product = a * b;
-    var error = ((ahi * bhi - product) + ahi * blo + alo * bhi) + alo * blo;
+    var error = fma(a, b, -product);
 
     var hi = fastTrunc(product / BASE);
     var lo = product - hi * BASE + error;
@@ -110,19 +112,21 @@
       throw new RangeError();
     }
     var p = a * BASE;
-    var y = p / divisor;
-    var r = p % divisor;
-    var q = fastTrunc(y);
-    if (y === q && r > divisor - r) {
+    var q = fastTrunc(p / divisor);
+
+    var r = 0 - fma(q, divisor, -p);
+    if (r < 0) {
       q -= 1;
+      r += divisor;
     }
+
     r += b - divisor;
     if (r < 0) {
       r += divisor;
     } else {
       q += 1;
     }
-    y = fastTrunc(r / divisor);
+    var y = fastTrunc(r / divisor);
     r -= y * divisor;
     q += y;
     return {q: q, r: r};

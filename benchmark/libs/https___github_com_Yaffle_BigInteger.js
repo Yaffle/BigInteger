@@ -56,7 +56,7 @@
     return accumulator * v;
   };
 
-  var epsilon = 1 / 4503599627370496;
+  var epsilon = 2 / (9007199254740991 + 1);
   while (1 + epsilon / 2 !== 1) {
     epsilon /= 2;
   }
@@ -404,7 +404,7 @@
       if (remainder[t] !== top) {
         var tmp2 = performDivision(remainder[t], remainder[t - 1], top);
         var q2 = tmp2.q;
-        var r2 = tmp2.r;
+        //var r2 = tmp2.r;
         q = q2;
       }
 
@@ -572,7 +572,7 @@
   BigInteger.add = function (x, y) {
     if (typeof x === "number" && typeof y === "number") {
       var value = x + y;
-      if (value > -BASE && value < +BASE) {
+      if (value >= -9007199254740991 && value <= +9007199254740991) {
         return value;
       }
     }
@@ -581,7 +581,7 @@
   BigInteger.subtract = function (x, y) {
     if (typeof x === "number" && typeof y === "number") {
       var value = x - y;
-      if (value > -BASE && value < +BASE) {
+      if (value >= -9007199254740991 && value <= +9007199254740991) {
         return value;
       }
     }
@@ -590,7 +590,7 @@
   BigInteger.multiply = function (x, y) {
     if (typeof x === "number" && typeof y === "number") {
       var value = 0 + x * y;
-      if (value > -BASE && value < +BASE) {
+      if (value >= -9007199254740991 && value <= +9007199254740991) {
         return value;
       }
     }

@@ -482,6 +482,13 @@ var wrapper = function () {
     var c = I.toString(b, 10);
     assertEquals(c, Math.pow(0, 0).toString(), "0 ** 0");
   });
+  // jsbn's bug
+  testSuite.add("0 ** (0xffffffff + 1)", function (I) {
+    var a = I.parseInt("0", 10);
+    var b = I.pow(a, (0xffffffff + 1));
+    var c = I.toString(b, 10);
+    assertEquals(c, Math.pow(0, (0xffffffff + 1)).toString(), "0 ** (0xffffffff + 1)");
+  });
   /*
   testSuite.add("modPow", function (I) {
     var t = Date.now();

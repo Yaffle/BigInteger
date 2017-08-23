@@ -26,6 +26,10 @@ if (Number.EPSILON == undefined) {
   Number.EPSILON = 2 / 9007199254740992;
 }
 
+if (Number.parseInt == undefined) {
+  Number.parseInt = parseInt;
+}
+
 // parseInt, toString, shiftLeft, shiftRight, pow: b is a number value
 
 // TODO: mod, modPow, modInverse
@@ -223,7 +227,8 @@ var libs = [
       BigInt.prototype.bitLength = function () {
         return bitSize(this._b);
       };
-      BigInt.prototype.pow = function (y, n) {
+      BigInt.prototype.pow = function (y) {
+        var n = BigInt.parseInt("1000000000000000000000000000000000000000000000000000000000000000000000000", 16);
         return new BigInt(1, powMod(this._b, y._b, n._b));
       };
       BigInt.ZERO = new BigInt(1, zero);
@@ -246,11 +251,11 @@ var libs = [
     and: "SchemeNumber.plugins.get(\"bitwiseAnd\")(a, b)",
     or: "SchemeNumber.plugins.get(\"bitwiseIor\")(a, b)",
     xor: "SchemeNumber.plugins.get(\"bitwiseXor\")(a, b)",
+    shiftLeft: "SchemeNumber.plugins.get(\"bitShift\")(a, SchemeNumber.plugins.get(\"parseExactInteger\")(1, (0 + b).toString(), 10))",
     not: "SchemeNumber.plugins.get(\"bitwiseNot\")(a)",
-    shiftLeft: "SchemeNumber.plugins.get(\"bitShift\")(a, b)",
-    shiftRight: "SchemeNumber.plugins.get(\"bitShift\")(a, 0 - b)",
-    bitLength: "SchemeNumber.plugins.get(\"bitLength\")(a)",
-    pow: "SchemeNumber.plugins.get(\"expt\")(a, b)"
+    shiftRight: "SchemeNumber.plugins.get(\"bitShift\")(a, SchemeNumber.plugins.get(\"parseExactInteger\")(1, (0 - b).toString(), 10))",
+    bitLength: "Number.parseInt(SchemeNumber.plugins.get(\"numberToString\")(SchemeNumber.plugins.get(\"bitLength\")(a), 10, 0), 10)",
+    pow: "SchemeNumber.plugins.get(\"expt\")(a, SchemeNumber.plugins.get(\"parseExactInteger\")(1, b.toString(), 10))"
   },
   Object.assign({}, JavaBigInteger, {
     url: "https://github.com/node-modules/node-biginteger",
@@ -406,12 +411,13 @@ var libs = [
     url: "https://github.com/defunctzombie/int",
     source: "https://raw.githubusercontent.com/defunctzombie/int/master/int.js",
     parseInt: "new Int(a, b)",
+    pow: "a.pow2(b)"
   }),
   Object.assign({}, JavaBigInteger, {
     url: "https://github.com/dtrebbien/BigDecimal.js",
     source: "https://rawgit.com/dtrebbien/BigDecimal.js/master/build/BigDecimal-all-last.js",
     parseInt: "(b === 10 ? new BigDecimal(a) : new BigDecimal(\"0\"))",
-    pow: "a.pow(new BigDecimal(b))",
+    pow: "a.pow(new BigDecimal(b.toString()))",
     setup: function () {
       var BigDecimal = self.BigDecimal;
       var divideFunction = BigDecimal.prototype.divide;

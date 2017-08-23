@@ -192,7 +192,9 @@ test = function () {
   }
 };
 
-setTimeout(function () {
+window.setTimeout(function () {
+  document.getElementById("table-container").innerHTML = generateTable();
+  
   var c = document.querySelector("input[type=checkbox]");
   c.onchange = function () {
     var value = c.checked;
@@ -201,23 +203,23 @@ setTimeout(function () {
       elements[i].checked = value;
     }
   };
-  var saveState = function () {
+  var startTests = function () {
     var state = [];
     var elements = document.querySelectorAll("input[type=checkbox]");
     for (var i = 0; i < elements.length; i += 1) {
       state[i] = elements[i].checked;
     }
     window.localStorage.setItem("state", JSON.stringify(state));
+    lastIndex = -1;
+    test();
   };
   document.querySelector("button.tests").onclick = function () {
     type = "tests";
-    saveState();
-    test();    
+    startTests();
   };
   document.querySelector("button.benchmarks").onclick = function () {
     type = "benchmarks";
-    saveState();
-    test();
+    startTests();
   };
   window.addEventListener("message", function (e) {
     if (running > 0) {

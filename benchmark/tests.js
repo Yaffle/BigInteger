@@ -409,12 +409,12 @@ var wrapper = function () {
     test0("^");
   });
   testSuite.add("~", function (I) {
-    var t0 = I.parseInt("3", 10);
-    var tmp1 = I.not(t0);
+    var x = I.parseInt("3", 10);
+    var tmp1 = I.not(x);
     var s = I.toString(tmp1, 10);
     assertEquals(s, (~3).toString(), "~3");
-    var t0 = I.parseInt("-3", 10);
-    var tmp1 = I.not(t0);
+    var x = I.parseInt("-3", 10);
+    var tmp1 = I.not(x);
     var s = I.toString(tmp1, 10);
     assertEquals(s, (~-3).toString(), "~-3");
   });
@@ -466,28 +466,43 @@ var wrapper = function () {
     // ceil(log2(this < 0 ? 0 - this : this + 1))
     var a = I.parseInt("4294967295", 10);
     var b = I.bitLength(a);
-    var s = I.toString(b, 10);
+      console.log(b, typeof b);
+    var s = typeof b === "number" ? b.toString(10) : "-"; // I.toString(b, 10);
     assertEquals(s, "32", "bitLength(4294967295)");
     for (var i = 0; i < 4; i += 1) {
       var tmp0 = i.toString();
       var tmp1 = I.parseInt(tmp0, 10);
       var tmp2 = I.bitLength(tmp1);
-      var s = I.toString(tmp2, 10);
+      var s = typeof tmp2 === "number" ? tmp2.toString(10) : "-";//I.toString(tmp2, 10);
       assertEquals(s, (i === 0 ? 0 : 1 + Math.floor(Math.log(i + 0.5) * Math.LOG2E)).toString(), "bitLength(" + i.toString() + ")");
     }
   });
-  testSuite.add("0 ** 0", function (I) {
-    var a = I.parseInt("0", 10);
-    var b = I.pow(a, 0);
-    var c = I.toString(b, 10);
-    assertEquals(c, Math.pow(0, 0).toString(), "0 ** 0");
+  var testPow = function (sa, sb) {
+    var ssa = sa.toString();
+    var a = I.parseInt(ssa, 10);
+    var b = null;
+    try {
+      b = I.pow(a, sb);
+    } catch (error) {
+      if (sb < 0) {
+        console.log(error);
+      } else {
+        throw error;
+      }
+    }
+    var c = b == null ? null : I.toString(b, 10);
+    assertEquals(c, sb < 0 ? null : Math.pow(sa, sb).toString(), sa + " ** " + sb);
+  };
+  testSuite.add("x ** y", function (I) {
+    for (var a = +2; a >= -2; a -= 1) {
+      for (var b = +2; b >= -2; b -= 1) {
+        testPow(a, b);
+      }
+    }
   });
   // jsbn's bug
   testSuite.add("0 ** (0xffffffff + 1)", function (I) {
-    var a = I.parseInt("0", 10);
-    var b = I.pow(a, (0xffffffff + 1));
-    var c = I.toString(b, 10);
-    assertEquals(c, Math.pow(0, (0xffffffff + 1)).toString(), "0 ** (0xffffffff + 1)");
+    testPow(0, 0xffffffff + 1);
   });
   /*
   testSuite.add("modPow", function (I) {

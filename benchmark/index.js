@@ -335,6 +335,8 @@ var generateTable = function () {
     {id: "mod", url: "https://github.com/indutny/bn.js/blob/master/benchmarks/index.js"},
     {id: "10*10==20", url: "#1"},
     {id: "27*27==54", url: "#2"},
+    {id: "bitwise-shift-operators", url: "#3"},
+    {id: "bitwise-logical-operators", url: "#4"},
     {id: "joseprio", url: "http://www.joseprio.com/blog/2013/04/27/biginteger-libraries-for-js"},
   ];
   for (var i = 0; i < benchmarks.length; i += 1) {

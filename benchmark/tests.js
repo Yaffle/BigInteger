@@ -113,6 +113,17 @@ var wrapper = function () {
       }
       return I.remainder(as, b);
     }, { setup: initialize });
+    benchmarkSuite.add("bitwise-shift-operators", function () {
+      var x = I.shiftLeft(a, 1);
+      var y = I.shiftRight(b, 1);
+      return I.compareTo(x, y) < 0;
+    }, { setup: initialize });
+    benchmarkSuite.add("bitwise-logical-operators", function () {
+      var x = I.and(a, b);
+      var y = I.or(a, b);
+      var z = I.xor(a, b);
+      return I.compareTo(x, y) < 0 && I.compareTo(x, z) < 0;
+    }, { setup: initialize });
   }());
   (function () {
     var a = undefined;

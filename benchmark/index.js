@@ -201,12 +201,22 @@ setTimeout(function () {
       elements[i].checked = value;
     }
   };
+  var saveState = function () {
+    var state = [];
+    var elements = document.querySelectorAll("input[type=checkbox]");
+    for (var i = 0; i < elements.length; i += 1) {
+      state[i] = elements[i].checked;
+    }
+    window.localStorage.setItem("state", JSON.stringify(state));
+  };
   document.querySelector("button.tests").onclick = function () {
     type = "tests";
+    saveState();
     test();    
   };
   document.querySelector("button.benchmarks").onclick = function () {
     type = "benchmarks";
+    saveState();
     test();
   };
   window.addEventListener("message", function (e) {
@@ -217,8 +227,11 @@ setTimeout(function () {
     }
   }, false);
   
+  var state = JSON.parse(window.localStorage.getItem("state") || "[]");
   var elements = document.querySelectorAll("input[type=checkbox]");
-  
+  for (var i = 0; i < elements.length; i += 1) {
+    elements[i].checked = i < state.length ? state[i] : false;
+  }
   
 }, 128);
 

@@ -26,6 +26,10 @@ if (Number.EPSILON == undefined) {
   Number.EPSILON = 2 / 9007199254740992;
 }
 
+// parseInt, toString, shiftLeft, shiftRight, pow: b is a number value
+
+// TODO: mod, modPow, modInverse
+
 var JavaBigInteger = {
   add: "a.add(b)",
   subtract: "a.subtract(b)",
@@ -43,7 +47,7 @@ var JavaBigInteger = {
   shiftLeft: "a.shiftLeft(b)",
   shiftRight: "a.shiftRight(b)",
   bitLength: "a.bitLength()",
-  modPow: "a.modPow(b)",
+  pow: "a.pow(b)",
   setup: undefined
 };
 
@@ -64,7 +68,7 @@ var NodeBigInteger = {
   shiftLeft: "a.shln(b)",
   shiftRight: "a.shrn(b)",
   bitLength: "a.bitLength()",
-  modPow: "a.modPow(b)",
+  pow: "a.pow(b)",
   setup: undefined
 };
 
@@ -85,7 +89,7 @@ var NumberInteger = {
   shiftLeft: "a << b",
   shiftRight: "a >> b",
   bitLength: "32 - Math.clz32(a)",
-  modPow: undefined,
+  pow: "Math.pow(a, b)",
   setup: undefined
 };
 
@@ -98,7 +102,8 @@ var MikeMclBigNumber = {
   negate: "a.neg()",
   compareTo: "a.cmp(b)",
   parseInt: "new BigNumber(a, b)",
-  toString: "a.toString(b)"
+  toString: "a.toString(b)",
+  pow: "a.toPower(b)"
 };
 
 var libs = [
@@ -218,7 +223,7 @@ var libs = [
       BigInt.prototype.bitLength = function () {
         return bitSize(this._b);
       };
-      BigInt.prototype.modPow = function (y, n) {
+      BigInt.prototype.pow = function (y, n) {
         return new BigInt(1, powMod(this._b, y._b, n._b));
       };
       BigInt.ZERO = new BigInt(1, zero);
@@ -242,9 +247,10 @@ var libs = [
     or: "SchemeNumber.plugins.get(\"bitwiseIor\")(a, b)",
     xor: "SchemeNumber.plugins.get(\"bitwiseXor\")(a, b)",
     not: "SchemeNumber.plugins.get(\"bitwiseNot\")(a)",
-    //shiftLeft: "",
-    //shiftRight: "",
+    shiftLeft: "SchemeNumber.plugins.get(\"bitShift\")(a, b)",
+    shiftRight: "SchemeNumber.plugins.get(\"bitShift\")(a, 0 - b)",
     bitLength: "SchemeNumber.plugins.get(\"bitLength\")(a)",
+    pow: "SchemeNumber.plugins.get(\"expt\")(a, b)"
   },
   Object.assign({}, JavaBigInteger, {
     url: "https://github.com/node-modules/node-biginteger",
@@ -327,8 +333,7 @@ var libs = [
     url: "https://github.com/silentmatt/javascript-biginteger",
     source: "https://rawgit.com/silentmatt/javascript-biginteger/master/biginteger.js",
     parseInt: "BigInteger.parse(a, b)",
-    compareTo: "a.compare(b)",
-    bitLength: "Math.ceil(a.add(BigIntege.parse(\"1\")).log() * Math.LOG2E)",
+    compareTo: "a.compare(b)"
   }),
   Object.assign({}, JavaBigInteger, {
     url: "http://www-cs-students.stanford.edu/~tjw/jsbn/",
@@ -357,12 +362,12 @@ var libs = [
     url: "https://github.com/peteroupc/BigNumber",
     source: "https://rawgit.com/peteroupc/BigNumber/master/BigInteger.js",
     parseInt: "BigInteger.fromRadixString(a, b)",
-    toString: "a.toRadixString(b)",
-    modPow: "a.ModPow(b)"
+    toString: "a.toRadixString(b)"
   }),
   Object.assign({}, NodeBigInteger, {
     url: "https://github.com/indutny/bn.js",
     source: "https://rawgit.com/indutny/bn.js/master/lib/bn.js",
+    pow: "a.pow(new BN(b, 10))",
     setup: function () {
       self.BigInteger = self.module.exports;
     }
@@ -403,6 +408,7 @@ var libs = [
     url: "https://github.com/dtrebbien/BigDecimal.js",
     source: "https://rawgit.com/dtrebbien/BigDecimal.js/master/build/BigDecimal-all-last.js",
     parseInt: "(b === 10 ? new BigDecimal(a) : new BigDecimal(\"0\"))",
+    pow: "a.pow(new BigDecimal(b))",
     setup: function () {
       var BigDecimal = self.BigDecimal;
       var divideFunction = BigDecimal.prototype.divide;
@@ -438,7 +444,7 @@ while (++i < libs.length) {
   }
 }
 
-if (this.self == undefined) {
+if (typeof self === "undefined") {
   libs.forEach(function (x, index) {
     setTimeout(function () {
       var https = require("https");
@@ -493,3 +499,5 @@ if (this.self == undefined) {
   }
   this.module = this;
 }
+
+this.libs = libs;

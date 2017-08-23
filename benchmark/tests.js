@@ -363,6 +363,35 @@ var wrapper = function () {
     assertEquals(b, f(4, -3).toString(), "4 " + operator + " -3");
     assertEquals(c, f(-4, 3).toString(), "-4 " + operator + " 3");
     assertEquals(d, f(-4, -3).toString(), "-4 " + operator + " -3");
+    
+    if (operator === "&" || operator === "|" || operator === "^") {
+      var fx = function (s1, s2) {
+        var a = I.parseInt(s1, 10);
+        var b = I.parseInt(s2, 10);
+        return f1(a, b);
+      };
+      var ff = function (a, b) {
+        var s1 = a.toString();
+        var s2 = b.toString();
+        assertEquals(fx(s1, s2).toString(), f(a, b).toString(), "-3 " + operator + " -2");
+      };
+      ff(4, 1);
+      ff(4, -1);
+      ff(-4, 1);
+      ff(-4, -1);
+      ff(3, 1);
+      ff(3, -1);
+      ff(-3, 1);
+      ff(-3, -1);
+      ff(4, 2);
+      ff(4, -2);
+      ff(-4, 2);
+      ff(-4, -2);
+      ff(3, 2);
+      ff(3, -2);
+      ff(-3, 2);
+      ff(-3, -2);
+    }
   };
   testSuite.add("%", function (I) {
     test0("%");
@@ -429,7 +458,7 @@ var wrapper = function () {
   });
   testSuite.add(">> 32", function (I) {
     var a = I.parseInt("12884901888", 10);
-    var b = I.shiftLeft(a, 32);
+    var b = I.shiftRight(a, 32);
     var s = I.toString(b, 10);
     assertEquals(s, "3", "12884901888 >> 32");  // OR Throw an error (?)
   });
@@ -447,6 +476,13 @@ var wrapper = function () {
       assertEquals(s, (i === 0 ? 0 : 1 + Math.floor(Math.log(i + 0.5) * Math.LOG2E)).toString(), "bitLength(" + i.toString() + ")");
     }
   });
+  testSuite.add("0 ** 0", function (I) {
+    var a = I.parseInt("0", 10);
+    var b = I.pow(a, 0);
+    var c = I.toString(b, 10);
+    assertEquals(c, Math.pow(0, 0).toString(), "0 ** 0");
+  });
+  /*
   testSuite.add("modPow", function (I) {
     var t = Date.now();
     var a = "-29694681763448712115267303514023904033265211886910761264672576231554464098637402550663040547342726600568933793424522580102024307390684120501123145913181335140054630257537266316462992944143291789428368597319366497044735307450905133722212599357295495795914532499656994934020209866067682479620381834108247731805362251476372300643310863145482504070318221407436590709353870667746678473405580031604287313646969125892734476605404502107124001169091069970155161376239893444309019800637825991490992886756114995636568690097893351815480034167383046629554600914654853770556603406920385489591581795592966209762321826324786588707444458373503608685515834491712886834370824573830770838543360344886700981870";
@@ -463,6 +499,7 @@ var wrapper = function () {
     console.log(t, url);
     assertEquals(s, e, "modPow");
   });
+  */
   //!!!
   var generateSomeTests = function (evaluate) {
     var bases = [
@@ -2221,7 +2258,7 @@ var wrapper = function () {
           }
           return r;
         }
-        throw new RangeError(divideType);
+        throw new RangeError(remainderType);
       };
       var integerRegExp = /^(0b|0x)?([0-9a-fA-F]+)/;
       var operatorRegExp = /^(?:\*\*|[\+\-\*\/%]|<\=>|\!)/;
@@ -2387,3 +2424,6 @@ var wrapper = function () {
     }
   });
 };
+
+
+// TODO: https://github.com/peterolson/BigInteger.js/issues/88

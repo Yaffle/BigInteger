@@ -367,9 +367,12 @@ var libs = [
   Object.assign({}, NodeBigInteger, {
     url: "https://github.com/indutny/bn.js",
     source: "https://rawgit.com/indutny/bn.js/master/lib/bn.js",
-    pow: "a.pow(new BigInteger(b.toString(), 10))",
+    pow: "BigInteger.pow(a, b)",
     setup: function () {
       self.BigInteger = self.module.exports;
+      self.BigInteger.pow = function (x, n) {
+        return x.pow(new BigInteger(n.toString(), 10));
+      };
     }
   }),
   Object.assign({}, NodeBigInteger, {

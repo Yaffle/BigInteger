@@ -1,6 +1,12 @@
 "use strict";
 
 var global = this;
+
+// for crypto.js
+function BenchmarkSuite() {
+}
+global.BenchmarkSuite = BenchmarkSuite
+
 var I = undefined;
 global.url = undefined;
 global.benchmarkSuite = undefined;

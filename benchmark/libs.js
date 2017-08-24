@@ -344,6 +344,10 @@ var libs = [
     url: "http://www-cs-students.stanford.edu/~tjw/jsbn/",
     source: "https://raw.githubusercontent.com/jasondavies/jsbn/master/jsbn.js https://raw.githubusercontent.com/jasondavies/jsbn/master/jsbn2.js",
   }),
+  Object.assign({}, JavaBigInteger, {
+    url: "https://github.com/chromium/octane/blob/master/crypto.js",
+    source: "https://raw.githubusercontent.com/chromium/octane/master/crypto.js",
+  }),
   {
     url: "https://github.com/Yaffle/BigInteger",
     source: "https://rawgit.com/Yaffle/BigInteger/master/BigInteger.js",

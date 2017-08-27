@@ -318,6 +318,12 @@ var sortTable = function (table) {
 
 
 var generateTable = function () {
+  var escapeHTML = function (s) {
+    return s.replace(/&/g, "&amp;")
+            .replace(/"/g, "&quot;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+  };
   var html = "";
   html += "\n<table class=\"results\" sortable=\"sortable\">";
   html += "\n<thead>";
@@ -350,7 +356,7 @@ var generateTable = function () {
     var lib = libs[i];
     html += "\n  <tr class=\"result\">";
     html += "\n    <td><input type=checkbox " + (lib.checked ? "checked=\"checked\"" : "") + " /></td>";
-    html += "\n    <td><a target=\"_blank\" href=\"${url}\">${url}</a></td>".replace("${url}", lib.url).replace("${url}", lib.url);
+    html += "\n    <td><a target=\"_blank\" href=\"${url}\">${url}</a></td>".replace(/\$\{url\}/g, escapeHTML(lib.url));
     for (var j = 0; j < benchmarks.length; j += 1) {
       html += "\n    <td></td>";
     }

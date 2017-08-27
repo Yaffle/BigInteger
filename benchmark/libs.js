@@ -76,27 +76,6 @@ var NodeBigInteger = {
   setup: undefined
 };
 
-var NumberInteger = {
-  add: "a + b",
-  subtract: "a - b",
-  multiply: "0 + a * b",
-  divide: "0 + Math.trunc(a / b)",
-  remainder: "0 + a % b",
-  negate: "0 - a",
-  compareTo: "(a < b ? -1 : (b < a ? +1 : 0))",
-  parseInt: "Number.parseInt(a, b)",
-  toString: "a.toString(b)",
-  and: "a & b",
-  or: "a | b",
-  xor: "a ^ b",
-  not: "~a",
-  shiftLeft: "a << b",
-  shiftRight: "a >> b",
-  bitLength: "32 - Math.clz32(a)",
-  pow: "Math.pow(a, b)",
-  setup: undefined
-};
-
 var MikeMclBigNumber = {
   add: "a.plus(b)",
   subtract: "a.minus(b)",
@@ -362,10 +341,50 @@ var libs = [
     toString: "a.toString(b)",
     setup: undefined
   },
-  Object.assign({}, NumberInteger, {
-    url: "data:application/javascript,%3B",
+  {
+    url: "data:text/plain,wrapped_number",
     source: "data:application/javascript,%3B",
-  }),
+    add: "SmallInteger.add(a, b)",
+    subtract: "SmallInteger.subtract(a, b)",
+    multiply: "SmallInteger.multiply(a, b)",
+    divide: "SmallInteger.divide(a, b)",
+    remainder: "SmallInteger.remainder(a, b)",
+    negate: "SmallInteger.negate(a)",
+    compareTo: "SmallInteger.compareTo(a, b)",
+    parseInt: "SmallInteger.parseInt(a, b)",
+    toString: "a.toString(b)",
+    and: "SmallInteger.and(a, b)",
+    or: "SmallInteger.or(a, b)",
+    xor: "SmallInteger.xor(a, b)",
+    not: "SmallInteger.not(a)",
+    shiftLeft: "SmallInteger.shiftLeft(a, b)",
+    shiftRight: "SmallInteger.shiftRight(a, b)",
+    bitLength: "SmallInteger.bitLength(a)",
+    pow: "SmallInteger.pow(a, b)",
+    setup: undefined
+  },
+  {
+    url: "data:text/plain,number",
+    source: "data:application/javascript,%3B",
+    add: "a + b",
+    subtract: "a - b",
+    multiply: "0 + a * b",
+    divide: "0 + Math.trunc(a / b)",
+    remainder: "0 + a % b",
+    negate: "0 - a",
+    compareTo: "(a < b ? -1 : (b < a ? +1 : 0))",
+    parseInt: "Number.parseInt(a, b)",
+    toString: "a.toString(b)",
+    and: "a & b",
+    or: "a | b",
+    xor: "a ^ b",
+    not: "~a",
+    shiftLeft: "a << b",
+    shiftRight: "a >> b",
+    bitLength: "32 - Math.clz32(a)",
+    pow: "Math.pow(a, b)",
+    setup: undefined
+  },
   Object.assign({}, JavaBigInteger, {
     npm: "bignumber-petero",
     url: "https://github.com/peteroupc/BigNumber",

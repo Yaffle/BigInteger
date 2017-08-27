@@ -121,7 +121,7 @@ self.onmessage = function (event) {
         }
       };
       loadScripts("libs.js", function () {
-        loadScripts(src === "number" ? "" : src, function () {
+        loadScripts(src === "data:text/plain,number" ? "" : (src === "data:text/plain,wrapped_number" ? "./libs/SmallInteger.js" : src), function () {
           var lib = undefined;
           for (var i = 0; i < libs.length; i += 1) {
             if (libs[i].src === src) {

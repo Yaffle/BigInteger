@@ -243,25 +243,19 @@
     var a = valueOf(x);
     var b = valueOf(y);
     var z = compareMagnitude(a, b);
-    var minSign = z < 0 ? a.sign : (isSubtraction ? 1 - b.sign : b.sign);
-    var minMagnitude = z < 0 ? a.magnitude : b.magnitude;
-    var minLength = z < 0 ? a.length : b.length;
-    var minValue = z < 0 ? a.value : b.value;
-    var maxSign = z < 0 ? (isSubtraction ? 1 - b.sign : b.sign) : a.sign;
-    var maxMagnitude = z < 0 ? b.magnitude : a.magnitude;
-    var maxLength = z < 0 ? b.length : a.length;
-    var maxValue = z < 0 ? b.value : a.value;
-
+    var resultSign = z < 0 ? (isSubtraction !== 0 ? 1 - b.sign : b.sign) : a.sign;
+    var min = z < 0 ? a : b;
+    var max = z < 0 ? b : a;
     // |a| <= |b|
-    if (minLength === 0) {
-      return createBigInteger(maxSign, maxMagnitude, maxLength, maxValue);
+    if (min.length === 0) {
+      return createBigInteger(resultSign, max.magnitude, max.length, max.value);
     }
     var subtract = 0;
-    var resultLength = maxLength;
-    if (minSign !== maxSign) {
+    var resultLength = max.length;
+    if (a.sign !== (isSubtraction !== 0 ? 1 - b.sign : b.sign)) {
       subtract = 1;
-      if (minLength === resultLength) {
-        while (resultLength > 0 && (minMagnitude == undefined ? minValue : minMagnitude[resultLength - 1]) === (maxMagnitude == undefined ? maxValue : maxMagnitude[resultLength - 1])) {
+      if (min.length === resultLength) {
+        while (resultLength > 0 && (min.magnitude == undefined ? min.value : min.magnitude[resultLength - 1]) === (max.magnitude == undefined ? max.value : max.magnitude[resultLength - 1])) {
           resultLength -= 1;
         }
       }
@@ -274,8 +268,8 @@
     var i = -1;
     var c = 0;
     while (++i < resultLength) {
-      var aDigit = i < minLength ? (minMagnitude == undefined ? minValue : minMagnitude[i]) : 0;
-      c += (maxMagnitude == undefined ? maxValue : maxMagnitude[i]) + (subtract === 1 ? 0 - aDigit : aDigit - BASE);
+      var aDigit = i < min.length ? (min.magnitude == undefined ? min.value : min.magnitude[i]) : 0;
+      c += (max.magnitude == undefined ? max.value : max.magnitude[i]) + (subtract !== 0 ? 0 - aDigit : aDigit - BASE);
       if (c < 0) {
         result[i] = BASE + c;
         c = 0 - subtract;
@@ -291,7 +285,7 @@
     while (resultLength > 0 && result[resultLength - 1] === 0) {
       resultLength -= 1;
     }
-    return createBigInteger(maxSign, result, resultLength, result[0]);
+    return createBigInteger(resultSign, result, resultLength, result[0]);
   };
 
   var multiply = function (x, y) {
@@ -346,7 +340,7 @@
     }
     var quotientSign = a.sign === 1 ? 1 - b.sign : b.sign;
     if (b.length === 1 && (b.magnitude == undefined ? b.value : b.magnitude[0]) === 1) {
-      if (isDivision === 1) {
+      if (isDivision !== 0) {
         return createBigInteger(quotientSign, a.magnitude, a.length, a.value);
       }
       return createBigInteger(0, createArray(0), 0, 0);
@@ -443,7 +437,7 @@
         }
         ax += c;
       }
-      if (isDivision === 1 && q !== 0) {
+      if (isDivision !== 0 && q !== 0) {
         if (quotientLength === 0) {
           quotientLength = i + 1;
           quotient = createArray(quotientLength);
@@ -452,7 +446,7 @@
       }
     }
 
-    if (isDivision === 1) {
+    if (isDivision !== 0) {
       if (quotientLength === 0) {
         return createBigInteger(0, createArray(0), 0, 0);
       }
@@ -494,15 +488,15 @@
     return createBigInteger(1 - a.sign, a.magnitude, a.length, a.value);
   };
 
-  var toString = function (sign, magnitude, length, radix) {
-    var result = sign === 1 ? "-" : "";
+  var toString = function (a, radix) {
+    var result = a.sign === 1 ? "-" : "";
 
-    var remainderLength = length;
+    var remainderLength = a.length;
     if (remainderLength === 0) {
       return "0";
     }
     if (remainderLength === 1) {
-      result += magnitude[0].toString(radix);
+      result += (a.magnitude == undefined ? a.value : a.magnitude[0]).toString(radix);
       return result;
     }
     var groupLength = 0;
@@ -520,7 +514,7 @@
     var remainder = createArray(size);
     var n = -1;
     while (++n < remainderLength) {
-      remainder[n] = magnitude[n];
+      remainder[n] = (a.magnitude == undefined ? a.value : a.magnitude[n]);
     }
 
     var k = size;
@@ -559,7 +553,7 @@
     if (radix !== 10 && (radix < 2 || radix > 36 || radix !== Math.floor(radix))) {
       throw new RangeError("radix argument must be an integer between 2 and 36");
     }
-    return toString(this.sign, this.magnitude, this.length, radix);
+    return toString(this, radix);
   };
 
   BigInteger.parseInt = parseBigInteger;

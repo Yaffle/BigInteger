@@ -342,6 +342,20 @@ var libs = [
     setup: undefined
   },
   {
+    url: "data:text/plain,wrapped_number2",
+    source: "data:application/javascript,%3B",
+    add: "SmallInteger.add(a, b)",
+    subtract: "SmallInteger.subtract(a, b)",
+    multiply: "SmallInteger.multiply(a, b)",
+    divide: "SmallInteger.divide(a, b)",
+    remainder: "SmallInteger.remainder(a, b)",
+    negate: "SmallInteger.negate(a)",
+    compareTo: "SmallInteger.compareTo(a, b)",
+    parseInt: "SmallInteger.parseInt(a, b)",
+    toString: "a.toString(b)",
+    setup: undefined
+  },
+  {
     url: "data:text/plain,wrapped_number",
     source: "data:application/javascript,%3B",
     add: "SmallInteger.add(a, b)",

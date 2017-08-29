@@ -49,7 +49,7 @@
   SmallInteger.parseInt = function (string, radix) {
     var value = 0 + Number.parseInt(string, radix);
     if (value >= -9007199254740991 && value <= +9007199254740991) {
-      return new SmallInteger();
+      return new SmallInteger(value);
     }
     throw new RangeError();
   };

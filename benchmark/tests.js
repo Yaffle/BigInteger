@@ -515,6 +515,47 @@ var wrapper = function () {
   testSuite.add("0 ** (0xffffffff + 1)", function (I) {
     testPow(0, 0xffffffff + 1);
   });
+  testSuite.add("mod", function (I) {
+    var testMod = function (I) {
+      var THREE = I.parseInt("3", 10);
+      var MINUS_THREE = I.parseInt("-3", 10);
+      var FOUR = I.parseInt("4", 10);
+      var MINUS_FOUR = I.parseInt("-4", 10);
+
+      var a = I.mod(FOUR, THREE);
+      var c = I.mod(MINUS_FOUR, THREE);
+      var as = I.toString(a, 10)
+      var cs = I.toString(c, 10);
+      assertEquals(as, "1");
+      assertEquals(cs, "2");
+      //try {
+      //  var t = I.mod(FOUR, MINUS_THREE);
+      //  assertEquals(false, true);
+      //} catch (error) {
+      //}
+      //try {
+      //  var t = I.mod(MINUS_FOUR, MINUS_THREE);
+      //  assertEquals(false, true);
+      //} catch (error) {
+      //}
+    };
+    testMod(I);
+  });
+  testSuite.add("modInverse", function (I) {
+    var a = I.parseInt("7", 10);
+    var b = I.parseInt("20", 10);
+    var x = I.modInverse(a, b);
+    var s = I.toString(x, 10);
+    assertEquals(s, "3");
+  });
+  testSuite.add("modPow", function (I) {
+    var a = I.parseInt("10", 10);
+    var b = I.parseInt("3", 10);
+    var c = I.parseInt("30", 10);
+    var x = I.modPow(a, b, c);
+    var s = I.toString(x, 10);
+    assertEquals(s, "10");
+  });
   /*
   testSuite.add("modPow", function (I) {
     var t = Date.now();
@@ -526,8 +567,9 @@ var wrapper = function () {
     var e = "13540802089857741167023542037988805222546440577229559332533075840910935632532209556364267054685794323888640528195606483456493117658256579047999363349321383330093264011066537310121911518868496867167891598543722545495853065340968093012365382813267366017727691685093503665250431900627681102142398694435798038224365707752325308958087778218641883318154142118828465677276422817258682513984877559101140482783383241463776862894614490093886509444848747212475405025421083989216107083936711753381670137437841278736875577642823331640840588001717269730039276342775573437428364758255438364398063059345080931231137408921321659897500";
     var tmp0 = I.parseInt(a, 10);
     var tmp1 = I.parseInt(b, 10);
-    var tmp2 = I.modPow(tmp0, tmp1);
-    var s = I.toString(tmp2, 10);
+    var tmp2 = I.parseInt(c, 10);
+    var x = I.modPow(tmp0, tmp1, tmp2);
+    var s = I.toString(x, 10);
     t = Date.now() - t;
     console.log(t, url);
     assertEquals(s, e, "modPow");

@@ -40,12 +40,12 @@ var loadScripts = function (src, callback) {
 };
 
 var transform = function (f) {
-  return eval("(" + f.toString().replace(/I\.([a-zA-Z]+)\(([^,\)]+)(?:,([^,\)]+))?\)/g, function (p, o, a, b) {
+  return eval("(" + f.toString().replace(/I\.([a-zA-Z]+)\(([^,\)]+)(?:,([^,\)]+))?(?:,([^,\)]+))?\)/g, function (p, o, a, b, c) {
     if (I[o] == undefined) {
       return p;
     }
     return I[o].replace(/([a-zA-Z]+)/g, function (t) {
-      return t === "a" ? a.trim() : (t === "b" ? b.trim() : t);
+      return t === "a" ? a.trim() : (t === "b" ? b.trim() : (t === "c" ? c.trim() : t));
     });
   }) + ")");
 };

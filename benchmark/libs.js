@@ -32,8 +32,6 @@ if (Number.parseInt == undefined) {
 
 // parseInt, toString, shiftLeft, shiftRight, pow: b is a number value
 
-// TODO: mod, modPow, modInverse
-
 var JavaBigInteger = {
   add: "a.add(b)",
   subtract: "a.subtract(b)",
@@ -52,7 +50,10 @@ var JavaBigInteger = {
   shiftRight: "a.shiftRight(b)",
   bitLength: "a.bitLength()",
   pow: "a.pow(b)",
-  setup: undefined
+  setup: undefined,
+  mod: "a.mod(b)",
+  modPow: "a.modPow(b, c)",
+  modInverse: "a.modInverse(b)"
 };
 
 var NodeBigInteger = {
@@ -73,7 +74,10 @@ var NodeBigInteger = {
   shiftRight: "a.shrn(b)",
   bitLength: "a.bitLength()",
   pow: "a.pow(b)",
-  setup: undefined
+  setup: undefined,
+  mod: "a.mod(b)",
+  modPow: undefined,
+  modInverse: "a.invm(b)"
 };
 
 var MikeMclBigNumber = {
@@ -106,6 +110,7 @@ var libs = [
       var expand = self.expand;
       var bitSize = self.bitSize;
       var powMod = self.powMod;
+      var inverseMod = self.inverseMod;
 
       // Big Thanks to @jtobey - https://github.com/jtobey/javascript-bignum/blob/master/lib/leemonBigInt.js
       function BigInt(sign, bigInt) {
@@ -210,6 +215,15 @@ var libs = [
         var n = BigInt.parseInt("1000000000000000000000000000000000000000000000000000000000000000000000000", 16);
         return new BigInt(1, powMod(this._b, y._b, n._b));
       };
+      BigInt.prototype.mod = function (b) {
+        return new BigInt(1, mod(this._b, b._b));
+      };
+      BigInt.prototype.modInverse = function (b) {
+        return new BigInt(1, inverseMod(this._b, b._b));
+      };
+      BigInt.prototype.modPow = function (b, c) {
+        return new BigInt(1, powMod(this._b, b._b, c._b));
+      };
       BigInt.ZERO = new BigInt(1, zero);
       self.BigInteger = BigInt;
     },
@@ -234,7 +248,8 @@ var libs = [
     not: "SchemeNumber.plugins.get(\"bitwiseNot\")(a)",
     shiftRight: "SchemeNumber.plugins.get(\"bitShift\")(a, SchemeNumber.plugins.get(\"parseExactInteger\")(1, (0 - b).toString(), 10))",
     bitLength: "Number.parseInt(SchemeNumber.plugins.get(\"numberToString\")(SchemeNumber.plugins.get(\"bitLength\")(a), 10, 0), 10)",
-    pow: "SchemeNumber.plugins.get(\"expt\")(a, SchemeNumber.plugins.get(\"parseExactInteger\")(1, b.toString(), 10))"
+    pow: "SchemeNumber.plugins.get(\"expt\")(a, SchemeNumber.plugins.get(\"parseExactInteger\")(1, b.toString(), 10))",
+    floatingPoint: true
   },
   Object.assign({}, JavaBigInteger, {
     url: "https://github.com/node-modules/node-biginteger",
@@ -260,10 +275,12 @@ var libs = [
     shiftLeft: "crunch.leftShift(a, b)",
     shiftRight: "crunch.rightShift(a, b)",
     //bitLength: "",
-    //modPow: "crunch.exp(a, b, n)",
     setup: function () {
       self.crunch = self.Crunch();
-    }
+    },
+    mod: "crunch.mod(a, b)",
+    modPow: "crunch.exp(a, b, c)",
+    modInverse: "crunch.mod(a, b)"
   },
   Object.assign({}, MikeMclBigNumber, {
     url: "https://github.com/MikeMcl/bignumber.js",
@@ -274,7 +291,8 @@ var libs = [
       //BigNumber.RM = 0;
       //BigNumber.E_POS = 2048;
       BigNumber.config({DECIMAL_PLACES: 0, ROUNDING_MODE: 1, EXPONENTIAL_AT: 2048});
-    }
+    },
+    floatingPoint: true
   }),
   Object.assign({}, MikeMclBigNumber, {
     url: "https://github.com/MikeMcl/big.js",
@@ -291,7 +309,8 @@ var libs = [
       BigNumber.prototype.neg = function () {
         return MINUS_ONE.times(this);
       };
-    }
+    },
+    floatingPoint: true
   }),
   Object.assign({}, MikeMclBigNumber, {
     url: "https://github.com/MikeMcl/decimal.js",
@@ -306,12 +325,14 @@ var libs = [
       //BigNumber.RM = 0;
       //BigNumber.E_POS = 2048;
       //BigNumber.config({DECIMAL_PLACES: 0, ROUNDING_MODE: 1, EXPONENTIAL_AT: 2048});
-    }
+    },
+    floatingPoint: true
   }),
   Object.assign({}, JavaBigInteger, {
     url: "https://github.com/peterolson/BigInteger.js",
     source: "https://rawgit.com/peterolson/BigInteger.js/master/BigInteger.js",
     parseInt: "bigInt(a, b === 10 ? undefined : b)",
+    modInverse: "a.modInv(b)"
   }),
   Object.assign({}, JavaBigInteger, {
     url: "https://github.com/silentmatt/javascript-biginteger",
@@ -404,7 +425,9 @@ var libs = [
     url: "https://github.com/peteroupc/BigNumber",
     source: "https://rawgit.com/peteroupc/BigNumber/master/BigInteger.js",
     parseInt: "BigInteger.fromRadixString(a, b)",
-    toString: "a.toRadixString(b)"
+    toString: "a.toRadixString(b)",
+    modPow: "a.ModPow(b, c)",
+    floatingPoint: true
   }),
   Object.assign({}, NodeBigInteger, {
     url: "https://github.com/indutny/bn.js",
@@ -462,11 +485,13 @@ var libs = [
       BigDecimal.prototype.divide = function (x) {
         return divideFunction.call(this, x, mc);
       };
-    }
+    },
+    floatingPoint: true
   }),
   Object.assign({}, JavaBigInteger, {
     url: "https://github.com/iriscouch/bigdecimal.js",
-    source: "http://jhs.iriscouch.com/demo/_design/bigdecimal/bigdecimal.js"
+    source: "http://jhs.iriscouch.com/demo/_design/bigdecimal/bigdecimal.js",
+    floatingPoint: true
   }),
   Object.assign({}, JavaBigInteger, {
     url: "http://ofmind.net/doc/hapint",

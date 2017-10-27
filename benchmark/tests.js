@@ -2480,6 +2480,12 @@ var wrapper = function () {
       }
     }
   }());
+  testSuite.add("negate", function () {
+    var a = I.parseInt("0", 10);
+    var b = I.negate(a);
+    var c = I.compareTo(a, b);
+    assertEquals(c, 0, "0<=>-0");
+  });
   testSuite.add("2", function () {
     for (var d = 2; d < 10 + 8; d += 8) {
       for (var c = 1; c < Math.pow(2, 53); c *= d) {

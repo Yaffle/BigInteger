@@ -36,10 +36,10 @@ Example
 ```javascript
 
 var factorial = function (n) {
-  var result = 1;
+  var result = BigInteger.parseInt("1", 10);
   var i = 0;
   while (++i <= n) {
-    result = BigInteger.multiply(result, i);
+    result = BigInteger.multiply(result, BigInteger.parseInt(i.toString(), 10));
   }
   return result;
 };

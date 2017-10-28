@@ -194,6 +194,8 @@ test = function () {
 
 window.setTimeout(function () {
   document.getElementById("table-container").innerHTML = generateTable();
+  document.getElementById("info-table-container").innerHTML = generateInfoTable();
+  
   
   var c = document.querySelector("input[type=checkbox]");
   c.onchange = function () {
@@ -317,13 +319,14 @@ var sortTable = function (table) {
 }());
 
 
+var escapeHTML = function (s) {
+  return s.replace(/&/g, "&amp;")
+          .replace(/"/g, "&quot;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+};
+
 var generateTable = function () {
-  var escapeHTML = function (s) {
-    return s.replace(/&/g, "&amp;")
-            .replace(/"/g, "&quot;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;");
-  };
   var html = "";
   html += "\n<table class=\"results\" sortable=\"sortable\">";
   html += "\n<thead>";
@@ -368,3 +371,47 @@ var generateTable = function () {
 };
 
 //console.log(generateTable());
+
+var generateInfoTable = function () {
+  var object = {};
+  object["url"] = "";
+  for (var i = 0; i < libs.length; i += 1) {
+    object = Object.assign(object, libs[i]);
+  }
+
+  var html = "";
+  html += "<table>";
+  html += "<thead>";
+  html += "<tr>";
+  for (var key in object) {
+    if (Object.prototype.hasOwnProperty.call(object, key)) {
+      if (key !== "src" && key !== "source" && key !== "setup") {
+        html += "<th>";
+        html += escapeHTML(key);
+        html += "</th>";
+      }
+    }
+  }
+  html += "</tr>";
+  html += "</thead>";
+  html += "<tbody>";
+  for (var i = 0; i < libs.length; i += 1) {
+    if (libs[i].url !== "data:text/plain,wrapped_number2" && libs[i].url !== "data:text/plain,wrapped_number") {
+      html += "<tr>";
+      for (var key in object) {
+        if (Object.prototype.hasOwnProperty.call(object, key)) {
+          if (key !== "src" && key !== "source" && key !== "setup") {
+            html += key === "url" ? "<th>" : "<td>";
+            var v = libs[i][key];
+            html += escapeHTML(typeof v === "function" ? "function" : (typeof v === "boolean" ? (v ? "+" : "-") : (v == undefined ? "undefined" : v || "-")));
+            html += key === "url" ? "</th>" : "</td>";
+          }
+        }
+      }
+    }
+    html += "</tr>";
+  }
+  html += "</tbody>";
+  html += "</table>";
+  return html;
+};

@@ -41,7 +41,7 @@ var loadScripts = function (src, callback) {
 
 var transform = function (f) {
   return eval("(" + f.toString().replace(/I\.([a-zA-Z]+)\(([^,\)]+)(?:,([^,\)]+))?(?:,([^,\)]+))?\)/g, function (p, o, a, b, c) {
-    if (I[o] == undefined) {
+    if (I[o] == undefined || I[o] === "") {
       return p;
     }
     return I[o].replace(/([a-zA-Z]+)/g, function (t) {
@@ -121,7 +121,13 @@ self.onmessage = function (event) {
         }
       };
       loadScripts("libs.js", function () {
-        loadScripts(src === "data:text/plain,number" ? "" : (src === "data:text/plain,wrapped_number" ? "./libs/SmallInteger.js" : (src === "data:text/plain,wrapped_number2" ? "./libs/SmallIntegerWithChecks.js" : src)), function () {
+        var special = {
+          "data:text/plain,number": "",
+          "data:text/plain,bigint": "",
+          "data:text/plain,wrapped_number": "./libs/SmallInteger.js",
+          "data:text/plain,wrapped_number2": "./libs/SmallIntegerWithChecks.js"
+        };
+        loadScripts(src in special ? special[src] : src, function () {
           var lib = undefined;
           for (var i = 0; i < libs.length; i += 1) {
             if (libs[i].src === src) {
@@ -138,7 +144,7 @@ self.onmessage = function (event) {
             f();
             setTimeout(function () {
               if (type === "start:tests") {
-                if (src !== "data:application/javascript,%3B") {
+                if (src.indexOf("data:") !== 0) {
                   testSuite.run();
                 }
                 finish();

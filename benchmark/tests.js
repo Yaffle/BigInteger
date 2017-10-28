@@ -515,6 +515,25 @@ var wrapper = function () {
   testSuite.add("0 ** (0xffffffff + 1)", function (I) {
     testPow(0, 0xffffffff + 1);
   });
+
+  testSuite.add("fromNumber", function (I) {
+    var i = I.fromNumber(42);
+    var s = I.toString(i, 10);
+    assertEquals(s, "42");
+    var i = I.fromNumber(9007199254740991);
+    var s = I.toString(i, 10);
+    assertEquals(s, "9007199254740991");
+  });
+
+  testSuite.add("toNumber", function (I) {
+    var i = I.parseInt("42", 10);
+    var s = I.toNumber(i);
+    assertEquals(s, 42);
+    var i = I.parseInt("9007199254740991", 10);
+    var s = I.toNumber(i);
+    assertEquals(s, 9007199254740991);
+  });
+
   testSuite.add("mod", function (I) {
     var testMod = function (I) {
       var THREE = I.parseInt("3", 10);

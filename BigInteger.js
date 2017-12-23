@@ -181,20 +181,15 @@
       groupLength += 1;
       groupRadix *= radix;
     }
-    var size = Math.floor((length - 1) / groupLength) + 1;
 
+    var size = Math.floor((length - 1) / groupLength) + 1;
     var magnitude = createArray(size);
-    var k = size;
-    var i = length;
-    while (i > 0) {
-      k -= 1;
-      magnitude[k] = parseInteger(s, from + (i > groupLength ? i - groupLength : 0), from + i, radix);
-      i -= groupLength;
-    }
+    var start = from + 1 + (length - 1 - (size - 1) * groupLength) - groupLength;
 
     var j = -1;
     while (++j < size) {
-      var c = magnitude[j];
+      var groupStart = start + j * groupLength;
+      var c = parseInteger(s, (groupStart >= from ? groupStart : from), groupStart + groupLength, radix);
       var l = -1;
       while (++l < j) {
         var tmp = performMultiplication(c, magnitude[l], groupRadix);

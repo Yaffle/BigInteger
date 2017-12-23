@@ -265,12 +265,13 @@
         c = 1 - subtract;
       }
     }
-    if (c !== 0) {
+    if (subtract === 0) {
       result[resultLength] = c;
-      resultLength += 1;
-    }
-    while (resultLength > 0 && result[resultLength - 1] === 0) {
-      resultLength -= 1;
+      resultLength += c !== 0 ? 1 : 0;
+    } else {
+      while (resultLength > 0 && result[resultLength - 1] === 0) {
+        resultLength -= 1;
+      }
     }
     return createBigInteger(resultSign, result, resultLength);
   };
@@ -297,6 +298,10 @@
     }
     var resultLength = a.length + b.length;
     var result = createArray(resultLength);
+    var k = -1;
+    while (++k < a.length) {
+      result[k] = 0;
+    }
     var i = -1;
     while (++i < b.length) {
       var c = 0;
@@ -347,10 +352,12 @@
     while (++n < a.length) {
       remainder[n] = a.magnitude[n];
     }
+    remainder[a.length] = 0;
     var m = -1;
     while (++m < b.length) {
       divisor[divisorOffset + m] = b.magnitude[m];
     }
+    divisor[divisorOffset + b.length] = 0;
 
     var top = divisor[divisorOffset + b.length - 1];
 

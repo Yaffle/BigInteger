@@ -534,6 +534,15 @@ var wrapper = function () {
     assertEquals(s, 9007199254740991);
   });
 
+  testSuite.add("toNumber-big", function (I) {
+    var i = I.parseInt("100000000000000008192", 10);
+    var s = I.toNumber(i);
+    assertEquals(s, 100000000000000000000);
+    var i = I.parseInt("100000000000000008193", 10);
+    var s = I.toNumber(i);
+    assertEquals(s, 100000000000000016384);
+  });
+
   testSuite.add("mod", function (I) {
     var testMod = function (I) {
       var THREE = I.parseInt("3", 10);

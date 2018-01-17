@@ -5,10 +5,10 @@ if (Object.assign == undefined) {
     for (var i = 1; i < arguments.length; i += 1) {
       var nextSource = arguments[i];
       if (nextSource != undefined) {
-        var keys = Object.keys(nextSource);
-        for (var j = 0; j < keys.length; j += 1) {
-          var key = keys[j];
-          target[key] = nextSource[key];
+        for (var key in nextSource) {
+          if (Object.prototype.hasOwnProperty.call(nextSource, key)) {
+            target[key] = nextSource[key];
+          }
         }
       }
     }

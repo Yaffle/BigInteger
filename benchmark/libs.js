@@ -454,7 +454,7 @@ var libs = [
     shiftLeft: "a << b",
     shiftRight: "a >> b",
     bitLength: "",
-    pow: undefined, // "a ** b",
+    pow: self.BigInt != undefined ? "a**b" : undefined, // "a ** b",
     setup: undefined,
     fromNumber: "BigInt(a)",
     toNumber: "Number(a)",

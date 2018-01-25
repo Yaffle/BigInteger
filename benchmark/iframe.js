@@ -127,6 +127,11 @@ self.onmessage = function (event) {
           "data:text/plain,wrapped_number": "./libs/SmallInteger.js",
           "data:text/plain,wrapped_number2": "./libs/SmallIntegerWithChecks.js"
         };
+        var notTestable = {
+          "data:text/plain,number": "",
+          "data:text/plain,wrapped_number": "./libs/SmallInteger.js",
+          "data:text/plain,wrapped_number2": "./libs/SmallIntegerWithChecks.js"
+        };
         loadScripts(src in special ? special[src] : src, function () {
           var lib = undefined;
           for (var i = 0; i < libs.length; i += 1) {
@@ -144,7 +149,7 @@ self.onmessage = function (event) {
             f();
             setTimeout(function () {
               if (type === "start:tests") {
-                if (src.indexOf("data:") !== 0) {
+                if (!(src in notTestable)) {
                   testSuite.run();
                 }
                 finish();

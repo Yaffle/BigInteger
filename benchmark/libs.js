@@ -458,7 +458,21 @@ var libs = [
     setup: undefined,
     fromNumber: "BigInt(a)",
     toNumber: "Number(a)",
-    floatingPoint: false
+    floatingPoint: false,
+    setup: function () {
+      self.BigInt.parseInt = function (string, radix) {
+        if (radix === 2) {
+          return self.BigInt("0b" + string);
+        } else if (radix === 8) {
+          return self.BigInt("0o" + string);
+        } else if (radix === 10) {
+          return self.BigInt("" + string);
+        } else if (radix === 16) {
+          return self.BigInt("0x" + string);
+        }
+        throw new RangeError();
+      };
+    }
   },
   {
     url: "data:text/plain,number",

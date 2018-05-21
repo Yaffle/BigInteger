@@ -20,7 +20,7 @@ var BigInteger = require("BigInteger").BigInteger;
 The API is terrible, but small integers are stored as primitive numbers, so operations on small integers are faster.
 
   `BigInteger`                        | `Number`                         | `BigInt` (https://github.com/tc39/proposal-bigint)
---------------------------------------|--------------------------------------------------------------------------------------
+--------------------------------------|----------------------------------|----------------------------------------------------
  `BigInteger.parseInt(string, radix)` | `Number.parseInt(string, radix)` | `BigInt(radix === 16 ? "0x" + string : string)`
  `BigInteger.compareTo(a, b)`         | `Math.sign(a - b)`               | `a < b ? -1 : (b < a ? +1 : 0)`
  `BigInteger.negate(a)`               | `0 - a`                          | `-a`

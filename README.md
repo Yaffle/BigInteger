@@ -19,17 +19,17 @@ var BigInteger = require("BigInteger").BigInteger;
 
 The API is terrible, but small integers are stored as primitive numbers, so operations on small integers are faster.
 
-  `BigInteger`                        | `Number`
---------------------------------------|----------------------------------
- `BigInteger.parseInt(string, radix)` | `Number.parseInt(string, radix)`
- `BigInteger.compareTo(a, b)`         | `Math.sign(a - b)`              
- `BigInteger.negate(a)`               | `0 - a`                         
- `BigInteger.add(a, b)`               | `a + b`                         
- `BigInteger.subtract(a, b)`          | `a - b`                         
- `BigInteger.multiply(a, b)`          | `0 + a * b`                     
- `BigInteger.divide(a, b)`            | `0 + Math.trunc(a / b)`         
- `BigInteger.remainder(a, b)`         | `0 + a % b`                     
- `a.toString(radix)`                  | `a.toString(radix)`             
+  `BigInteger`                        | `Number`                         | `BigInt` (https://github.com/tc39/proposal-bigint)
+--------------------------------------|--------------------------------------------------------------------------------------
+ `BigInteger.parseInt(string, radix)` | `Number.parseInt(string, radix)` | `BigInt(radix === 2 ? "0b" + string : (radix === 8 ? "0o" + string : (radix === 16 ? "0x" + string : string)))`
+ `BigInteger.compareTo(a, b)`         | `Math.sign(a - b)`               | `a < b ? -1 : (b < a ? +1 : 0)`
+ `BigInteger.negate(a)`               | `0 - a`                          | `-a`
+ `BigInteger.add(a, b)`               | `a + b`                          | `a + b`
+ `BigInteger.subtract(a, b)`          | `a - b`                          | `a - b`
+ `BigInteger.multiply(a, b)`          | `0 + a * b`                      | `a * b`
+ `BigInteger.divide(a, b)`            | `0 + Math.trunc(a / b)`          | `a / b`
+ `BigInteger.remainder(a, b)`         | `0 + a % b`                      | `a % b`
+ `a.toString(radix)`                  | `a.toString(radix)`              | `a.toString(radix)`
 
 Example
 =======

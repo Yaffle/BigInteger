@@ -103,7 +103,7 @@
       this.negative = 1;
     }
 
-    this.strip();
+    this._strip();
 
     if (endian !== 'le') return;
 
@@ -180,30 +180,38 @@
         }
       }
     }
-    return this.strip();
+    return this._strip();
   };
 
   function parseHex (str, start, end) {
     var r = 0;
     var len = Math.min(str.length, end);
+    var z = 0;
     for (var i = start; i < len; i++) {
       var c = str.charCodeAt(i) - 48;
 
       r <<= 4;
 
+      var b;
+
       // 'a' - 'f'
       if (c >= 49 && c <= 54) {
-        r |= c - 49 + 0xa;
+        b = c - 49 + 0xa;
 
       // 'A' - 'F'
       } else if (c >= 17 && c <= 22) {
-        r |= c - 17 + 0xa;
+        b = c - 17 + 0xa;
 
       // '0' - '9'
       } else {
-        r |= c & 0xf;
+        b = c;
       }
+
+      r |= b;
+      z |= b;
     }
+
+    assert(!(z & 0xf0), 'Invalid character in ' + str);
     return r;
   }
 
@@ -234,11 +242,12 @@
       this.words[j] |= (w << off) & 0x3ffffff;
       this.words[j + 1] |= w >>> (26 - off) & 0x3fffff;
     }
-    this.strip();
+    this._strip();
   };
 
   function parseBase (str, start, end, mul) {
     var r = 0;
+    var b = 0;
     var len = Math.min(str.length, end);
     for (var i = start; i < len; i++) {
       var c = str.charCodeAt(i) - 48;
@@ -247,16 +256,18 @@
 
       // 'a'
       if (c >= 49) {
-        r += c - 49 + 0xa;
+        b = c - 49 + 0xa;
 
       // 'A'
       } else if (c >= 17) {
-        r += c - 17 + 0xa;
+        b = c - 17 + 0xa;
 
       // '0' - '9'
       } else {
-        r += c;
+        b = c;
       }
+      assert(c >= 0 && b < mul, 'Invalid character');
+      r += b;
     }
     return r;
   }
@@ -316,6 +327,13 @@
     dest.red = this.red;
   };
 
+  BN.prototype._move = function _move (dest) {
+    dest.words = this.words;
+    dest.length = this.length;
+    dest.negative = this.negative;
+    dest.red = this.red;
+  };
+
   BN.prototype.clone = function clone () {
     var r = new BN(null);
     this.copy(r);
@@ -330,7 +348,7 @@
   };
 
   // Remove leading `0` from `this`
-  BN.prototype.strip = function strip () {
+  BN.prototype._strip = function strip () {
     while (this.length > 1 && this.words[this.length - 1] === 0) {
       this.length--;
     }
@@ -471,7 +489,7 @@
       var c = this.clone();
       c.negative = 0;
       while (!c.isZero()) {
-        var r = c.modn(groupBase).toString(base);
+        var r = c.modrn(groupBase).toString(base);
         c = c.idivn(groupBase);
 
         if (!c.isZero()) {
@@ -509,13 +527,14 @@
   };
 
   BN.prototype.toJSON = function toJSON () {
-    return this.toString(16);
+    return this.toString(16, 2);
   };
 
-  BN.prototype.toBuffer = function toBuffer (endian, length) {
-    assert(typeof Buffer !== 'undefined');
-    return this.toArrayLike(Buffer, endian, length);
-  };
+  if (Buffer) {
+    BN.prototype.toBuffer = function toBuffer (endian, length) {
+      return this.toArrayLike(Buffer, endian, length);
+    };
+  }
 
   BN.prototype.toArray = function toArray (endian, length) {
     return this.toArrayLike(Array, endian, length);
@@ -527,9 +546,9 @@
     assert(byteLength <= reqLength, 'byte array longer than desired length');
     assert(reqLength > 0, 'Requested array length <= 0');
 
-    this.strip();
+    this._strip();
     var littleEndian = endian === 'le';
-    var res = new ArrayType(reqLength);
+    var res = allocate(ArrayType, reqLength);
 
     var b, i;
     var q = this.clone();
@@ -559,6 +578,13 @@
     }
 
     return res;
+  };
+
+  var allocate = function allocate (ArrayType, size) {
+    if (ArrayType.allocUnsafe) {
+      return ArrayType.allocUnsafe(size);
+    }
+    return new ArrayType(size);
   };
 
   if (Math.clz32) {
@@ -695,7 +721,7 @@
       this.words[i] = this.words[i] | num.words[i];
     }
 
-    return this.strip();
+    return this._strip();
   };
 
   BN.prototype.ior = function ior (num) {
@@ -730,7 +756,7 @@
 
     this.length = b.length;
 
-    return this.strip();
+    return this._strip();
   };
 
   BN.prototype.iand = function iand (num) {
@@ -774,7 +800,7 @@
 
     this.length = a.length;
 
-    return this.strip();
+    return this._strip();
   };
 
   BN.prototype.ixor = function ixor (num) {
@@ -818,7 +844,7 @@
     }
 
     // And remove leading zeroes
-    return this.strip();
+    return this._strip();
   };
 
   BN.prototype.notn = function notn (width) {
@@ -840,7 +866,7 @@
       this.words[off] = this.words[off] & ~(1 << wbit);
     }
 
-    return this.strip();
+    return this._strip();
   };
 
   // Add `num` to `this` in-place
@@ -981,7 +1007,7 @@
       this.negative = 1;
     }
 
-    return this.strip();
+    return this._strip();
   };
 
   // Subtract `num` from `this`
@@ -1027,7 +1053,7 @@
       out.length--;
     }
 
-    return out.strip();
+    return out._strip();
   }
 
   // TODO(indutny): it may be reasonable to omit it for users who don't need
@@ -1649,7 +1675,7 @@
       out.length--;
     }
 
-    return out.strip();
+    return out._strip();
   }
 
   function jumboMulTo (self, num, out) {
@@ -1866,7 +1892,7 @@
 
     out.negative = x.negative ^ y.negative;
     out.length = x.length + y.length;
-    return out.strip();
+    return out._strip();
   };
 
   // Multiply `this` by `num`
@@ -1889,6 +1915,9 @@
   };
 
   BN.prototype.imuln = function imuln (num) {
+    var isNegNum = num < 0;
+    if (isNegNum) num = -num;
+
     assert(typeof num === 'number');
     assert(num < 0x4000000);
 
@@ -1909,7 +1938,7 @@
       this.length++;
     }
 
-    return this;
+    return isNegNum ? this.ineg() : this;
   };
 
   BN.prototype.muln = function muln (num) {
@@ -1984,7 +2013,7 @@
       this.length += s;
     }
 
-    return this.strip();
+    return this._strip();
   };
 
   BN.prototype.ishln = function ishln (bits) {
@@ -2050,7 +2079,7 @@
       this.length = 1;
     }
 
-    return this.strip();
+    return this._strip();
   };
 
   BN.prototype.ishrn = function ishrn (bits, hint, extended) {
@@ -2115,7 +2144,7 @@
       this.words[this.length - 1] &= mask;
     }
 
-    return this.strip();
+    return this._strip();
   };
 
   // Return only lowers bits of number
@@ -2190,7 +2219,7 @@
       }
     }
 
-    return this.strip();
+    return this._strip();
   };
 
   BN.prototype.addn = function addn (num) {
@@ -2232,7 +2261,7 @@
       this.words[i + shift] = w & 0x3ffffff;
     }
 
-    if (carry === 0) return this.strip();
+    if (carry === 0) return this._strip();
 
     // Subtraction overflow
     assert(carry === -1);
@@ -2244,7 +2273,7 @@
     }
     this.negative = 1;
 
-    return this.strip();
+    return this._strip();
   };
 
   BN.prototype._wordDiv = function _wordDiv (num, mode) {
@@ -2306,9 +2335,9 @@
       }
     }
     if (q) {
-      q.strip();
+      q._strip();
     }
-    a.strip();
+    a._strip();
 
     // Denormalize
     if (mode !== 'div' && shift !== 0) {
@@ -2407,13 +2436,13 @@
       if (mode === 'mod') {
         return {
           div: null,
-          mod: new BN(this.modn(num.words[0]))
+          mod: new BN(this.modrn(num.words[0]))
         };
       }
 
       return {
         div: this.divn(num.words[0]),
-        mod: new BN(this.modn(num.words[0]))
+        mod: new BN(this.modrn(num.words[0]))
       };
     }
 
@@ -2454,7 +2483,10 @@
     return dm.div.negative !== 0 ? dm.div.isubn(1) : dm.div.iaddn(1);
   };
 
-  BN.prototype.modn = function modn (num) {
+  BN.prototype.modrn = function modrn (num) {
+    var isNegNum = num < 0;
+    if (isNegNum) num = -num;
+
     assert(num <= 0x3ffffff);
     var p = (1 << 26) % num;
 
@@ -2463,11 +2495,19 @@
       acc = (p * acc + (this.words[i] | 0)) % num;
     }
 
-    return acc;
+    return isNegNum ? -acc : acc;
+  };
+
+  // WARNING: DEPRECATED
+  BN.prototype.modn = function modn (num) {
+    return this.modrn(num);
   };
 
   // In-place division by number
   BN.prototype.idivn = function idivn (num) {
+    var isNegNum = num < 0;
+    if (isNegNum) num = -num;
+
     assert(num <= 0x3ffffff);
 
     var carry = 0;
@@ -2477,7 +2517,8 @@
       carry = w % num;
     }
 
-    return this.strip();
+    this._strip();
+    return isNegNum ? this.ineg() : this;
   };
 
   BN.prototype.divn = function divn (num) {
@@ -2729,7 +2770,7 @@
     if (this.negative !== 0 && !negative) return -1;
     if (this.negative === 0 && negative) return 1;
 
-    this.strip();
+    this._strip();
 
     var res;
     if (this.length > 1) {
@@ -2972,7 +3013,7 @@
     } else if (cmp > 0) {
       r.isub(this.p);
     } else {
-      r.strip();
+      r._strip();
     }
 
     return r;
@@ -3145,7 +3186,9 @@
 
   Red.prototype.imod = function imod (a) {
     if (this.prime) return this.prime.ireduce(a)._forceRed(this);
-    return a.umod(this.m)._forceRed(this);
+
+    a.umod(this.m)._forceRed(this)._move(a);
+    return a;
   };
 
   Red.prototype.neg = function neg (a) {

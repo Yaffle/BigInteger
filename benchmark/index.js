@@ -396,16 +396,14 @@ var generateInfoTable = function () {
   html += "</thead>";
   html += "<tbody>";
   for (var i = 0; i < libs.length; i += 1) {
-    if (libs[i].url !== "data:text/plain,wrapped_number2" && libs[i].url !== "data:text/plain,wrapped_number") {
-      html += "<tr>";
-      for (var key in object) {
-        if (Object.prototype.hasOwnProperty.call(object, key)) {
-          if (key !== "src" && key !== "source" && key !== "setup") {
-            html += key === "url" ? "<th>" : "<td>";
-            var v = libs[i][key];
-            html += escapeHTML(typeof v === "function" ? "function" : (typeof v === "boolean" ? (v ? "+" : "-") : (v == undefined ? "undefined" : v || "-")));
-            html += key === "url" ? "</th>" : "</td>";
-          }
+    html += "<tr>";
+    for (var key in object) {
+      if (Object.prototype.hasOwnProperty.call(object, key)) {
+        if (key !== "src" && key !== "source" && key !== "setup") {
+          html += key === "url" ? "<th>" : "<td>";
+          var v = libs[i][key];
+          html += escapeHTML(typeof v === "function" ? "function" : (typeof v === "boolean" ? (v ? "+" : "-") : (v == undefined ? "undefined" : v || "-")));
+          html += key === "url" ? "</th>" : "</td>";
         }
       }
     }

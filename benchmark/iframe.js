@@ -123,14 +123,10 @@ self.onmessage = function (event) {
       loadScripts("libs.js", function () {
         var special = {
           "data:text/plain,number": "",
-          "data:text/plain,bigint": "",
-          "data:text/plain,wrapped_number": "./libs/SmallInteger.js",
-          "data:text/plain,wrapped_number2": "./libs/SmallIntegerWithChecks.js"
+          "data:text/plain,bigint": ""
         };
         var notTestable = {
-          "data:text/plain,number": "",
-          "data:text/plain,wrapped_number": "./libs/SmallInteger.js",
-          "data:text/plain,wrapped_number2": "./libs/SmallIntegerWithChecks.js"
+          "data:text/plain,number": true
         };
         loadScripts(src in special ? special[src] : src, function () {
           var lib = undefined;

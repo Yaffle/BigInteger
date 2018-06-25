@@ -473,6 +473,24 @@ var wrapper = function () {
     var s = I.toString(b, 10);
     assertEquals(s, "3", "12884901888 >> 32");  // OR Throw an error (?)
   });
+  testSuite.add("-1024 >> 9007199254740991", function (I) {
+    var a = I.parseInt("-1024", 10);
+    var b = I.shiftRight(a, 9007199254740991);
+    var s = I.toString(b, 10);
+    assertEquals(s, "-1");
+  });
+  //testSuite.add("1024 >> 9007199254740991", function (I) {
+  //  var a = I.parseInt("1024", 10);
+  //  var b = I.shiftRight(a, 9007199254740991);
+  //  var s = I.toString(b, 10);
+  //  assertEquals(s, "0");
+  //});
+  //testSuite.add("0 << 9007199254740991", function (I) {
+  //  var a = I.parseInt("0", 10);
+  //  var b = I.shiftLeft(a, 9007199254740991);
+  //  var s = I.toString(b, 10);
+  //  assertEquals(s, "0");
+  //});
   testSuite.add("bitLength", function (I) {
     // ceil(log2(this < 0 ? 0 - this : this + 1))
     var a = I.parseInt("4294967295", 10);
@@ -523,6 +541,12 @@ var wrapper = function () {
     var i = I.fromNumber(9007199254740991);
     var s = I.toString(i, 10);
     assertEquals(s, "9007199254740991");
+  });
+
+  testSuite.add("fromNumber-big", function (I) {
+    var i = I.fromNumber(Number.MAX_VALUE);
+    var s = I.toString(i, 10);
+    assertEquals(s, "179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368");
   });
 
   testSuite.add("toNumber", function (I) {

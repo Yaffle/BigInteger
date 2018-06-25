@@ -271,6 +271,8 @@ var libs = [
     url: "https://github.com/node-modules/node-biginteger",
     source: "https://raw.githubusercontent.com/node-modules/node-biginteger/master/lib/BigInteger.js",
     parseInt: "BigInteger.fromString(a, b)",
+    fromNumber: "BigInteger.fromLong(a)",
+    toNumber: "a.longValue()"
   }),
   {
     url: "https://github.com/vukicevic/crunch",
@@ -305,6 +307,7 @@ var libs = [
   Object.assign({}, MikeMclBigNumber, {
     url: "https://github.com/MikeMcl/bignumber.js",
     source: "https://raw.githubusercontent.com/MikeMcl/bignumber.js/master/bignumber.js",
+    compareTo: "a.comparedTo(b)",
     setup: function () {
       //BigNumber.config({precision: 2048, rounding: 1, toExpPos: 2048});
       //BigNumber.DP = 0;
@@ -317,6 +320,7 @@ var libs = [
     url: "https://github.com/MikeMcl/big.js",
     source: "https://raw.githubusercontent.com/MikeMcl/big.js/master/big.js",
     parseInt: "(b === 10 ? new BigNumber(a, b) : new BigNumber(\"0\"))",
+    toString: "a.toFixed(0)",
     setup: function () {
       self.BigNumber = self.Big;
       //BigNumber.config({precision: 2048, rounding: 1, toExpPos: 2048});
@@ -339,10 +343,17 @@ var libs = [
     setup: function () {
       self.BigNumber = self.Decimal;
       BigNumber.config({precision: 2048, rounding: 1, toExpPos: 2048});
-      //BigNumber.DP = 0;
-      //BigNumber.RM = 0;
-      //BigNumber.E_POS = 2048;
-      //BigNumber.config({DECIMAL_PLACES: 0, ROUNDING_MODE: 1, EXPONENTIAL_AT: 2048});
+    }
+  }),
+  Object.assign({}, MikeMclBigNumber, {
+    url: "https://github.com/MikeMcl/decimal.js-light",
+    parseInt: "(b === 10 ? new BigNumber(a, b) : new BigNumber(\"0\"))",
+    source: "https://raw.githubusercontent.com/MikeMcl/decimal.js/master/decimal.js",
+    divide: "a.div(b).trunc()",
+    remainder: "a.minus(a.div(b).trunc().times(b))",
+    setup: function () {
+      self.BigNumber = self.Decimal;
+      BigNumber.set({precision: 2048, rounding: BigNumber.ROUND_DOWN, toExpPos: 2048});
     }
   }),
   Object.assign({}, JavaBigInteger, {
@@ -398,44 +409,6 @@ var libs = [
     floatingPoint: false
   },
   {
-    url: "data:text/plain,wrapped_number2",
-    source: "data:application/javascript,%3B",
-    add: "SmallInteger.add(a, b)",
-    subtract: "SmallInteger.subtract(a, b)",
-    multiply: "SmallInteger.multiply(a, b)",
-    divide: "SmallInteger.divide(a, b)",
-    remainder: "SmallInteger.remainder(a, b)",
-    negate: "SmallInteger.negate(a)",
-    compareTo: "SmallInteger.compareTo(a, b)",
-    parseInt: "SmallInteger.parseInt(a, b)",
-    toString: "a.toString(b)",
-    setup: undefined,
-    floatingPoint: false
-  },
-  {
-    url: "data:text/plain,wrapped_number",
-    source: "data:application/javascript,%3B",
-    add: "SmallInteger.add(a, b)",
-    subtract: "SmallInteger.subtract(a, b)",
-    multiply: "SmallInteger.multiply(a, b)",
-    divide: "SmallInteger.divide(a, b)",
-    remainder: "SmallInteger.remainder(a, b)",
-    negate: "SmallInteger.negate(a)",
-    compareTo: "SmallInteger.compareTo(a, b)",
-    parseInt: "SmallInteger.parseInt(a, b)",
-    toString: "a.toString(b)",
-    and: "SmallInteger.and(a, b)",
-    or: "SmallInteger.or(a, b)",
-    xor: "SmallInteger.xor(a, b)",
-    not: "SmallInteger.not(a)",
-    shiftLeft: "SmallInteger.shiftLeft(a, b)",
-    shiftRight: "SmallInteger.shiftRight(a, b)",
-    bitLength: "SmallInteger.bitLength(a)",
-    pow: "SmallInteger.pow(a, b)",
-    setup: undefined,
-    floatingPoint: false
-  },
-  {
     url: "data:text/plain,bigint", // https://tc39.github.io/proposal-bigint/
     source: "data:application/javascript,%3B",
     add: "a + b",
@@ -454,24 +427,26 @@ var libs = [
     shiftLeft: "a << BigInt(b)",
     shiftRight: "a >> BigInt(b)",
     bitLength: "",
-    pow: self.BigInt != undefined ? "a**BigInt(b)" : undefined, // "a ** b",
+    pow: typeof self !== "undefined" && self.BigInt != undefined ? "a**BigInt(b)" : undefined,
     setup: undefined,
     fromNumber: "BigInt(a)",
     toNumber: "Number(a)",
     floatingPoint: false,
     setup: function () {
-      self.BigInt.parseInt = function (string, radix) {
-        if (radix === 2) {
-          return self.BigInt("0b" + string);
-        } else if (radix === 8) {
-          return self.BigInt("0o" + string);
-        } else if (radix === 10) {
-          return self.BigInt("" + string);
-        } else if (radix === 16) {
-          return self.BigInt("0x" + string);
-        }
-        throw new RangeError();
-      };
+      if (self.BigInt != undefined) {
+        self.BigInt.parseInt = function (string, radix) {
+          if (radix === 2) {
+            return self.BigInt("0b" + string);
+          } else if (radix === 8) {
+            return self.BigInt("0o" + string);
+          } else if (radix === 10) {
+            return self.BigInt("" + string);
+          } else if (radix === 16) {
+            return self.BigInt("0x" + string);
+          }
+          throw new RangeError();
+        };
+      }
     }
   },
   {

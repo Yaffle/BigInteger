@@ -226,7 +226,7 @@
     return a.sign === 1 ? 0 - c : c; // positive zero will be returned for c === 0
   };
 
-  BigIntegerInternal.addAndSubtract = function (a, b, isSubtraction) {
+  var addAndSubtract = function (a, b, isSubtraction) {
     var z = compareMagnitude(a, b);
     var resultSign = z < 0 ? (isSubtraction !== 0 ? 1 - b.sign : b.sign) : a.sign;
     var min = z < 0 ? a : b;
@@ -275,11 +275,11 @@
   };
 
   BigIntegerInternal.add = function (a, b) {
-    return BigIntegerInternal.addAndSubtract(a, b, 0);
+    return addAndSubtract(a, b, 0);
   };
 
   BigIntegerInternal.subtract = function (a, b) {
-    return BigIntegerInternal.addAndSubtract(a, b, 1);
+    return addAndSubtract(a, b, 1);
   };
 
   BigIntegerInternal.multiply = function (a, b) {
@@ -301,23 +301,25 @@
     }
     var i = -1;
     while (++i < b.length) {
-      var c = 0;
-      var j = -1;
-      while (++j < a.length) {
-        var carry = 0;
-        c += result[j + i] - BASE;
-        if (c >= 0) {
-          carry = 1;
-        } else {
-          c += BASE;
+      if (b.magnitude[i] !== 0) { // to optimize multiplications by a power of BASE
+        var c = 0;
+        var j = -1;
+        while (++j < a.length) {
+          var carry = 0;
+          c += result[j + i] - BASE;
+          if (c >= 0) {
+            carry = 1;
+          } else {
+            c += BASE;
+          }
+          var tmp = performMultiplication(c, a.magnitude[j], b.magnitude[i]);
+          var lo = tmp.lo;
+          var hi = tmp.hi;
+          result[j + i] = lo;
+          c = hi + carry;
         }
-        var tmp = performMultiplication(c, a.magnitude[j], b.magnitude[i]);
-        var lo = tmp.lo;
-        var hi = tmp.hi;
-        result[j + i] = lo;
-        c = hi + carry;
+        result[a.length + i] = c;
       }
-      result[a.length + i] = c;
     }
     while (resultLength > 0 && result[resultLength - 1] === 0) {
       resultLength -= 1;
@@ -325,7 +327,7 @@
     return createBigInteger(resultSign, result, resultLength);
   };
 
-  BigIntegerInternal.divideAndRemainder = function (a, b, isDivision) {
+  var divideAndRemainder = function (a, b, isDivision) {
     if (b.length === 0) {
       throw new RangeError();
     }
@@ -387,6 +389,12 @@
     var quotient = undefined;
     var quotientLength = 0;
 
+    // to optimize divisions by a power of BASE
+    var lastNonZero = 0;
+    while (divisor[divisorOffset + lastNonZero] === 0) {
+      lastNonZero += 1;
+    }
+
     var i = shift;
     while (--i >= 0) {
       var t = b.length + i;
@@ -400,15 +408,13 @@
 
       var ax = 0;
       var bx = 0;
-      var j = i - 1;
+      var j = i - 1 + lastNonZero;
       while (++j <= t) {
-        var rj = remainder[j];
         var tmp3 = performMultiplication(bx, q, divisor[divisorOffset + j - i]);
         var lo3 = tmp3.lo;
         var hi3 = tmp3.hi;
-        remainder[j] = lo3;
         bx = hi3;
-        ax += rj - remainder[j];
+        ax += remainder[j] - lo3;
         if (ax < 0) {
           remainder[j] = BASE + ax;
           ax = -1;
@@ -420,7 +426,7 @@
       while (ax !== 0) {
         q -= 1;
         var c = 0;
-        var k = i - 1;
+        var k = i - 1 + lastNonZero;
         while (++k <= t) {
           c += remainder[k] - BASE + divisor[divisorOffset + k - i];
           if (c < 0) {
@@ -480,11 +486,11 @@
   };
 
   BigIntegerInternal.divide = function (a, b) {
-    return BigIntegerInternal.divideAndRemainder(a, b, 1);
+    return divideAndRemainder(a, b, 1);
   };
 
   BigIntegerInternal.remainder = function (a, b) {
-    return BigIntegerInternal.divideAndRemainder(a, b, 0);
+    return divideAndRemainder(a, b, 0);
   };
 
   BigIntegerInternal.negate = function (a) {
@@ -558,13 +564,12 @@
   };
 
   BigIntegerInternal.fromNumber = function (x) {
+    if (x >= BASE || 0 - x >= BASE) {
+      throw new RangeError();
+    }
     var a = createArray(1);
     a[0] = x < 0 ? 0 - x : 0 + x;
     return createBigInteger(x < 0 ? 1 : 0, a, x === 0 ? 0 : 1);
-  };
-
-  BigIntegerInternal.isSafeInteger = function (a) {
-    return a.length < 2;
   };
 
   BigIntegerInternal.toNumber = function (a) {
@@ -584,54 +589,58 @@
     };
   };
 
+  var Internal = global.BigIntWrapper != undefined ? global.BigIntWrapper : BigIntegerInternal;
+
   var parseInt = n(function (string, radix) {
-    return BigIntegerInternal.parseInt(string, radix);
+    return Internal.parseInt(string, radix);
   });
   var valueOf = function (x) {
     if (typeof x === "number") {
-      return BigIntegerInternal.fromNumber(x);
+      return Internal.fromNumber(x);
     }
     return x;
   };
   var compareTo = n(function (x, y) {
     var a = valueOf(x);
     var b = valueOf(y);
-    return BigIntegerInternal.compareTo(a, b);
+    return Internal.compareTo(a, b);
   });
+  var SA = Internal.fromNumber(-9007199254740991);
+  var SB = Internal.fromNumber(+9007199254740991);
   var toResult = function (x) {
-    if (BigIntegerInternal.isSafeInteger(x)) {
-      return BigIntegerInternal.toNumber(x);
+    if (Internal.compareTo(x, SA) >= 0 && Internal.compareTo(x, SB) <= 0) {
+      return Internal.toNumber(x);
     }
     return x;
   };
   var add = n(function (x, y) {
     var a = valueOf(x);
     var b = valueOf(y);
-    return toResult(BigIntegerInternal.add(a, b));
+    return toResult(Internal.add(a, b));
   });
   var subtract = n(function (x, y) {
     var a = valueOf(x);
     var b = valueOf(y);
-    return toResult(BigIntegerInternal.subtract(a, b));
+    return toResult(Internal.subtract(a, b));
   });
   var multiply = n(function (x, y) {
     var a = valueOf(x);
     var b = valueOf(y);
-    return toResult(BigIntegerInternal.multiply(a, b));
+    return toResult(Internal.multiply(a, b));
   });
   var divide = n(function (x, y) {
     var a = valueOf(x);
     var b = valueOf(y);
-    return toResult(BigIntegerInternal.divide(a, b));
+    return toResult(Internal.divide(a, b));
   });
   var remainder = n(function (x, y) {
     var a = valueOf(x);
     var b = valueOf(y);
-    return toResult(BigIntegerInternal.remainder(a, b));
+    return toResult(Internal.remainder(a, b));
   });
   var negate = n(function (x) {
     var a = valueOf(x);
-    return toResult(BigIntegerInternal.negate(a));
+    return toResult(Internal.negate(a));
   });
 
   function BigInteger() {
@@ -699,6 +708,12 @@
       return 0 - x;
     }
     return negate(x);
+  };
+  BigInteger.fromNumber = function (n) {
+    return n;
+  };
+  BigInteger.toNumber = function (x) {
+    return x;
   };
 
   global.BigInteger = BigInteger;

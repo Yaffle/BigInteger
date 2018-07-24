@@ -10,11 +10,11 @@ To use it from a web browser:
 ```
 To use it from the node.js:
 ```
-npm install js-big-integer
+npm install Yaffle/BigInteger
 ```
 Then:
 ```
-var BigInteger = require("BigInteger").BigInteger;
+var BigInteger = require("js-big-integer").BigInteger;
 ```
 
 The API is terrible, but small integers are stored as primitive numbers, so operations on small integers are faster.

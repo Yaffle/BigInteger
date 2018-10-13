@@ -295,10 +295,6 @@
     }
     var resultLength = a.length + b.length;
     var result = createArray(resultLength);
-    var k = -1;
-    while (++k < a.length) {
-      result[k] = 0;
-    }
     var i = -1;
     while (++i < b.length) {
       if (b.magnitude[i] !== 0) { // to optimize multiplications by a power of BASE
@@ -350,12 +346,10 @@
     while (++n < a.length) {
       remainder[n] = a.magnitude[n];
     }
-    remainder[a.length] = 0;
     var m = -1;
     while (++m < b.length) {
       divisor[divisorOffset + m] = b.magnitude[m];
     }
-    divisor[divisorOffset + b.length] = 0;
 
     var top = divisor[divisorOffset + b.length - 1];
 
@@ -579,7 +573,14 @@
     if (a.length === 1) {
       return a.sign === 1 ? 0 - a.magnitude[0] : a.magnitude[0];
     }
-    throw new RangeError();
+    //?
+    var x = 0;
+    var i = a.length;
+    while (--i >= 0) {
+      x *= BASE;
+      x += a.magnitude[i];
+    }
+    return a.sign === 1 ? 0 - x : x;
   };
 
   // noinline
@@ -601,15 +602,18 @@
     return x;
   };
   var compareTo = n(function (x, y) {
-    var a = valueOf(x);
-    var b = valueOf(y);
-    return Internal.compareTo(a, b);
+    if (typeof x === "number") {
+      return x < Internal.toNumber(y) ? -1 : +1;
+    }
+    if (typeof y === "number") {
+      return Internal.toNumber(x) < y ? -1 : +1;
+    }
+    return Internal.compareTo(x, y);
   });
-  var SA = Internal.fromNumber(-9007199254740991);
-  var SB = Internal.fromNumber(+9007199254740991);
   var toResult = function (x) {
-    if (Internal.compareTo(x, SA) >= 0 && Internal.compareTo(x, SB) <= 0) {
-      return Internal.toNumber(x);
+    var value = Internal.toNumber(x);
+    if (value >= -9007199254740991 && value <= +9007199254740991) {
+      return value;
     }
     return x;
   };
@@ -624,6 +628,10 @@
     return toResult(Internal.subtract(a, b));
   });
   var multiply = n(function (x, y) {
+    if (x === y) {
+      var c = valueOf(x);
+      return Internal.multiply(c, c);
+    }
     var a = valueOf(x);
     var b = valueOf(y);
     return toResult(Internal.multiply(a, b));
@@ -640,7 +648,7 @@
   });
   var negate = n(function (x) {
     var a = valueOf(x);
-    return toResult(Internal.negate(a));
+    return Internal.negate(a);
   });
 
   function BigInteger() {
@@ -713,7 +721,10 @@
     return n;
   };
   BigInteger.toNumber = function (x) {
-    return x;
+    if (typeof x === "number") {
+      return x;
+    }
+    return Internal.toNumber(x);
   };
 
   global.BigInteger = BigInteger;

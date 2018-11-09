@@ -275,6 +275,39 @@ var libs = [
     toNumber: "a.longValue()"
   }),
   {
+    url: "https://github.com/GoogleChromeLabs/jsbi",
+    source: "https://raw.githubusercontent.com/GoogleChromeLabs/jsbi/master/jsbi.mjs",
+    add: "a.add(b)",
+    subtract: "a.subtract(b)",
+    multiply: "a.multiply(b)",
+    divide: "a.divide(b)",
+    remainder: "a.remainder(b)",
+    negate: "a.unaryMinus()",
+    compareTo: "(a.lessThan(b) ? -1 : (b.lessThan(a) ? +1 : 0))",
+    parseInt: "JSBI.parseInt(a, b)",
+    toString: "a.toString(b)",
+    and: "a.bitwiseAnd(b)",
+    or: "a.bitwiseOr(b)",
+    xor: "a.bitwiseXor(b)",
+    not: "a.bitwiseNot()",
+    shiftLeft: "a.leftShift(JSBI.BigInt(b))",
+    shiftRight: "a.signedRightShift(JSBI.BigInt(b))",
+    bitLength: "",
+    pow: "a.exponentiate(JSBI.BigInt(b))",
+    setup: function () {
+      JSBI.parseInt = function (string, radix) {
+        var prefix = radix === 10 ? "" : (radix === 2 ? "0b" : (radix === 8 ? "0o" : (radix === 16 ? "0x" : "")));
+        return JSBI.BigInt(prefix === "" ? string : prefix + string);
+      };
+    },
+    fromNumber: "JSBI.BigInt(a)",
+    toNumber: "a.toNumber()",
+    mod: "",
+    modPow: "",
+    modInverse: "",
+    floatingPoint: false
+  },
+  {
     url: "https://github.com/vukicevic/crunch",
     source: "https://raw.githubusercontent.com/vukicevic/crunch/master/crunch.js",
     add: "crunch.add(a, b)",

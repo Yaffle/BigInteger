@@ -65,6 +65,7 @@ Other pure JavaScript implementations:
  14. https://github.com/dtrebbien/BigDecimal.js
  15. https://github.com/iriscouch/bigdecimal.js
  16. http://ofmind.net/doc/hapint
+ 17. https://github.com/GoogleChromeLabs/jsbi
 
 Benchmark:
   http://yaffle.github.io/BigInteger/benchmark/

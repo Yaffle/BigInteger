@@ -49,23 +49,23 @@ console.log(factorial(30).toString(10));
 ```
 
 Other pure JavaScript implementations:
- 1. http://www.leemon.com/crypto/BigInt.html
- 2. https://github.com/jtobey/javascript-bignum
- 3. https://github.com/node-modules/node-biginteger
- 4. https://github.com/vukicevic/crunch
- 5. https://github.com/MikeMcl/bignumber.js
- 6. https://github.com/peterolson/BigInteger.js
- 7. https://github.com/silentmatt/javascript-biginteger
- 8. http://www-cs-students.stanford.edu/~tjw/jsbn/
- 9. https://github.com/Yaffle/BigInteger
- 10. https://github.com/peteroupc/BigNumber
- 11. https://github.com/indutny/bn.js
- 12. https://github.com/dankogai/js-math-bigint
- 13. https://github.com/defunctzombie/int
- 14. https://github.com/dtrebbien/BigDecimal.js
- 15. https://github.com/iriscouch/bigdecimal.js
- 16. http://ofmind.net/doc/hapint
- 17. https://github.com/GoogleChromeLabs/jsbi
+ 1. <http://www.leemon.com/crypto/BigInt.html>
+ 2. <https://github.com/jtobey/javascript-bignum>
+ 3. <https://github.com/node-modules/node-biginteger>
+ 4. <https://github.com/vukicevic/crunch>
+ 5. <https://github.com/MikeMcl/bignumber.js>
+ 6. <https://github.com/peterolson/BigInteger.js>
+ 7. <https://github.com/silentmatt/javascript-biginteger>
+ 8. <http://www-cs-students.stanford.edu/~tjw/jsbn/>
+ 9. <https://github.com/Yaffle/BigInteger>
+ 10. <https://github.com/peteroupc/BigNumber>
+ 11. <https://github.com/indutny/bn.js>
+ 12. <https://github.com/dankogai/js-math-bigint>
+ 13. <https://github.com/defunctzombie/int>
+ 14. <https://github.com/dtrebbien/BigDecimal.js>
+ 15. <https://github.com/iriscouch/bigdecimal.js>
+ 16. <http://ofmind.net/doc/hapint>
+ 17. <https://github.com/GoogleChromeLabs/jsbi>
 
 Benchmark:
-  http://yaffle.github.io/BigInteger/benchmark/
+  <http://yaffle.github.io/BigInteger/benchmark/>

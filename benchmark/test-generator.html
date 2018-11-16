@@ -1,0 +1,109 @@
+<script src="libs/http___www_cs_students_stanford_edu__tjw_jsbn_.js"></script>
+<script>
+
+function LiteralNode(value, radix) {
+  this.value = value;
+  this.radix = radix;
+}
+LiteralNode.prototype.toString = function () {
+  var value = this.value;
+  var radix = this.radix;
+  var prefix = "";
+  if (radix === 10) {
+    prefix = "";
+  } else if (radix === 16) {
+    prefix = "0x";
+  } else {
+    throw new Error();
+  }
+  return prefix + value;
+};
+LiteralNode.prototype.evaluate = function () {
+  return new BigInteger(this.value, this.radix);
+};
+function BinaryOperatorNode(operator, a, b) {
+  this.operator = operator;
+  this.a = a;
+  this.b = b;
+}
+BinaryOperatorNode.prototype.toString = function () {
+  function precedence(operator) {
+    switch (operator) {
+      case "<=>": return 0;
+      case "+": return 1;
+      case "-": return 1;
+      case "*": return 2;
+      case "/": return 2;
+      case "%": return 2;
+    }
+    throw new Error();
+  }
+  function fence(e, operator, isStart) {
+    return precedence(operator) > (e instanceof LiteralNode ? 42 : precedence(e.operator)) ? "(" + e.toString() + ")" : e.toString();
+  }
+  return fence(this.a, this.operator, false) + this.operator + fence(this.b, this.operator, true);
+};
+BinaryOperatorNode.prototype.evaluate = function () {
+  var operator = this.operator;
+  var a = this.a.evaluate();
+  var b = this.b.evaluate();
+  if (operator === "+") {
+    return a.add(b);
+  }
+  if (operator === "-") {
+    return a.subtract(b);
+  }
+  if (operator === "*") {
+    return a.multiply(b);
+  }
+  if (operator === "/") {
+    return a.divide(b);
+  }
+  if (operator === "%") {
+    return a.remainder(b);
+  }
+  if (operator === "<=>") {
+    return Math.min(Math.max(a.compareTo(b), -1), +1);
+  }
+  throw new Error();
+};
+
+var operators = ["+", "-", "*", "/", "%", "<=>"];
+
+function generateSomeTests() {
+  var small = 9;
+  var values = [
+    "0",
+    "1",
+    small.toString(),
+    "67108864", //2**26
+    "9007199254740992", //2**53
+    (bases[1] - small).toString(),
+    "9999999999999998",
+    "9999999999999999",
+    "10000000000000000"
+  ];
+  var newValues = [];
+  for (var k = 0; k < values.length; k += 1) {
+    newValues.push(values[k]);
+    newValues.push("-" + values[k]);
+  }
+  var result = [];
+  for (var i = 0; i < operators.length; i += 1) {
+    for (var a = 0; a < newValues.length; a += 1) {
+      for (var b = 0; b < newValues.length; b += 1) {
+        var s = "?";
+        if (operators[i] !== "/" && operators[i] !== "%" || newValues[b] !== "0" && newValues[b] !== "-0") {
+          var input = new BinaryOperatorNode(operators[i], new LiteralNode(newValues[a], 10), new LiteralNode(newValues[b], 10));
+          s = input.toString() + "=" + input.evaluate().toString();
+        }
+        result.push(s);
+      }
+    }
+  }
+  return result;
+}
+
+console.log(JSON.stringify(generateSomeTests(), null, 2));
+
+</script>

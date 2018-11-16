@@ -137,6 +137,7 @@ self.onmessage = function (event) {
           }
           I = lib;
           url = lib.url;//!
+          loadScripts("generated-tests.js", function () {
           loadScripts("tests.js", function () {
             if (I.setup != undefined) {
               I.setup();
@@ -156,6 +157,7 @@ self.onmessage = function (event) {
                 });
               }
             }, 64);
+          });
           });
         });
       });

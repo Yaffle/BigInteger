@@ -654,11 +654,9 @@
   function BigInteger() {
   }
   BigInteger.parseInt = function (string, radix) {
-    if (typeof string === "string" && typeof radix === "number") {
-      var value = 0 + Number.parseInt(string, radix);
-      if (value >= -9007199254740991 && value <= +9007199254740991) {
-        return value;
-      }
+    var value = 0 + Number.parseInt(string, radix == undefined ? 10 : radix);
+    if (value >= -9007199254740991 && value <= +9007199254740991) {
+      return value;
     }
     return parseInt(string, radix);
   };

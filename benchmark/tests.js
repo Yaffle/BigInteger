@@ -866,39 +866,39 @@ var wrapper = function () {
               match = operatorRegExp.exec(input.slice(position));
               if (match != undefined) {
                 var tmp = undefined;
-                if (match[0] === "+" && p < 1) {
+                if (match[0] === "+" && p < 2) {
                   position += match[0].length;
-                  tmp = evaluate(input, position, 1);
+                  tmp = evaluate(input, position, 2);
                   position = tmp[0];
                   result = I.add(result, tmp[1]);
-                } else if (match[0] === "-" && p < 1) {
+                } else if (match[0] === "-" && p < 2) {
+                  position += match[0].length;
+                  tmp = evaluate(input, position, 2);
+                  position = tmp[0];
+                  result = I.subtract(result, tmp[1]);
+                } else if (match[0] === "*" && p < 3) {
+                  position += match[0].length;
+                  tmp = evaluate(input, position, 3);
+                  position = tmp[0];
+                  result = I.multiply(result, tmp[1]);
+                } else if (match[0] === "/" && p < 3) {
+                  position += match[0].length;
+                  tmp = evaluate(input, position, 3);
+                  position = tmp[0];
+                  result = divideInternal(result, tmp[1]);
+                } else if (match[0] === "%" && p < 3) {
+                  position += match[0].length;
+                  tmp = evaluate(input, position, 3);
+                  position = tmp[0];
+                  result = remainderInternal(result, tmp[1]);
+                } else if (match[0] === "<=>" && p < 1) {
                   position += match[0].length;
                   tmp = evaluate(input, position, 1);
                   position = tmp[0];
-                  result = I.subtract(result, tmp[1]);
-                } else if (match[0] === "*" && p < 2) {
-                  position += match[0].length;
-                  tmp = evaluate(input, position, 2);
-                  position = tmp[0];
-                  result = I.multiply(result, tmp[1]);
-                } else if (match[0] === "/" && p < 2) {
-                  position += match[0].length;
-                  tmp = evaluate(input, position, 2);
-                  position = tmp[0];
-                  result = divideInternal(result, tmp[1]);
-                } else if (match[0] === "%" && p < 2) {
-                  position += match[0].length;
-                  tmp = evaluate(input, position, 2);
-                  position = tmp[0];
-                  result = remainderInternal(result, tmp[1]);
-                } else if (match[0] === "<=>" && p < 2) {
-                  position += match[0].length;
-                  tmp = evaluate(input, position, 2);
-                  position = tmp[0];
                   result = I.compareTo(result, tmp[1]);
-                } else if (match[0] === "**" && p < 2) {
+                } else if (match[0] === "**" && p < 3) {
                   position += match[0].length;
-                  tmp = evaluate(input, position, 2);
+                  tmp = evaluate(input, position, 3);
                   position = tmp[0];
                   result = pow(result, Number.parseInt(I.toString(tmp[1], 10)), I.parseInt("1", 10));
                 } else if (match[0] === "!") {
@@ -914,7 +914,7 @@ var wrapper = function () {
               match = /^\-/.exec(input.slice(position));
               if (match != undefined) {
                 position += match[0].length;
-                var tmp = evaluate(input, position, 2);
+                var tmp = evaluate(input, position, 3);
                 position = tmp[0];
                 var MINUS_ONE = I.parseInt("-1", 10);
                 result = I.multiply(MINUS_ONE, tmp[1]);

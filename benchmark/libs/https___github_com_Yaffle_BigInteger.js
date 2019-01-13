@@ -40,22 +40,6 @@
     return x;
   };
 
-  // count >= 1
-  var pow = function (x, count) {
-    var accumulator = 1;
-    var v = x;
-    var c = count;
-    while (c > 1) {
-      var q = Math.floor(c / 2);
-      if (q * 2 !== c) {
-        accumulator *= v;
-      }
-      v *= v;
-      c = q;
-    }
-    return accumulator * v;
-  };
-
   var epsilon = 2 / (9007199254740991 + 1);
   while (1 + epsilon / 2 !== 1) {
     epsilon /= 2;
@@ -168,12 +152,7 @@
     if (length === 0) {
       throw new RangeError();
     }
-    if (pow(radix, length) <= BASE) {
-      var value = parseInteger(s, from, from + length, radix);
-      var a = createArray(1);
-      a[0] = value;
-      return createBigInteger(value === 0 ? 0 : sign, a, value === 0 ? 0 : 1);
-    }
+
     var groupLength = 0;
     var groupRadix = 1;
     var limit = fastTrunc(BASE / radix);
@@ -654,11 +633,9 @@
   function BigInteger() {
   }
   BigInteger.parseInt = function (string, radix) {
-    if (typeof string === "string" && typeof radix === "number") {
-      var value = 0 + Number.parseInt(string, radix);
-      if (value >= -9007199254740991 && value <= +9007199254740991) {
-        return value;
-      }
+    var value = 0 + Number.parseInt(string, radix == undefined ? 10 : radix);
+    if (value >= -9007199254740991 && value <= +9007199254740991) {
+      return value;
     }
     return parseInt(string, radix);
   };

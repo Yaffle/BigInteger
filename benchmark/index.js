@@ -32,43 +32,45 @@ self.onmessage = function (e) {
 
   var data = JSON.parse(e.data);
   if (data.name === "test") {
-    var table = document.querySelector("table.tests");
-    var rows = table.rows;
-    var row = undefined;
-    var testRow = undefined;
-    var i = -1;
-    i += 1;
-    while (++i < rows.length) {
-      var a = rows[i].cells[0];
-      if (a.getAttribute("data.message") === data.message) {
-        testRow = rows[i];
-      }
-    }
-    if (testRow == undefined) {
-      testRow = table.insertRow(-1);
-      var c = testRow.insertCell(-1);
-      c.setAttribute("data.message", data.message);
-      c.innerHTML = data.message;
-      for (var i = 1; i < table.rows[0].cells.length; i += 1) {
-        testRow.insertCell(-1);
-      }
-    }
-    var row = rows[0];
-    var cellIndex = 0;
-    while (cellIndex < row.cells.length && row.cells[cellIndex].getAttribute("data-url") !== data.url) {
-      cellIndex += 1;
-    }
-    if (cellIndex === row.cells.length) {
-      for (var i = 0; i < rows.length; i += 1) {
-        rows[i].insertCell(cellIndex);
-      }
-      row.cells[cellIndex].setAttribute("data-url", data.url);
-      row.cells[cellIndex].innerHTML = data.url;
-    }
-    testRow.cells[cellIndex].innerHTML = data.result === "" ? "OK" : data.result;
     if (data.result !== "") {
-      if (testRow.classList != undefined) {
-        testRow.classList.add("y");
+      var table = document.querySelector("table.tests");
+      var rows = table.rows;
+      var row = undefined;
+      var testRow = undefined;
+      var i = -1;
+      i += 1;
+      while (++i < rows.length) {
+        var a = rows[i].cells[0];
+        if (a.getAttribute("data.message") === data.message) {
+          testRow = rows[i];
+        }
+      }
+      if (testRow == undefined) {
+        testRow = table.insertRow(-1);
+        var c = testRow.insertCell(-1);
+        c.setAttribute("data.message", data.message);
+        c.innerHTML = data.message;
+        for (var i = 1; i < table.rows[0].cells.length; i += 1) {
+          testRow.insertCell(-1);
+        }
+      }
+      var row = rows[0];
+      var cellIndex = 0;
+      while (cellIndex < row.cells.length && row.cells[cellIndex].getAttribute("data-url") !== data.url) {
+        cellIndex += 1;
+      }
+      if (cellIndex === row.cells.length) {
+        for (var i = 0; i < rows.length; i += 1) {
+          rows[i].insertCell(cellIndex);
+        }
+        row.cells[cellIndex].setAttribute("data-url", data.url);
+        row.cells[cellIndex].innerHTML = data.url;
+      }
+      testRow.cells[cellIndex].innerHTML = data.result === "" ? "OK" : data.result;
+      if (data.result !== "") {
+        if (testRow.classList != undefined) {
+          testRow.classList.add("y");
+        }
       }
     }
   } else if (data.name !== "complete") {

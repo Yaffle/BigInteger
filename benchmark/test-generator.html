@@ -1,25 +1,14 @@
 <script src="libs/http___www_cs_students_stanford_edu__tjw_jsbn_.js"></script>
 <script>
 
-function LiteralNode(value, radix) {
+function LiteralNode(value) {
   this.value = value;
-  this.radix = radix;
 }
 LiteralNode.prototype.toString = function () {
-  var value = this.value;
-  var radix = this.radix;
-  var prefix = "";
-  if (radix === 10) {
-    prefix = "";
-  } else if (radix === 16) {
-    prefix = "0x";
-  } else {
-    throw new Error();
-  }
-  return prefix + value;
+  return this.value;
 };
 LiteralNode.prototype.evaluate = function () {
-  return new BigInteger(this.value, this.radix);
+  return new BigInteger(this.value, 10);
 };
 function BinaryOperatorNode(operator, a, b) {
   this.operator = operator;
@@ -39,14 +28,23 @@ BinaryOperatorNode.prototype.toString = function () {
     throw new Error();
   }
   function fence(e, operator, isStart) {
-    return precedence(operator) > (e instanceof LiteralNode ? 42 : precedence(e.operator)) ? "(" + e.toString() + ")" : e.toString();
+    if (isStart) {
+      return precedence(operator) > (e instanceof LiteralNode ? 42 : precedence(e.operator)) ? "(" + e.toString() + ")" : e.toString();
+    }
+    return precedence(operator) >= (e instanceof LiteralNode ? 42 : precedence(e.operator)) ? "(" + e.toString() + ")" : e.toString();
   }
-  return fence(this.a, this.operator, false) + this.operator + fence(this.b, this.operator, true);
+  return fence(this.a, this.operator, true) + this.operator + fence(this.b, this.operator, false);
 };
 BinaryOperatorNode.prototype.evaluate = function () {
   var operator = this.operator;
   var a = this.a.evaluate();
   var b = this.b.evaluate();
+  if (a == null || b == null) {
+    return null;
+  }
+  if (typeof a === "number" || typeof b === "number") {
+    return null;
+  }
   if (operator === "+") {
     return a.add(b);
   }
@@ -57,9 +55,15 @@ BinaryOperatorNode.prototype.evaluate = function () {
     return a.multiply(b);
   }
   if (operator === "/") {
+    if (b.compareTo(BigInteger.ZERO) === 0) {
+      return null;
+    }
     return a.divide(b);
   }
   if (operator === "%") {
+    if (b.compareTo(BigInteger.ZERO) === 0) {
+      return null;
+    }
     return a.remainder(b);
   }
   if (operator === "<=>") {
@@ -70,35 +74,43 @@ BinaryOperatorNode.prototype.evaluate = function () {
 
 var operators = ["+", "-", "*", "/", "%", "<=>"];
 
-function generateSomeTests() {
-  var small = 9;
+function* generateNode(operatorsCount, possibleOperators, possibleValues) {
+  if (operatorsCount === 0) {
+    for (var value of possibleValues) {
+      yield new LiteralNode(value);
+    }
+  } else {
+    for (var i = 0; i < operatorsCount; i += 1) {
+      for (var a of generateNode(i, possibleOperators, possibleValues)) {
+        for (var b of generateNode(operatorsCount - 1 - i, possibleOperators, possibleValues)) {
+          for (var operator of possibleOperators) {
+            yield new BinaryOperatorNode(operator, a, b);
+          }
+        }
+      }
+    }
+  }
+};
+
+function generateSomeTests() { 
   var values = [
     "0",
     "1",
-    small.toString(),
+    "2",
+    "3",
+    "9",
     "67108864", //2**26
     "9007199254740992", //2**53
-    (bases[1] - small).toString(),
-    "9999999999999998",
-    "9999999999999999",
-    "10000000000000000"
+    "65536",
+    "4294967296",
+    "18446744073709551616",
+    "10000000"
   ];
-  var newValues = [];
-  for (var k = 0; k < values.length; k += 1) {
-    newValues.push(values[k]);
-    newValues.push("-" + values[k]);
-  }
   var result = [];
-  for (var i = 0; i < operators.length; i += 1) {
-    for (var a = 0; a < newValues.length; a += 1) {
-      for (var b = 0; b < newValues.length; b += 1) {
-        var s = "?";
-        if (operators[i] !== "/" && operators[i] !== "%" || newValues[b] !== "0" && newValues[b] !== "-0") {
-          var input = new BinaryOperatorNode(operators[i], new LiteralNode(newValues[a], 10), new LiteralNode(newValues[b], 10));
-          s = input.toString() + "=" + input.evaluate().toString();
-        }
-        result.push(s);
-      }
+  for (var node of generateNode(2, operators, values)) {
+    var x = node.evaluate();
+    if (x != null) {
+      result.push(node.toString() + "=" + x.toString());
     }
   }
   return result;

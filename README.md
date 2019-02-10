@@ -18,28 +18,32 @@ var BigInteger = require("js-big-integer").BigInteger;
 ```
 
 The API is terrible, but small integers are stored as primitive numbers, so operations on small integers are faster.
+The API was updated to match the API provided by https://github.com/GoogleChromeLabs/jsbi
 
-  `BigInteger`                        | `Number`                         | `BigInt` (https://github.com/tc39/proposal-bigint)
---------------------------------------|----------------------------------|----------------------------------------------------
- `BigInteger.parseInt(string, radix)` | `Number.parseInt(string, radix)` | `BigInt(radix === 16 ? "0x" + string : string)`
- `BigInteger.compareTo(a, b)`         | `Math.sign(a - b)`               | `a < b ? -1 : (b < a ? +1 : 0)`
- `BigInteger.negate(a)`               | `0 - a`                          | `-a`
- `BigInteger.add(a, b)`               | `a + b`                          | `a + b`
- `BigInteger.subtract(a, b)`          | `a - b`                          | `a - b`
- `BigInteger.multiply(a, b)`          | `0 + a * b`                      | `a * b`
- `BigInteger.divide(a, b)`            | `0 + Math.trunc(a / b)`          | `a / b`
- `BigInteger.remainder(a, b)`         | `0 + a % b`                      | `a % b`
- `a.toString(radix)`                  | `a.toString(radix)`              | `a.toString(radix)`
+Operation              | `BigInteger`                         | `Number`                         | `BigInt` (https://github.com/tc39/proposal-bigint)
+-----------------------|--------------------------------------|----------------------------------|---------------------------------------------------
+Conversion from String | `BigInteger.BigInt(string)`          | `Number(string)`                 | `BigInt(string)`
+Conversion from Number | `BigInteger.BigInt(number)`          | N/A                              | `BigInt(number)`
+Conversion to String   | `a.toString(radix)`                  | `a.toString(radix)`              | `a.toString(radix)`
+Converstion to Number  | `a.toNumber()`                       | N/A                              | `Number(bigint)`
+Addition               | `BigInteger.add(a, b)`               | `a + b`                          | `a + b`
+Subtraction            | `BigInteger.subtract(a, b)`          | `a - b`                          | `a - b`
+Multiplication         | `BigInteger.multiply(a, b)`          | `0 + a * b`                      | `a * b`
+Division               | `BigInteger.divide(a, b)`            | `0 + Math.trunc(a / b)`          | `a / b`
+Remainder              | `BigInteger.remainder(a, b)`         | `0 + a % b`                      | `a % b`
+Exponentiatio          | `BigInteger.exponentiate(a, b)`      | `0 + a**b`                       | `a**b`
+Negation               | `BigInteger.unaryMinus(a)`           | `0 - a`                          | `-a`
+Comparison             | `BigInteger.lessThan(a, b)`          | `a < b`                          | `a < b`
 
 Example
 =======
 ```javascript
 
 var factorial = function (n) {
-  var result = BigInteger.parseInt("1", 10);
+  var result = BigInteger.BigInt(1);
   var i = 0;
   while (++i <= n) {
-    result = BigInteger.multiply(result, BigInteger.parseInt(i.toString(), 10));
+    result = BigInteger.multiply(result, BigInteger.BigInt(i));
   }
   return result;
 };

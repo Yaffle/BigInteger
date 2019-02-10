@@ -421,8 +421,8 @@ var libs = [
     multiply: "BigInteger.multiply(a, b)",
     divide: "BigInteger.divide(a, b)",
     remainder: "BigInteger.remainder(a, b)",
-    negate: "BigInteger.negate(a)",
-    compareTo: "BigInteger.compareTo(a, b)",
+    negate: "BigInteger.unaryMinus(a)",
+    compareTo: "(BigInteger.lessThan(a, b) ? -1 : (BigInteger.lessThan(b, a) ? +1 : 0))",
     parseInt: "BigInteger.parseInt(a, b)",
     toString: "a.toString(b)",
     and: "",
@@ -432,13 +432,18 @@ var libs = [
     shiftLeft: "",
     shiftRight: "",
     bitLength: "",
-    pow: "",
-    fromNumber: "BigInteger.fromNumber(a)",
+    pow: "BigInteger.exponentiate(a, BigInteger.BigInt(b))",
+    fromNumber: "BigInteger.BigInt(a)",
     toNumber: "BigInteger.toNumber(a)",
     mod: "",
     modInverse: "",
     modPow: "",
-    setup: undefined,
+    setup: function () {
+      BigInteger.parseInt = function (string, radix) {
+        var prefix = radix === 10 ? "" : (radix === 2 ? "0b" : (radix === 8 ? "0o" : (radix === 16 ? "0x" : "")));
+        return BigInteger.BigInt(prefix === "" ? string : prefix + string);
+      };
+    },
     floatingPoint: false
   },
   {

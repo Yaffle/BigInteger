@@ -213,7 +213,12 @@ window.setTimeout(function () {
     for (var i = 0; i < elements.length; i += 1) {
       state[i] = elements[i].checked;
     }
-    window.localStorage.setItem("state", JSON.stringify(state));
+    var s = JSON.stringify(state);
+    try {
+      window.localStorage.setItem("state", s);
+    } catch (error) {
+      console.log(error);
+    }
     lastIndex = -1;
     test();
   };
@@ -233,7 +238,13 @@ window.setTimeout(function () {
     }
   }, false);
   
-  var state = JSON.parse(window.localStorage.getItem("state") || "[]");
+  var s = null;
+  try {
+    s = window.localStorage.getItem("state");
+  } catch (error) {
+    console.log(error);
+  }
+  var state = JSON.parse(s || "[]");
   var elements = document.querySelectorAll("input[type=checkbox]");
   for (var i = 0; i < elements.length; i += 1) {
     elements[i].checked = i < state.length ? state[i] : false;

@@ -572,14 +572,20 @@
     if (a.length === 1) {
       return a.sign === 1 ? 0 - a.magnitude[0] : a.magnitude[0];
     }
-    //?
-    var x = 0;
-    var i = a.length;
-    while (--i >= 0) {
-      x *= BASE;
-      x += a.magnitude[i];
+    if (BASE + 1 !== BASE) {
+      throw new RangeError();
     }
-    return a.sign === 1 ? 0 - x : x;
+    var x = a.magnitude[a.length - 1];
+    var y = a.magnitude[a.length - 2];
+    var i = a.length - 3;
+    while (i >= 0 && a.magnitude[i] === 0) {
+      i -= 1;
+    }
+    if (i >= 0 && y % 2 === 1) {
+      y += 1;
+    }
+    var z = (x * BASE + y) * Math.pow(BASE, a.length - 2);
+    return a.sign === 1 ? 0 - z : z;
   };
 
   var exponentiateBigInt = function (a, b) {
@@ -590,7 +596,7 @@
     if (n > 9007199254740991) {
       var y = Internal.toNumber(a);
       if (y === 0 || y === -1 || y === +1) {
-        return Internal.BigInt(y === -1 && Internal.remainder(a, Internal.BigInt(2)) === 0 ? +1 : y);
+        return Internal.BigInt(y === -1 && Internal.toNumber(Internal.remainder(b, Internal.BigInt(2))) === 0 ? +1 : y);
       }
       throw new RangeError();
     }

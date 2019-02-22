@@ -33,7 +33,9 @@ Division               | `BigInteger.divide(a, b)`            | `0 + Math.trunc(
 Remainder              | `BigInteger.remainder(a, b)`         | `0 + a % b`                      | `a % b`
 Exponentiatio          | `BigInteger.exponentiate(a, b)`      | `0 + a**b`                       | `a**b`
 Negation               | `BigInteger.unaryMinus(a)`           | `0 - a`                          | `-a`
-Comparison             | `BigInteger.lessThan(a, b)`          | `a < b`                          | `a < b`
+Comparison             | `BigInteger.equal(a, b)`             | `a === b`                        | `a === b`
+                       | `BigInteger.lessThan(a, b)`          | `a < b`                          | `a < b`
+                       | `BigInteger.greaterThan(a, b)`       | `a > b`                          | `a > b`
 
 Example
 =======

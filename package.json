@@ -1,7 +1,7 @@
 {
   "name": "js-big-integer",
   "description": "Yet another class for arbitrary-precision integers in pure JavaScript. Small. Well tested.",
-  "version": "2.1.1",
+  "version": "3.0.0",
   "keywords": [
     "BigInteger",
     "BigNumber",

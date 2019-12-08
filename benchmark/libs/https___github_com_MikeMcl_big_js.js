@@ -1,5 +1,5 @@
 /*
- *  big.js v5.2.1
+ *  big.js v5.2.2
  *  A small, fast, easy-to-use library for arbitrary-precision decimal arithmetic.
  *  Copyright (c) 2018 Michael Mclaughlin <M8ch88l@gmail.com>
  *  https://github.com/MikeMcl/big.js/LICENCE
@@ -107,7 +107,7 @@
     Big.RM = RM;
     Big.NE = NE;
     Big.PE = PE;
-    Big.version = '5.2.1';
+    Big.version = '5.2.2';
 
     return Big;
   }
@@ -845,7 +845,7 @@
         b = b / 10 | 0;
       }
 
-      c[j] = (c[j] + b) % 10;
+      c[j] = b;
     }
 
     // Increment result exponent if there is a final carry, otherwise remove leading zero.

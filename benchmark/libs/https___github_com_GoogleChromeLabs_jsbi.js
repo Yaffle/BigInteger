@@ -68,7 +68,7 @@ class JSBI extends Array {
           'toString() radix argument must be between 2 and 36');
     }
     if (this.length === 0) return '0';
-    if ((radix & (radix-1)) === 0) {
+    if ((radix & (radix - 1)) === 0) {
       return JSBI.__toStringBasePowerOfTwo(this, radix);
     }
     return JSBI.__toStringGeneric(this, radix, false);
@@ -76,7 +76,61 @@ class JSBI extends Array {
 
   // Equivalent of "Number(my_bigint)" in the native implementation.
   static toNumber(x) {
-    return JSBI.__toNumber(x);
+    const xLength = x.length;
+    if (xLength === 0) return 0;
+    if (xLength === 1) {
+      const value = x.__unsignedDigit(0);
+      return x.sign ? -value : value;
+    }
+    const xMsd = x.__digit(xLength - 1);
+    const msdLeadingZeros = Math.clz32(xMsd);
+    const xBitLength = xLength * 32 - msdLeadingZeros;
+    if (xBitLength > 1024) return x.sign ? -Infinity : Infinity;
+    let exponent = xBitLength - 1;
+    let currentDigit = xMsd;
+    let digitIndex = xLength - 1;
+    const shift = msdLeadingZeros + 1;
+    let mantissaHigh = (shift === 32) ? 0 : currentDigit << shift;
+    mantissaHigh >>>= 12;
+    const mantissaHighBitsUnset = shift - 12;
+    let mantissaLow = (shift >= 12) ? 0 : (currentDigit << (20 + shift));
+    let mantissaLowBitsUnset = 20 + shift;
+    if (mantissaHighBitsUnset > 0 && digitIndex > 0) {
+      digitIndex--;
+      currentDigit = x.__digit(digitIndex);
+      mantissaHigh |= (currentDigit >>> (32 - mantissaHighBitsUnset));
+      mantissaLow = currentDigit << mantissaHighBitsUnset;
+      mantissaLowBitsUnset = mantissaHighBitsUnset;
+    }
+    if (mantissaLowBitsUnset > 0 && digitIndex > 0) {
+      digitIndex--;
+      currentDigit = x.__digit(digitIndex);
+      mantissaLow |= (currentDigit >>> (32 - mantissaLowBitsUnset));
+      mantissaLowBitsUnset -= 32;
+    }
+    const rounding = JSBI.__decideRounding(x, mantissaLowBitsUnset,
+        digitIndex, currentDigit);
+    if (rounding === 1 || (rounding === 0 && (mantissaLow & 1) === 1)) {
+      mantissaLow = (mantissaLow + 1) >>> 0;
+      if (mantissaLow === 0) {
+        // Incrementing mantissaLow overflowed.
+        mantissaHigh++;
+        if ((mantissaHigh >>> 20) !== 0) {
+          // Incrementing mantissaHigh overflowed.
+          mantissaHigh = 0;
+          exponent++;
+          if (exponent > 1023) {
+            // Incrementing the exponent overflowed.
+            return x.sign ? -Infinity : Infinity;
+          }
+        }
+      }
+    }
+    const signBit = x.sign ? (1 << 31) : 0;
+    exponent = (exponent + 0x3FF) << 20;
+    JSBI.__kBitConversionInts[1] = signBit | exponent | mantissaHigh;
+    JSBI.__kBitConversionInts[0] = mantissaLow;
+    return JSBI.__kBitConversionDouble[0];
   }
 
   // Operations.
@@ -270,6 +324,10 @@ class JSBI extends Array {
     return true;
   }
 
+  static notEqual(x, y) {
+    return !JSBI.equal(x, y);
+  }
+
   static bitwiseAnd(x, y) {
     if (!x.sign && !y.sign) {
       return JSBI.__absoluteAnd(x, y).__trim();
@@ -331,6 +389,56 @@ class JSBI extends Array {
     let result = JSBI.__absoluteSubOne(y, resultLength);
     result = JSBI.__absoluteAndNot(result, x, result);
     return JSBI.__absoluteAddOne(result, true, result).__trim();
+  }
+
+  static asIntN(n, x) {
+    if (x.length === 0) return x;
+    if (n === 0) return JSBI.__zero();
+    // If {x} has less than {n} bits, return it directly.
+    if (n >= JSBI.__kMaxLengthBits) return x;
+    const neededLength = (n + 31) >>> 5;
+    if (x.length < neededLength) return x;
+    const topDigit = x.__unsignedDigit(neededLength - 1);
+    const compareDigit = 1 << ((n - 1) & 31);
+    if (x.length === neededLength && topDigit < compareDigit) return x;
+    // Otherwise truncate and simulate two's complement.
+    const hasBit = (topDigit & compareDigit) === compareDigit;
+    if (!hasBit) return JSBI.__truncateToNBits(n, x);
+    if (!x.sign) return JSBI.__truncateAndSubFromPowerOfTwo(n, x, true);
+    if ((topDigit & (compareDigit - 1)) === 0) {
+      for (let i = neededLength - 2; i >= 0; i--) {
+        if (x.__digit(i) !== 0) {
+          return JSBI.__truncateAndSubFromPowerOfTwo(n, x, false);
+        }
+      }
+      if (x.length === neededLength && topDigit === compareDigit) return x;
+      return JSBI.__truncateToNBits(n, x);
+    }
+    return JSBI.__truncateAndSubFromPowerOfTwo(n, x, false);
+  }
+
+  static asUintN(n, x) {
+    if (x.length === 0) return x;
+    if (n === 0) return JSBI.__zero();
+    // If {x} is negative, simulate two's complement representation.
+    if (x.sign) {
+      if (n > JSBI.__kMaxLengthBits) {
+        throw new RangeError('BigInt too big');
+      }
+      return JSBI.__truncateAndSubFromPowerOfTwo(n, x, false);
+    }
+    // If {x} is positive and has up to {n} bits, return it directly.
+    if (n >= JSBI.__kMaxLengthBits) return x;
+    const neededLength = (n + 31) >>> 5;
+    if (x.length < neededLength) return x;
+    const bitsInTopDigit = n & 31;
+    if (x.length == neededLength) {
+      if (bitsInTopDigit === 0) return x;
+      const topDigit = x.__digit(neededLength - 1);
+      if ((topDigit >>> bitsInTopDigit) === 0) return x;
+    }
+    // Otherwise, truncate.
+    return JSBI.__truncateToNBits(n, x);
   }
 
   // Operators.
@@ -404,6 +512,10 @@ class JSBI extends Array {
     }
   }
 
+  static NE(x, y) {
+    return !JSBI.EQ(x, y);
+  }
+
   // Helpers.
 
   static __zero() {
@@ -440,64 +552,6 @@ class JSBI extends Array {
     for (let i = 0; i < this.length; i++) {
       this[i] = 0;
     }
-  }
-
-  static __toNumber(x) {
-    const xLength = x.length;
-    if (xLength === 0) return 0;
-    if (xLength === 1) {
-      const value = x.__unsignedDigit(0);
-      return x.sign ? -value : value;
-    }
-    const xMsd = x.__digit(xLength - 1);
-    const msdLeadingZeros = Math.clz32(xMsd);
-    const xBitLength = xLength * 32 - msdLeadingZeros;
-    if (xBitLength > 1024) return x.sign ? -Infinity : Infinity;
-    let exponent = xBitLength - 1;
-    let currentDigit = xMsd;
-    let digitIndex = xLength - 1;
-    const shift = msdLeadingZeros + 1;
-    let mantissaHigh = (shift === 32) ? 0 : currentDigit << shift;
-    mantissaHigh >>>= 12;
-    const mantissaHighBitsUnset = shift - 12;
-    let mantissaLow = (shift >= 12) ? 0 : (currentDigit << (20 + shift));
-    let mantissaLowBitsUnset = 20 + shift;
-    if (mantissaHighBitsUnset > 0 && digitIndex > 0) {
-      digitIndex--;
-      currentDigit = x.__digit(digitIndex);
-      mantissaHigh |= (currentDigit >>> (32 - mantissaHighBitsUnset));
-      mantissaLow = currentDigit << mantissaHighBitsUnset;
-      mantissaLowBitsUnset = mantissaHighBitsUnset;
-    }
-    if (mantissaLowBitsUnset > 0 && digitIndex > 0) {
-      digitIndex--;
-      currentDigit = x.__digit(digitIndex);
-      mantissaLow |= (currentDigit >>> (32 - mantissaLowBitsUnset));
-      mantissaLowBitsUnset -= 32;
-    }
-    const rounding = JSBI.__decideRounding(x, mantissaLowBitsUnset,
-        digitIndex, currentDigit);
-    if (rounding === 1 || (rounding === 0 && (mantissaLow & 1) === 1)) {
-      mantissaLow = (mantissaLow + 1) >>> 0;
-      if (mantissaLow === 0) {
-        // Incrementing mantissaLow overflowed.
-        mantissaHigh++;
-        if ((mantissaHigh >>> 20) !== 0) {
-          // Incrementing mantissaHigh overflowed.
-          mantissaHigh = 0;
-          exponent++;
-          if (exponent > 1023) {
-            // Incrementing the exponent overflowed.
-            return x.sign ? -Infinity : Infinity;
-          }
-        }
-      }
-    }
-    const signBit = x.sign ? (1 << 31) : 0;
-    exponent = (exponent + 0x3FF) << 20;
-    JSBI.__kBitConversionInts[1] = signBit | exponent | mantissaHigh;
-    JSBI.__kBitConversionInts[0] = mantissaLow;
-    return JSBI.__kBitConversionDouble[0];
   }
 
   static __decideRounding(x, mantissaBitsUnset, digitIndex, currentDigit) {
@@ -576,18 +630,18 @@ class JSBI extends Array {
     return result.__trim();
   }
 
-  static __iswhitespace(c) {
-    if (c <= 13 && c >= 9) return true;
-    if (c <= 159) return c === 32;
-    if (c <= 0x1ffff) {
-      return c === 160 || c === 5760;
+  static __isWhitespace(c) {
+    if (c <= 0x0D && c >= 0x09) return true;
+    if (c <= 0x9F) return c === 0x20;
+    if (c <= 0x01FFFF) {
+      return c === 0xA0 || c === 0x1680;
     }
-    if (c <= 0x2ffff) {
-      c &= 0x1ffff;
-      return c <= 10 || c === 40 || c === 41 || c === 47 ||
-             c === 95 || c === 4096;
+    if (c <= 0x02FFFF) {
+      c &= 0x01FFFF;
+      return c <= 0x0A || c === 0x28 || c === 0x29 || c === 0x2F ||
+             c === 0x5F || c === 0x1000;
     }
-    return c === 65279;
+    return c === 0xFEFF;
   }
 
   static __fromString(string, radix = 0) {
@@ -598,7 +652,7 @@ class JSBI extends Array {
     if (cursor === length) return JSBI.__zero();
     let current = string.charCodeAt(cursor);
     // Skip whitespace.
-    while (JSBI.__iswhitespace(current)) {
+    while (JSBI.__isWhitespace(current)) {
       if (++cursor === length) return JSBI.__zero();
       current = string.charCodeAt(cursor);
     }
@@ -737,9 +791,12 @@ class JSBI extends Array {
       } while (!done);
     }
 
-    while (cursor !== length) {
-      if (!JSBI.__iswhitespace(current)) return null;
-      current = string.charCodeAt(cursor++);
+    if (cursor !== length) {
+      if (!JSBI.__isWhitespace(current)) return null;
+      for (cursor++; cursor < length; cursor++) {
+        current = string.charCodeAt(cursor);
+        if (!JSBI.__isWhitespace(current)) return null;
+      }
     }
 
     // Get result.
@@ -1528,7 +1585,7 @@ class JSBI extends Array {
         r0 = (current & 0xFFFF) - subTop - borrow;
         borrow = (r0 >>> 16) & 1;
         this.__setDigit(startIndex + subtrahend.length,
-                        (current & 0xFFFF0000) | (r0 & 0xFFFF));
+            (current & 0xFFFF0000) | (r0 & 0xFFFF));
       }
     } else {
       startIndex >>= 1;
@@ -1722,6 +1779,62 @@ class JSBI extends Array {
 
   static __isBigInt(value) {
     return typeof value === 'object' && value.constructor === JSBI;
+  }
+
+  static __truncateToNBits(n, x) {
+    const neededDigits = (n + 31) >>> 5;
+    const result = new JSBI(neededDigits, x.sign);
+    const last = neededDigits - 1;
+    for (let i = 0; i < last; i++) {
+      result.__setDigit(i, x.__digit(i));
+    }
+    let msd = x.__digit(last);
+    if ((n & 31) !== 0) {
+      const drop = 32 - (n & 31);
+      msd = (msd << drop) >>> drop;
+    }
+    result.__setDigit(last, msd);
+    return result.__trim();
+  }
+
+  static __truncateAndSubFromPowerOfTwo(n, x, resultSign) {
+    const neededDigits = (n + 31) >>> 5;
+    const result = new JSBI(neededDigits, resultSign);
+    let i = 0;
+    const last = neededDigits - 1;
+    let borrow = 0;
+    const limit = Math.min(last, x.length);
+    for (; i < limit; i++) {
+      const xDigit = x.__digit(i);
+      const rLow = 0 - (xDigit & 0xFFFF) - borrow;
+      borrow = (rLow >>> 16) & 1;
+      const rHigh = 0 - (xDigit >>> 16) - borrow;
+      borrow = (rHigh >>> 16) & 1;
+      result.__setDigit(i, (rLow & 0xFFFF) | (rHigh << 16));
+    }
+    for (; i < last; i++) {
+      result.__setDigit(i, (-borrow) | 0);
+    }
+    let msd = last < x.length ? x.__digit(last) : 0;
+    const msdBitsConsumed = n & 31;
+    let resultMsd;
+    if (msdBitsConsumed === 0) {
+      const rLow = 0 - (msd & 0xFFFF) - borrow;
+      borrow = (rLow >>> 16) & 1;
+      const rHigh = 0 - (msd >>> 16) - borrow;
+      resultMsd = (rLow & 0xFFFF) | (rHigh << 16);
+    } else {
+      const drop = 32 - msdBitsConsumed;
+      msd = (msd << drop) >>> drop;
+      const minuendMsd = 1 << (32 - drop);
+      const rLow = (minuendMsd & 0xFFFF) - (msd & 0xFFFF) - borrow;
+      borrow = (rLow >>> 16) & 1;
+      const rHigh = (minuendMsd >>> 16) - (msd >>> 16) - borrow;
+      resultMsd = (rLow & 0xFFFF) | (rHigh << 16);
+      resultMsd &= (minuendMsd - 1);
+    }
+    result.__setDigit(last, resultMsd);
+    return result.__trim();
   }
 
   // Digit helpers.

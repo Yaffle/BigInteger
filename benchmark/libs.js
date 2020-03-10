@@ -601,9 +601,9 @@ var libs = [
     multiply: "Z.mul(a, b)",
     divide: "Z.div(a, b)",
     remainder: "Z.mod(a, b)",
-    negate: "Z(a).negate()",
+    negate: "a.negate()",
     compareTo: "(Z.lt(a, b) ? -1 : (Z.lt(b, a) ? +1 : 0))",
-    parseInt: "Z(a, b)",
+    parseInt: "new Z(a, b)",
     toString: "a.toString(b)",
     and: "",
     or: "",
@@ -613,41 +613,15 @@ var libs = [
     shiftRight: "",
     bitLength: "",
     pow: "Z.pow(a, b)",
-    fromNumber: "Z(a)",
-    toNumber: "Z.toNum()",
+    fromNumber: "new Z(a)",
+    toNumber: "a.toNum()",
     mod: "",
     modInverse: "",
     modPow: "",
     setup: function () {
       //TODO: !!!
-      Z.div2 = Z.div;
-      Z.div = function (a, b) {
-        var s = 1;
-        if (a.isNeg()) {
-          s *= -1;
-          a = Z(a).negate();
-        }
-        if (b.isNeg()) {
-          s *= -1;
-          b = Z(b).negate();
-        }
-        return Z.mul(Z.div2(a, b), Z(s));
-      };
       Z.mod = function (a, b) {
         return Z.sub(a, Z.mul(Z.div(a, b), b));
-      };
-      Z.prototype.toString2 = Z.prototype.toString;
-      Z.prototype.toString = function (radix) {
-        if (this.digits.filter(x => x != x).length !== 0) {
-          return '?';
-        }
-        if (this.isZero()) {
-          return '0';
-        }
-        if (this.isNeg()) {
-          return '-' + Z(this).negate().toString2(radix);
-        }
-        return this.toString2(radix);
       };
     },
     floatingPoint: false

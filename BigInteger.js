@@ -536,11 +536,15 @@
     if (n > 9007199254740991) {
       var y = BigIntegerInternal.toNumber(a);
       if (y === 0 || y === -1 || y === +1) {
-        return BigIntegerInternal.BigInt(y === -1 && BigIntegerInternal.toNumber(BigIntegerInternal.remainder(b, BigIntegerInternal.BigInt(2))) === 0 ? +1 : y);
+        return y === -1 && BigIntegerInternal.toNumber(BigIntegerInternal.remainder(b, BigIntegerInternal.BigInt(2))) === 0 ? BigIntegerInternal.unaryMinus(a) : a;
       }
       throw new RangeError();
     }
-    var accumulator = BigIntegerInternal.BigInt(1);
+    if (n < 1) {
+      return BigIntegerInternal.BigInt(1);
+    }
+    var accumulator = a;
+    n -= 1;
     if (n > 0) {
       var x = a;
       while (n >= 2) {
@@ -673,11 +677,15 @@
     if (n > 9007199254740991) {
       var y = Number(a);
       if (y === 0 || y === -1 || y === +1) {
-        return BigInt(y === -1 && Number(b % BigInt(2)) === 0 ? +1 : y);
+        return y === -1 && Number(b % BigInt(2)) === 0 ? -a : a;
       }
       throw new RangeError();
     }
-    var accumulator = BigInt(1);
+    if (n < 1) {
+      return BigInt(1);
+    }
+    var accumulator = a;
+    n -= 1;
     if (n > 0) {
       var x = a;
       while (n >= 2) {

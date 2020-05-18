@@ -733,9 +733,12 @@
       var c = valueOf(x);
       return Internal.multiply(c, c);
     }
+    if (typeof x === "number" && x === 0 || typeof y === "number" && y === 0) {
+      return 0;
+    }
     var a = valueOf(x);
     var b = valueOf(y);
-    return toResult(Internal.multiply(a, b));
+    return Internal.multiply(a, b);
   });
   var divide = n(function (x, y) {
     var a = valueOf(x);
@@ -748,9 +751,21 @@
     return toResult(Internal.remainder(a, b));
   });
   var exponentiate = n(function (x, y) {
+    if (typeof y === "number" && y < 3) {
+      if (y === 0) {
+        return 1;
+      }
+      if (y === 1) {
+        return x;
+      }
+      if (y === 2) {
+        var c = valueOf(x);
+        return Internal.multiply(c, c);
+      }
+    }
     var a = valueOf(x);
     var b = valueOf(y);
-    return toResult(Internal.exponentiate(a, b));
+    return Internal.exponentiate(a, b);
   });
   var unaryMinus = n(function (x) {
     var a = valueOf(x);

@@ -209,6 +209,9 @@
     if (typeof x === "string") {
       return fromString(x);
     }
+    if (x instanceof BigIntegerInternal) {
+      return x;
+    }
     throw new RangeError();
   };
 
@@ -527,6 +530,15 @@
   BigIntegerInternal.greaterThan = function (a, b) {
     return compareTo(a, b) > 0;
   };
+  BigIntegerInternal.notEqual = function (a, b) {
+    return compareTo(a, b) !== 0;
+  };
+  BigIntegerInternal.lessThanOrEqual = function (a, b) {
+    return compareTo(a, b) <= 0;
+  };
+  BigIntegerInternal.greaterThanOrEqual = function (a, b) {
+    return compareTo(a, b) >= 0;
+  };
 
   BigIntegerInternal.exponentiate = function (a, b) {
     var n = BigIntegerInternal.toNumber(b);
@@ -662,6 +674,15 @@
   BigIntWrapper.greaterThan = function (a, b) {
     return a > b;
   };
+  BigIntWrapper.notEqual = function (a, b) {
+    return a !== b;
+  };
+  BigIntWrapper.lessThanOrEqual = function (a, b) {
+    return a <= b;
+  };
+  BigIntWrapper.greaterThanOrEqual = function (a, b) {
+    return a >= b;
+  };
 
   BigIntWrapper.exponentiate = function (a, b) { // a**b
     if (typeof a !== "bigint") {
@@ -684,10 +705,14 @@
     if (n < 1) {
       return BigInt(1);
     }
-    var accumulator = a;
+    var x = a;
+    while (n % 2 === 0) {
+      n = Math.floor(n / 2);
+      x *= x;
+    }
+    var accumulator = x;
     n -= 1;
-    if (n > 0) {
-      var x = a;
+    if (n >= 2) {
       while (n >= 2) {
         var t = Math.floor(n / 2);
         if (t * 2 !== n) {
@@ -727,6 +752,12 @@
     return x;
   };
   var add = n(function (x, y) {
+    if (typeof x === "number" && x === 0) {
+      return y;
+    }
+    if (typeof y === "number" && y === 0) {
+      return x;
+    }
     var a = valueOf(x);
     var b = valueOf(y);
     return toResult(Internal.add(a, b));
@@ -744,11 +775,20 @@
     if (typeof x === "number" && x === 0 || typeof y === "number" && y === 0) {
       return 0;
     }
+    if (typeof x === "number" && x === 1) {
+      return y;
+    }
+    if (typeof y === "number" && y === 1) {
+      return x;
+    }
     var a = valueOf(x);
     var b = valueOf(y);
     return Internal.multiply(a, b);
   });
   var divide = n(function (x, y) {
+    if (typeof y === "number" && y === 1) {
+      return x;
+    }
     var a = valueOf(x);
     var b = valueOf(y);
     return toResult(Internal.divide(a, b));
@@ -759,7 +799,7 @@
     return toResult(Internal.remainder(a, b));
   });
   var exponentiate = n(function (x, y) {
-    if (typeof y === "number" && y < 3) {
+    if (typeof y === "number") {
       if (y === 0) {
         return 1;
       }
@@ -769,6 +809,12 @@
       if (y === 2) {
         var c = valueOf(x);
         return Internal.multiply(c, c);
+      }
+      if (typeof x === "number" && y >= 0) {
+        var k = x === 2 ? 52 : Math.floor(53 / Math.log2(x < 0 ? 0 - x : 0 + x)); // 53 === Math.log2(9007199254740991 + 1)
+        if (k >= 2) {
+          return multiply(Math.pow(x, y % k), exponentiate(Math.pow(x, k), Math.floor(y / k)));
+        }
       }
     }
     var a = valueOf(x);
@@ -821,9 +867,8 @@
       if (value >= -9007199254740991 && value <= +9007199254740991) {
         return value;
       }
-      return Internal.BigInt(x);
     }
-    throw new RangeError();
+    return Internal.BigInt(x);
   };
   // Conversion to Number:
   BigInteger.toNumber = function (x) {
@@ -903,9 +948,18 @@
     }
     return greaterThan(x, y);
   };
+  BigInteger.notEqual = function (x, y) {
+    return !BigInteger.equal(x, y);
+  };
+  BigInteger.lessThanOrEqual = function (x, y) {
+    return !BigInteger.greaterThan(x, y);
+  };
+  BigInteger.greaterThanOrEqual = function (x, y) {
+    return !BigInteger.lessThan(x, y);
+  };
 
   BigInteger.exponentiate = function (x, y) {
-    if (typeof x === "number" && typeof y === "number" && y >= 0 && y < 53) { // Math.log2(9007199254740991 + 1)
+    if (typeof x === "number" && typeof y === "number" && y >= 0 && y < 53) { // 53 === Math.log2(9007199254740991 + 1)
       var value = 0 + Math.pow(x, y);
       if (value >= -9007199254740991 && value <= 9007199254740991) {
         return value;

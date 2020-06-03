@@ -10,6 +10,12 @@
   // For implementation details, see "The Handbook of Applied Cryptography"
   // http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf
 
+  if (Math.log2 == null) {
+    Math.log2 = function (x) {
+      return Math.log(x) / Math.log(2);
+    };
+  }
+
   var parseInteger = function (s, from, to, radix) {
     var i = from - 1;
     var n = 0;

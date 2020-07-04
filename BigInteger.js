@@ -10,12 +10,6 @@
   // For implementation details, see "The Handbook of Applied Cryptography"
   // http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf
 
-  if (Math.log2 == null) {
-    Math.log2 = function (x) {
-      return Math.log(x) / Math.log(2);
-    };
-  }
-
   var parseInteger = function (s, from, to, radix) {
     var i = from - 1;
     var n = 0;
@@ -644,6 +638,54 @@
     return result;
   };
 
+  var toLocaleString = function (value, locale, options) {
+    if (options == undefined ||
+        options.localeMatcher != undefined ||
+        options.numberingSystem != undefined ||
+        options.style != undefined ||
+        options.useGrouping !== false ||
+        options.minimumIntegerDigits != undefined ||
+        options.maximumFractionDigits != undefined ||
+        options.minimumFractionDigits != undefined ||
+        options.minimumSignificantDigits != undefined ||
+        options.maximumSignificantDigits != undefined) {
+      throw new TypeError("not supported options");
+    }
+    var one = (1).toLocaleString(locale, {useGrouping: false});
+    var digits = function (s, one) {
+      var ones = {
+        "۱": "arabext",
+        "١": "arab",
+        "1": "latn"
+      };
+      var numberingSystems = {
+        arabext: "۰۱۲۳۴۵۶۷۸۹",
+        arab: "٠١٢٣٤٥٦٧٨٩",
+        latn: "0123456789"
+      };
+      var numberingSystem = ones[one] || "latn";
+      var characters = numberingSystems[numberingSystem] || "0123456789";
+      var result = "";
+      for (var i = 0; i < s.length; i += 1) {
+        var code = s.charCodeAt(i);
+        if (code >= "0".charCodeAt(0) && code <= "9".charCodeAt(0)) {
+          var replacement = characters.charCodeAt(code - "0".charCodeAt(0));
+          result += String.fromCharCode(replacement);
+        } else {
+          throw new RangeError();
+        }
+      }
+      return result;
+    };
+    return digits(String(value), one);
+  };
+
+  if ((9007199254740991).toLocaleString("fa", {useGrouping: false}) !== (9007199254740991).toLocaleString("en", {useGrouping: false})) {
+    BigIntegerInternal.prototype.toLocaleString = function (locale, options) {
+      return toLocaleString(this.toString(), locale, options);
+    };
+  }
+
   function BigIntWrapper() {
   }
 
@@ -708,7 +750,10 @@
       }
       throw new RangeError();
     }
-    if (n < 1) {
+    if (a === BigInt(2)) {
+      return BigInt(1) << b;
+    }
+    if (n === 1) {
       return BigInt(1);
     }
     var x = a;
@@ -740,6 +785,14 @@
   };
 
   var Internal = typeof BigInt !== "undefined" && BigInt(9007199254740991) + BigInt(2) - BigInt(2) === BigInt(9007199254740991) ? BigIntWrapper : BigIntegerInternal;
+
+  // Chrome 67-76
+  if (typeof BigInt !== "undefined" && BigInt(9007199254740991).toLocaleString("fa", {useGrouping: false}) !== (9007199254740991).toLocaleString("fa", {useGrouping: false})) {
+    BigInt.prototype.toLocaleString = function (locale, options) {
+      "use strict";
+      return toLocaleString(BigInt(this).toString(), locale, options);
+    };
+  }
 
   var toNumber = n(function (a) {
     return Internal.toNumber(a);
@@ -816,8 +869,8 @@
         var c = valueOf(x);
         return Internal.multiply(c, c);
       }
-      if (typeof x === "number" && y >= 0) {
-        var k = x === 2 ? 52 : Math.floor(53 / Math.log2(x < 0 ? 0 - x : 0 + x)); // 53 === Math.log2(9007199254740991 + 1)
+      if (typeof x === "number" && Math.abs(x) > 2 && y >= 0) {
+        var k = Math.floor(Math.log(9007199254740991) / Math.log(Math.abs(x) + 0.5));
         if (k >= 2) {
           return multiply(Math.pow(x, y % k), exponentiate(Math.pow(x, k), Math.floor(y / k)));
         }
@@ -965,7 +1018,7 @@
   };
 
   BigInteger.exponentiate = function (x, y) {
-    if (typeof x === "number" && typeof y === "number" && y >= 0 && y < 53) { // 53 === Math.log2(9007199254740991 + 1)
+    if (typeof x === "number" && typeof y === "number" && y >= 0 && y < 53) { // 53 === log2(9007199254740991 + 1)
       var value = 0 + Math.pow(x, y);
       if (value >= -9007199254740991 && value <= 9007199254740991) {
         return value;

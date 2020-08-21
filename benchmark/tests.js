@@ -756,7 +756,12 @@ var wrapper = function () {
         "(0x1000000000000000000000000*0x1000000000000000000000000)/0x1000000000000000000000000=0x1000000000000000000000000",
 
         // https://github.com/GoogleChromeLabs/jsbi/issues/13
-        "2788589391528142331873770897124985830679715361908029740727468171087321981075%170141183460469231731687303715884105727=170141183460469231731687303715884105726"
+        "2788589391528142331873770897124985830679715361908029740727468171087321981075%170141183460469231731687303715884105727=170141183460469231731687303715884105726",
+
+        // https://github.com/GoogleChromeLabs/jsbi/issues/44
+        "0b10000010001000100010001000100010001000100010001000100010001000100&(~0b10000000000000000000000000000000000000000000000000000000000000000)=0b10001000100010001000100010001000100010001000100010001000100",
+        "0|(-18446744073709551615)=-18446744073709551615",
+        "0^(-18446744073709551615)=-18446744073709551615"
       ];
     var run = function (input) {
       //if (testDivide() !== "truncated division" && input.indexOf("/") !== -1) {
@@ -818,7 +823,7 @@ var wrapper = function () {
         throw new RangeError(remainderType);
       };
       var integerRegExp = /^(0b|0x)?([0-9a-fA-F]+)/;
-      var operatorRegExp = /^(?:\*\*|[\+\-\*\/%]|<\=>|\!)/;
+      var operatorRegExp = /^(?:\*\*|[\+\-\*\/%]|<\=>|\!|[&^|])/;
       var pow = function (x, count, accumulator) {
         if (count < 0) {
           throw new RangeError();
@@ -904,6 +909,21 @@ var wrapper = function () {
                 } else if (match[0] === "!") {
                   position += match[0].length;
                   result = factorial(Number.parseInt(I.toString(result, 10), 10));
+                } else if (match[0] === "&" && p < 1.3) {
+                  position += match[0].length;
+                  tmp = evaluate(input, position, 1.3);
+                  position = tmp[0];
+                  result = I.and(result, tmp[1]);
+                } else if (match[0] === "^" && p < 1.2) {
+                  position += match[0].length;
+                  tmp = evaluate(input, position, 1.2);
+                  position = tmp[0];
+                  result = I.xor(result, tmp[1]);
+                } else if (match[0] === "|" && p < 1.1) {
+                  position += match[0].length;
+                  tmp = evaluate(input, position, 1.1);
+                  position = tmp[0];
+                  result = I.or(result, tmp[1]);
                 } else {
                   ok = false;
                 }
@@ -911,13 +931,18 @@ var wrapper = function () {
                 ok = false;
               }
             } else if (result == undefined) {
-              match = /^\-/.exec(input.slice(position));
-              if (match != undefined) {
+              match = /^[\-~]/.exec(input.slice(position));
+              if (match != undefined && match[0] === "-") {
                 position += match[0].length;
                 var tmp = evaluate(input, position, 3);
                 position = tmp[0];
                 var MINUS_ONE = I.parseInt("-1", 10);
                 result = I.multiply(MINUS_ONE, tmp[1]);
+              } else if (match != undefined && match[0] === "~") {
+                position += match[0].length;
+                var tmp = evaluate(input, position, 3);
+                position = tmp[0];
+                result = I.not(tmp[1]);
               } else {
                 ok = false;
               }

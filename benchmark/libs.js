@@ -524,11 +524,16 @@ var libs = [
   Object.assign({}, NodeBigInteger, {
     url: "https://github.com/indutny/bn.js",
     source: "https://rawgit.com/indutny/bn.js/master/lib/bn.js",
+    modPow: "BN.modPow(a, b, c)",
     pow: "BN.pow(a, b)",
     setup: function () {
       self.BN = self.module.exports;
       self.BN.pow = function (x, n) {
         return x.pow(new BN(n.toString(), 10));
+      };
+      self.BN.modPow = function (a, b, c) {
+        var ctx = BN.mont(new BN(c));
+        return a.toRed(ctx).redPow(b).fromRed();
       };
     }
   }),

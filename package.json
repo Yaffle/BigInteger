@@ -10,9 +10,9 @@
     "arbitrary-precision",
     "integer"
   ],
-  "files": {
+  "files": [
     "./BigInteger.js"
-  },
+  ],
   "main": "BigInteger.js",
   "repositories": [
     {

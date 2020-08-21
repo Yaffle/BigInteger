@@ -53,14 +53,14 @@
 
   // Veltkamp-Dekker's algorithm
   // see http://web.mit.edu/tabbott/Public/quaddouble-debian/qd-2.3.4-old/docs/qd.pdf
-  var fma = function (a, b, product) {
+  var fms = function (a, b, product) {
     var at = SPLIT * a;
     var ahi = at - (at - a);
     var alo = a - ahi;
     var bt = SPLIT * b;
     var bhi = bt - (bt - b);
     var blo = b - bhi;
-    var error = ((ahi * bhi + product) + ahi * blo + alo * bhi) + alo * blo;
+    var error = ((ahi * bhi - product) + ahi * blo + alo * bhi) + alo * blo;
     return error;
   };
 
@@ -71,21 +71,20 @@
 
   var performMultiplication = function (carry, a, b) {
     var product = a * b;
-    var error = fma(a, b, -product);
+    var error = fms(a, b, product);
 
-    var hi = fastTrunc(product / BASE);
+    var hi = (product / BASE) - BASE + BASE;
     var lo = product - hi * BASE + error;
 
+    if (lo >= 0) {
+      lo -= BASE;
+      hi += 1;
+    }
+
+    lo += carry;
     if (lo < 0) {
       lo += BASE;
       hi -= 1;
-    }
-
-    lo += carry - BASE;
-    if (lo < 0) {
-      lo += BASE;
-    } else {
-      hi += 1;
     }
 
     return {lo: lo, hi: hi};
@@ -98,7 +97,7 @@
     var p = a * BASE;
     var q = fastTrunc(p / divisor);
 
-    var r = 0 - fma(q, divisor, -p);
+    var r = 0 - fms(q, divisor, p);
     if (r < 0) {
       q -= 1;
       r += divisor;
@@ -239,6 +238,9 @@
   };
 
   var compareMagnitude = function (a, b) {
+    if (a === b) {
+      return 0;
+    }
     if (a.length !== b.length) {
       return a.length < b.length ? -1 : +1;
     }
@@ -282,9 +284,20 @@
     var result = createArray(resultLength + (1 - subtract));
     var i = -1;
     var c = 0;
-    while (++i < resultLength) {
-      var aDigit = i < min.length ? min.magnitude[i] : 0;
+    while (++i < min.length) {
+      var aDigit = min.magnitude[i];
       c += max.magnitude[i] + (subtract !== 0 ? 0 - aDigit : aDigit - BASE);
+      if (c < 0) {
+        result[i] = BASE + c;
+        c = 0 - subtract;
+      } else {
+        result[i] = c;
+        c = 1 - subtract;
+      }
+    }
+    i -= 1;
+    while (++i < resultLength) {
+      c += max.magnitude[i] + (subtract !== 0 ? 0 : 0 - BASE);
       if (c < 0) {
         result[i] = BASE + c;
         c = 0 - subtract;
@@ -313,41 +326,47 @@
   };
 
   BigIntegerInternal.multiply = function (a, b) {
-    if (a.length === 0 || b.length === 0) {
+    var alength = a.length;
+    var blength = b.length;
+    var am = a.magnitude;
+    var bm = b.magnitude;
+    var asign = a.sign;
+    var bsign = b.sign;
+    if (alength === 0 || blength === 0) {
       return createBigInteger(0, createArray(0), 0);
     }
-    if (a.length === 1 && a.magnitude[0] === 1) {
-      return createBigInteger(a.sign === 1 ? 1 - b.sign : b.sign, b.magnitude, b.length);
+    if (alength === 1 && am[0] === 1) {
+      return createBigInteger(asign === 1 ? 1 - bsign : bsign, bm, blength);
     }
-    if (b.length === 1 && b.magnitude[0] === 1) {
-      return createBigInteger(a.sign === 1 ? 1 - b.sign : b.sign, a.magnitude, a.length);
+    if (blength === 1 && bm[0] === 1) {
+      return createBigInteger(asign === 1 ? 1 - bsign : bsign, am, alength);
     }
-    var resultSign = a.sign === 1 ? 1 - b.sign : b.sign;
-    var resultLength = a.length + b.length;
+    var resultSign = asign === 1 ? 1 - bsign : bsign;
+    var resultLength = alength + blength;
     var result = createArray(resultLength);
     var i = -1;
-    while (++i < b.length) {
-      if (b.magnitude[i] !== 0) { // to optimize multiplications by a power of BASE
+    while (++i < blength) {
+      var digit = bm[i];
+      if (digit !== 0) { // to optimize multiplications by a power of BASE
         var c = 0;
         var j = -1;
-        while (++j < a.length) {
-          var carry = 0;
+        while (++j < alength) {
+          var carry = 1;
           c += result[j + i] - BASE;
-          if (c >= 0) {
-            carry = 1;
-          } else {
+          if (c < 0) {
             c += BASE;
+            carry = 0;
           }
-          var tmp = performMultiplication(c, a.magnitude[j], b.magnitude[i]);
+          var tmp = performMultiplication(c, am[j], digit);
           var lo = tmp.lo;
           var hi = tmp.hi;
           result[j + i] = lo;
           c = hi + carry;
         }
-        result[a.length + i] = c;
+        result[alength + i] = c;
       }
     }
-    while (resultLength > 0 && result[resultLength - 1] === 0) {
+    if (result[resultLength - 1] === 0) {
       resultLength -= 1;
     }
     return createBigInteger(resultSign, result, resultLength);
@@ -552,13 +571,17 @@
       }
       throw new RangeError();
     }
-    if (n < 1) {
+    if (n === 0) {
       return BigIntegerInternal.BigInt(1);
     }
-    var accumulator = a;
+    var x = a;
+    while (n % 2 === 0) {
+      n = Math.floor(n / 2);
+      x = BigIntegerInternal.multiply(x, x);
+    }
+    var accumulator = x;
     n -= 1;
-    if (n > 0) {
-      var x = a;
+    if (n >= 2) {
       while (n >= 2) {
         var t = Math.floor(n / 2);
         if (t * 2 !== n) {
@@ -578,6 +601,19 @@
     }
     if (radix !== 10 && (radix < 2 || radix > 36 || radix !== Math.floor(radix))) {
       throw new RangeError("radix argument must be an integer between 2 and 36");
+    }
+
+    // console.time(); var n = BigInteger.exponentiate(2**4, 2**16); console.timeEnd(); console.time(); n.toString(16).length; console.timeEnd();
+    if (this.length > 8 && true) { // https://github.com/GoogleChromeLabs/jsbi/blob/c9b179a4d5d34d35dd24cf84f7c1def54dc4a590/jsbi.mjs#L880
+      if (this.sign === 1) {
+        return '-' + BigIntegerInternal.unaryMinus(this).toString(radix);
+      }
+      var s = Math.floor(this.length * Math.log(BASE) / Math.log(radix) / 2 + 0.5 - 1);
+      var split = BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(radix), BigIntegerInternal.BigInt(s));
+      var q = BigIntegerInternal.divide(this, split);
+      var r = BigIntegerInternal.subtract(this, BigIntegerInternal.multiply(q, split));
+      var a = r.toString(radix);
+      return q.toString(radix) + '0'.repeat(s - a.length) + a;
     }
 
     var a = this;
@@ -629,62 +665,10 @@
     result += remainder[k].toString(radix);
     while (++k < size) {
       var t = remainder[k].toString(radix);
-      var j = groupLength - t.length;
-      while (--j >= 0) {
-        result += "0";
-      }
-      result += t;
+      result += "0".repeat(groupLength - t.length) + t;
     }
     return result;
   };
-
-  var toLocaleString = function (value, locale, options) {
-    if (options == undefined ||
-        options.localeMatcher != undefined ||
-        options.numberingSystem != undefined ||
-        options.style != undefined ||
-        options.useGrouping !== false ||
-        options.minimumIntegerDigits != undefined ||
-        options.maximumFractionDigits != undefined ||
-        options.minimumFractionDigits != undefined ||
-        options.minimumSignificantDigits != undefined ||
-        options.maximumSignificantDigits != undefined) {
-      throw new TypeError("not supported options");
-    }
-    var one = (1).toLocaleString(locale, {useGrouping: false});
-    var digits = function (s, one) {
-      var ones = {
-        "۱": "arabext",
-        "١": "arab",
-        "1": "latn"
-      };
-      var numberingSystems = {
-        arabext: "۰۱۲۳۴۵۶۷۸۹",
-        arab: "٠١٢٣٤٥٦٧٨٩",
-        latn: "0123456789"
-      };
-      var numberingSystem = ones[one] || "latn";
-      var characters = numberingSystems[numberingSystem] || "0123456789";
-      var result = "";
-      for (var i = 0; i < s.length; i += 1) {
-        var code = s.charCodeAt(i);
-        if (code >= "0".charCodeAt(0) && code <= "9".charCodeAt(0)) {
-          var replacement = characters.charCodeAt(code - "0".charCodeAt(0));
-          result += String.fromCharCode(replacement);
-        } else {
-          throw new RangeError();
-        }
-      }
-      return result;
-    };
-    return digits(String(value), one);
-  };
-
-  if ((9007199254740991).toLocaleString("fa", {useGrouping: false}) !== (9007199254740991).toLocaleString("en", {useGrouping: false})) {
-    BigIntegerInternal.prototype.toLocaleString = function (locale, options) {
-      return toLocaleString(this.toString(), locale, options);
-    };
-  }
 
   function BigIntWrapper() {
   }
@@ -753,7 +737,7 @@
     if (a === BigInt(2)) {
       return BigInt(1) << b;
     }
-    if (n === 1) {
+    if (n === 0) {
       return BigInt(1);
     }
     var x = a;
@@ -785,14 +769,6 @@
   };
 
   var Internal = typeof BigInt !== "undefined" && BigInt(9007199254740991) + BigInt(2) - BigInt(2) === BigInt(9007199254740991) ? BigIntWrapper : BigIntegerInternal;
-
-  // Chrome 67-76
-  if (typeof BigInt !== "undefined" && BigInt(9007199254740991).toLocaleString("fa", {useGrouping: false}) !== (9007199254740991).toLocaleString("fa", {useGrouping: false})) {
-    BigInt.prototype.toLocaleString = function (locale, options) {
-      "use strict";
-      return toLocaleString(BigInt(this).toString(), locale, options);
-    };
-  }
 
   var toNumber = n(function (a) {
     return Internal.toNumber(a);
@@ -870,6 +846,9 @@
         return Internal.multiply(c, c);
       }
       if (typeof x === "number" && Math.abs(x) > 2 && y >= 0) {
+        if (x % 2 === 0 && y > 42) {//TODO: ?
+          return multiply(exponentiate(2, y), exponentiate(x / 2, y));
+        }
         var k = Math.floor(Math.log(9007199254740991) / Math.log(Math.abs(x) + 0.5));
         if (k >= 2) {
           return multiply(Math.pow(x, y % k), exponentiate(Math.pow(x, k), Math.floor(y / k)));

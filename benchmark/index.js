@@ -353,6 +353,7 @@ var generateTable = function () {
     {id: "toString-hex", url: "https://github.com/indutny/bn.js/blob/master/benchmarks/index.js"},
     {id: "add", url: "https://github.com/indutny/bn.js/blob/master/benchmarks/index.js"},
     {id: "mul", url: "https://github.com/indutny/bn.js/blob/master/benchmarks/index.js"},
+    {id: "mul-jumbo", url: "https://github.com/indutny/bn.js/blob/master/benchmarks/index.js"},
     {id: "div", url: "https://github.com/indutny/bn.js/blob/master/benchmarks/index.js"},
     {id: "mod", url: "https://github.com/indutny/bn.js/blob/master/benchmarks/index.js"},
     {id: "10*10==20", url: "#1"},

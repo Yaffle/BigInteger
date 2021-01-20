@@ -16,11 +16,11 @@
     var y = radix < 10 ? radix : 10;
     while (++i < to) {
       var code = s.charCodeAt(i);
-      var v = code - 48;
+      var v = code - "0".charCodeAt(0);
       if (v < 0 || y <= v) {
-        v = 10 - 65 + code;
+        v = 10 - "A".charCodeAt(0) + code;
         if (v < 10 || radix <= v) {
-          v = 10 - 97 + code;
+          v = 10 - "a".charCodeAt(0) + code;
           if (v < 10 || radix <= v) {
             throw new RangeError();
           }
@@ -53,14 +53,14 @@
 
   // Veltkamp-Dekker's algorithm
   // see http://web.mit.edu/tabbott/Public/quaddouble-debian/qd-2.3.4-old/docs/qd.pdf
-  var fms = function (a, b, product) {
+  var fma = function (a, b, product) {
     var at = SPLIT * a;
     var ahi = at - (at - a);
     var alo = a - ahi;
     var bt = SPLIT * b;
     var bhi = bt - (bt - b);
     var blo = b - bhi;
-    var error = ((ahi * bhi - product) + ahi * blo + alo * bhi) + alo * blo;
+    var error = ((ahi * bhi + product) + ahi * blo + alo * bhi) + alo * blo;
     return error;
   };
 
@@ -71,7 +71,7 @@
 
   var performMultiplication = function (carry, a, b) {
     var product = a * b;
-    var error = fms(a, b, product);
+    var error = fma(a, b, -product);
 
     var hi = (product / BASE) - BASE + BASE;
     var lo = product - hi * BASE + error;
@@ -97,7 +97,7 @@
     var p = a * BASE;
     var q = fastTrunc(p / divisor);
 
-    var r = 0 - fms(q, divisor, p);
+    var r = 0 - fma(q, divisor, -p);
     if (r < 0) {
       q -= 1;
       r += divisor;
@@ -142,22 +142,22 @@
     var sign = 0;
     var signCharCode = s.charCodeAt(0);
     var from = 0;
-    if (signCharCode === 43) { // "+"
+    if (signCharCode === "+".charCodeAt(0)) {
       from = 1;
     }
-    if (signCharCode === 45) { // "-"
+    if (signCharCode === "-".charCodeAt(0)) {
       from = 1;
       sign = 1;
     }
     var radix = 10;
-    if (from === 0 && length >= 2 && s.charCodeAt(0) === 48) {
-      if (s.charCodeAt(1) === 98) {
+    if (from === 0 && length >= 2 && s.charCodeAt(0) === "0".charCodeAt(0)) {
+      if (s.charCodeAt(1) === "b".charCodeAt(0)) {
         radix = 2;
         from = 2;
-      } else if (s.charCodeAt(1) === 111) {
+      } else if (s.charCodeAt(1) === "o".charCodeAt(0)) {
         radix = 8;
         from = 2;
-      } else if (s.charCodeAt(1) === 120) {
+      } else if (s.charCodeAt(1) === "x".charCodeAt(0)) {
         radix = 16;
         from = 2;
       }
@@ -341,6 +341,10 @@
     if (blength === 1 && bm[0] === 1) {
       return createBigInteger(asign === 1 ? 1 - bsign : bsign, am, alength);
     }
+    var astart = 0;
+    while (am[astart] === 0) { // to optimize multiplications of a power of BASE
+      astart += 1;
+    }
     var resultSign = asign === 1 ? 1 - bsign : bsign;
     var resultLength = alength + blength;
     var result = createArray(resultLength);
@@ -349,7 +353,7 @@
       var digit = bm[i];
       if (digit !== 0) { // to optimize multiplications by a power of BASE
         var c = 0;
-        var j = -1;
+        var j = astart - 1;
         while (++j < alength) {
           var carry = 1;
           c += result[j + i] - BASE;
@@ -574,6 +578,16 @@
     if (n === 0) {
       return BigIntegerInternal.BigInt(1);
     }
+    if (a.length === 1 && (a.magnitude[0] === 2 || a.magnitude[0] === 16)) {
+      var bits = Math.floor(Math.log(BASE) / Math.log(2) + 0.5);
+      var abits = Math.floor(Math.log(a.magnitude[0]) / Math.log(2) + 0.5);
+      var nn = abits * n;
+      var q = Math.floor(nn / bits);
+      var r = nn - q * bits;
+      var array = createArray(q + 1);
+      array[q] = Math.pow(2, r);
+      return createBigInteger(a.sign === 0 || n % 2 === 0 ? 0 : 1, array, q + 1);
+    }
     var x = a;
     while (n % 2 === 0) {
       n = Math.floor(n / 2);
@@ -669,97 +683,32 @@
     }
     return result;
   };
-
-  function BigIntWrapper() {
-  }
-
-  BigIntWrapper.BigInt = function (x) {
-    return BigInt(x);
-  };
-  BigIntWrapper.toNumber = function (bigint) {
-    return Number(bigint);
-  };
-  BigIntWrapper.add = function (a, b) {
-    return a + b;
-  };
-  BigIntWrapper.subtract = function (a, b) {
-    return a - b;
-  };
-  BigIntWrapper.multiply = function (a, b) {
-    return a * b;
-  };
-  BigIntWrapper.divide = function (a, b) {
-    return a / b;
-  };
-  BigIntWrapper.remainder = function (a, b) {
-    return a % b;
-  };
-  BigIntWrapper.unaryMinus = function (a) {
-    return -a;
-  };
-  BigIntWrapper.equal = function (a, b) {
-    return a === b;
-  };
-  BigIntWrapper.lessThan = function (a, b) {
-    return a < b;
-  };
-  BigIntWrapper.greaterThan = function (a, b) {
-    return a > b;
-  };
-  BigIntWrapper.notEqual = function (a, b) {
-    return a !== b;
-  };
-  BigIntWrapper.lessThanOrEqual = function (a, b) {
-    return a <= b;
-  };
-  BigIntWrapper.greaterThanOrEqual = function (a, b) {
-    return a >= b;
-  };
-
-  BigIntWrapper.exponentiate = function (a, b) { // a**b
-    if (typeof a !== "bigint") {
-      throw new TypeError();
+  BigIntegerInternal.signedRightShift = function (x, n) {
+    var ZERO = BigIntegerInternal.BigInt(0);
+    if (BigIntegerInternal.lessThan(n, ZERO)) {
+      return BigIntegerInternal.leftShift(x, BigIntegerInternal.unaryMinus(n));
     }
-    if (typeof b !== "bigint") {
-      throw new TypeError();
-    }
-    var n = Number(b);
-    if (n < 0) {
-      throw new RangeError();
-    }
-    if (n > 9007199254740991) {
-      var y = Number(a);
-      if (y === 0 || y === -1 || y === +1) {
-        return y === -1 && Number(b % BigInt(2)) === 0 ? -a : a;
+    if (BigIntegerInternal.lessThan(x, ZERO)) {
+      var q = BigIntegerInternal.divide(x, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n));
+      if (BigIntegerInternal.lessThan(BigIntegerInternal.subtract(x, BigIntegerInternal.multiply(q, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n))), 0)) {
+        q = BigIntegerInternal.subtract(q, BigIntegerInternal.BigInt(1));
       }
-      throw new RangeError();
+      return q;
     }
-    if (a === BigInt(2)) {
-      return BigInt(1) << b;
-    }
-    if (n === 0) {
-      return BigInt(1);
-    }
-    var x = a;
-    while (n % 2 === 0) {
-      n = Math.floor(n / 2);
-      x *= x;
-    }
-    var accumulator = x;
-    n -= 1;
-    if (n >= 2) {
-      while (n >= 2) {
-        var t = Math.floor(n / 2);
-        if (t * 2 !== n) {
-          accumulator *= x;
-        }
-        n = t;
-        x *= x;
-      }
-      accumulator *= x;
-    }
-    return accumulator;
+    return BigIntegerInternal.divide(x, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n));
   };
+  BigIntegerInternal.leftShift = function (x, n) {
+    var ZERO = BigIntegerInternal.BigInt(0);
+    if (BigIntegerInternal.lessThan(n, 0)) {
+      return BigIntegerInternal.signedRightShift(x, BigIntegerInternal.unaryMinus(n));
+    }
+    return BigIntegerInternal.multiply(x, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n));
+  };
+  BigIntegerInternal.prototype.valueOf = function () {
+    throw new TypeError();
+  };
+
+  var Internal = typeof BigInt !== "undefined" && BigInt(9007199254740991) + BigInt(2) - BigInt(2) === BigInt(9007199254740991) ? BigIntWrapper : BigIntegerInternal;
 
   // noinline
   var n = function (f) {
@@ -767,8 +716,6 @@
       return f(x, y);
     };
   };
-
-  var Internal = typeof BigInt !== "undefined" && BigInt(9007199254740991) + BigInt(2) - BigInt(2) === BigInt(9007199254740991) ? BigIntWrapper : BigIntegerInternal;
 
   var toNumber = n(function (a) {
     return Internal.toNumber(a);
@@ -798,6 +745,13 @@
     return toResult(Internal.add(a, b));
   });
   var subtract = n(function (x, y) {
+    if (typeof x === "number" && x === 0) {
+      return unaryMinus(y);
+    }
+    // quite good optimization for comparision of big integers
+    if (typeof y === "number" && y === 0) {
+      return x;
+    }
     var a = valueOf(x);
     var b = valueOf(y);
     return toResult(Internal.subtract(a, b));
@@ -813,8 +767,14 @@
     if (typeof x === "number" && x === 1) {
       return y;
     }
+    if (typeof x === "number" && x === -1) {
+      return Internal.unaryMinus(y);
+    }
     if (typeof y === "number" && y === 1) {
       return x;
+    }
+    if (typeof y === "number" && y === -1) {
+      return Internal.unaryMinus(x);
     }
     var a = valueOf(x);
     var b = valueOf(y);
@@ -829,6 +789,9 @@
     return toResult(Internal.divide(a, b));
   });
   var remainder = n(function (x, y) {
+    if (typeof x === "number") {
+      return x;
+    }
     var a = valueOf(x);
     var b = valueOf(y);
     return toResult(Internal.remainder(a, b));
@@ -846,7 +809,7 @@
         return Internal.multiply(c, c);
       }
       if (typeof x === "number" && Math.abs(x) > 2 && y >= 0) {
-        if (x % 2 === 0 && y > 42) {//TODO: ?
+        if (y > 42 && x % 2 === 0) {//TODO: ?
           return multiply(exponentiate(2, y), exponentiate(x / 2, y));
         }
         var k = Math.floor(Math.log(9007199254740991) / Math.log(Math.abs(x) + 0.5));
@@ -865,10 +828,10 @@
   });
   var equal = n(function (x, y) {
     if (typeof x === "number") {
-      return x === Internal.toNumber(y);
+      return false;
     }
     if (typeof y === "number") {
-      return Internal.toNumber(x) === y;
+      return false;
     }
     return Internal.equal(x, y);
   });
@@ -906,6 +869,9 @@
         return value;
       }
     }
+    if (typeof x === "bigint") {
+      return toResult(x);
+    }
     return Internal.BigInt(x);
   };
   // Conversion to Number:
@@ -918,6 +884,9 @@
 
   // Arithmetic:
   BigInteger.add = function (x, y) {
+    if (typeof x === "string" || typeof y === "string") {
+      return x + y;
+    }
     if (typeof x === "number" && typeof y === "number") {
       var value = x + y;
       if (value >= -9007199254740991 && value <= +9007199254740991) {
@@ -1004,6 +973,31 @@
       }
     }
     return exponentiate(x, y);
+  };
+  BigInteger.signedRightShift = function (x, n) {
+    if (typeof x === "bigint") {
+      return toResult(x >> BigInt(n));
+    }
+    if (n < 0) {
+      return BigInteger.leftShift(x, BigInteger.unaryMinus(n));
+    }
+    if (x < 0) {
+      var q = BigInteger.divide(x, BigInteger.exponentiate(2, n));
+      if (BigInteger.subtract(x, BigInteger.multiply(q, BigInteger.exponentiate(2, n))) < 0) {
+        q = BigInteger.subtract(q, BigInteger.BigInt(1));
+      }
+      return q;
+    }
+    return BigInteger.divide(x, BigInteger.exponentiate(2, n));
+  };
+  BigInteger.leftShift = function (x, n) {
+    if (typeof x === "bigint") {
+      return x << BigInt(n);
+    }
+    if (n < 0) {
+      return BigInteger.signedRightShift(x, BigInteger.unaryMinus(n));
+    }
+    return BigInteger.multiply(x, BigInteger.exponentiate(2, n));
   };
 
   global.BigInteger = BigInteger;

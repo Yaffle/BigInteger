@@ -708,7 +708,7 @@
     throw new TypeError();
   };
 
-  var Internal = typeof BigInt !== "undefined" && BigInt(9007199254740991) + BigInt(2) - BigInt(2) === BigInt(9007199254740991) ? BigIntWrapper : BigIntegerInternal;
+  var Internal = BigIntegerInternal;
 
   // noinline
   var n = function (f) {

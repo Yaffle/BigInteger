@@ -689,6 +689,10 @@
       return BigIntegerInternal.leftShift(x, BigIntegerInternal.unaryMinus(n));
     }
     if (BigIntegerInternal.lessThan(x, ZERO)) {
+      var nn = BigIntegerInternal.toNumber(n);
+      if (nn > x.length * Math.ceil(Math.log(BASE) / Math.log(2))) {
+        return x.sign === 1 ? BigIntegerInternal.BigInt(-1) : ZERO;
+      }
       var q = BigIntegerInternal.divide(x, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n));
       if (BigIntegerInternal.lessThan(BigIntegerInternal.subtract(x, BigIntegerInternal.multiply(q, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n))), 0)) {
         q = BigIntegerInternal.subtract(q, BigIntegerInternal.BigInt(1));

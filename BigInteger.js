@@ -694,7 +694,7 @@
     }
     if (BigIntegerInternal.lessThan(x, ZERO)) {
       var q = BigIntegerInternal.divide(x, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n));
-      if (BigIntegerInternal.lessThan(BigIntegerInternal.subtract(x, BigIntegerInternal.multiply(q, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n))), 0)) {
+      if (BigIntegerInternal.lessThan(BigIntegerInternal.subtract(x, BigIntegerInternal.multiply(q, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n))), ZERO)) {
         q = BigIntegerInternal.subtract(q, BigIntegerInternal.BigInt(1));
       }
       return q;
@@ -703,13 +703,15 @@
   };
   BigIntegerInternal.leftShift = function (x, n) {
     var ZERO = BigIntegerInternal.BigInt(0);
-    if (BigIntegerInternal.lessThan(n, 0)) {
+    if (BigIntegerInternal.lessThan(n, ZERO)) {
       return BigIntegerInternal.signedRightShift(x, BigIntegerInternal.unaryMinus(n));
     }
     return BigIntegerInternal.multiply(x, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n));
   };
   BigIntegerInternal.prototype.valueOf = function () {
-    throw new TypeError();
+    //throw new TypeError();
+    console.error('BigIntegerInternal#valueOf is called');
+    return this;
   };
 
   var Internal = BigIntegerInternal;
@@ -1005,5 +1007,6 @@
   };
 
   global.BigInteger = BigInteger;
+  global.BigIntegerInternal = BigIntegerInternal;
 
 }(this));

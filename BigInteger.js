@@ -1006,7 +1006,7 @@
     return BigInteger.multiply(x, BigInteger.exponentiate(2, n));
   };
 
-  global.BigInteger = BigInteger;
-  global.BigIntegerInternal = BigIntegerInternal;
+  (global || globalThis).BigInteger = BigInteger;
+  (global || globalThis).BigIntegerInternal = BigIntegerInternal;
 
 }(this));

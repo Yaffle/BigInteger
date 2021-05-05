@@ -695,9 +695,10 @@
     if (nn > x.length * Math.ceil(Math.log(BASE) / Math.log(2))) {
       return x.sign === 1 ? BigIntegerInternal.BigInt(-1) : ZERO;
     }
+    var q = BigIntegerInternal.divide(x, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n));
     if (BigIntegerInternal.lessThan(x, ZERO)) {
-      var q = BigIntegerInternal.divide(x, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n));
-      if (BigIntegerInternal.lessThan(BigIntegerInternal.subtract(x, BigIntegerInternal.multiply(q, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n))), ZERO)) {
+      var r = BigIntegerInternal.subtract(x, BigIntegerInternal.multiply(q, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n)));
+      if (BigIntegerInternal.lessThan(r, ZERO)) {
         q = BigIntegerInternal.subtract(q, BigIntegerInternal.BigInt(1));
       }
       return q;
@@ -708,6 +709,9 @@
     var ZERO = BigIntegerInternal.BigInt(0);
     if (BigIntegerInternal.lessThan(n, ZERO)) {
       return BigIntegerInternal.signedRightShift(x, BigIntegerInternal.unaryMinus(n));
+    }
+    if (!BigIntegerInternal.lessThan(x, ZERO) && !BigIntegerInternal.lessThan(ZERO, x)) {
+      return x;
     }
     return BigIntegerInternal.multiply(x, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n));
   };
@@ -1010,29 +1014,10 @@
     return exponentiate(x, y);
   };
   BigInteger.signedRightShift = function (x, n) {
-    if (typeof x === "bigint") {
-      return toResult(x >> BigInt(n));
-    }
-    if (n < 0) {
-      return BigInteger.leftShift(x, BigInteger.unaryMinus(n));
-    }
-    if (x < 0) {
-      var q = BigInteger.divide(x, BigInteger.exponentiate(2, n));
-      if (BigInteger.subtract(x, BigInteger.multiply(q, BigInteger.exponentiate(2, n))) < 0) {
-        q = BigInteger.subtract(q, BigInteger.BigInt(1));
-      }
-      return q;
-    }
-    return BigInteger.divide(x, BigInteger.exponentiate(2, n));
+    return toResult(Internal.signedRightShift(valueOf(x), valueOf(n)));
   };
   BigInteger.leftShift = function (x, n) {
-    if (typeof x === "bigint") {
-      return x << BigInt(n);
-    }
-    if (n < 0) {
-      return BigInteger.signedRightShift(x, BigInteger.unaryMinus(n));
-    }
-    return BigInteger.multiply(x, BigInteger.exponentiate(2, n));
+    return toResult(Internal.leftShift(valueOf(x), valueOf(n)));
   };
 
   (global || globalThis).BigInteger = BigInteger;

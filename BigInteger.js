@@ -734,6 +734,8 @@
   for (var i = 0; i < cache.length; i += 1) {
     cache[i] = undefined;
   }
+  var lastNumber = 0;
+  var lastBigInt = undefined;
   var toNumber = n(function (a) {
     return Internal.toNumber(a);
   });
@@ -747,7 +749,11 @@
         }
         return value;
       }
-      return Internal.BigInt(x);
+      if (lastNumber !== x) {
+        lastNumber = x;
+        lastBigInt = Internal.BigInt(x);
+      }
+      return lastBigInt;
     }
     return x;
   };
@@ -784,10 +790,6 @@
     return typeof x === "number" && typeof y === "number" ? difference : toResult(difference);
   });
   var multiply = n(function (x, y) {
-    if (x === y) {
-      var c = valueOf(x);
-      return Internal.multiply(c, c);
-    }
     if (typeof x === "number" && x === 0) {
       return 0;
     }
@@ -847,8 +849,7 @@
         return x;
       }
       if (y === 2) {
-        var c = valueOf(x);
-        return Internal.multiply(c, c);
+        return multiply(x, x);
       }
       if (typeof x === "number" && Math.abs(x) > 2 && y >= 0) {
         if (y > 42 && x % 2 === 0) {//TODO: ?

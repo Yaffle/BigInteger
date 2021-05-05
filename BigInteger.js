@@ -208,6 +208,9 @@
     if (typeof x === "string") {
       return fromString(x);
     }
+    if (typeof x === "bigint") {
+      return fromString(x.toString());
+    }
     if (x instanceof BigIntegerInternal) {
       return x;
     }
@@ -832,12 +835,6 @@
     return toResult(Internal.remainder(a, b));
   });
   var exponentiate = n(function (x, y) {
-    if (typeof x === "number" && x === 0) {
-      return 0;
-    }
-    if (typeof x === "number" && x === 1) {
-      return 1;
-    }
     if (typeof y === "number") {
       if (y === 0) {
         return 1;
@@ -862,7 +859,7 @@
     var a = valueOf(x);
     var b = valueOf(y);
     var power = Internal.exponentiate(a, b);
-    return typeof x === "number" && x === -1 ? toResult(power) : power;
+    return typeof x === "number" && Math.abs(x) <= 1 ? toResult(power) : power;
   });
   var unaryMinus = n(function (x) {
     var a = valueOf(x);
@@ -902,17 +899,11 @@
   // Conversion from String:
   // Conversion from Number:
   BigInteger.BigInt = function (x) {
-    if (typeof x === "number") {
-      return x;
-    }
-    if (typeof x === "string") {
-      var value = 0 + Number(x);
+    if (typeof x === "number" || typeof x === "string" || typeof x === "bigint") {
+      var value = 0 + (typeof x === "number" ? x : Number(x));
       if (value >= -9007199254740991 && value <= +9007199254740991) {
         return value;
       }
-    }
-    if (typeof x === "bigint") {
-      return toResult(x);
     }
     return toResult(Internal.BigInt(x));
   };

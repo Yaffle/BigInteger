@@ -688,9 +688,13 @@
     if (BigIntegerInternal.lessThan(n, ZERO)) {
       return BigIntegerInternal.leftShift(x, BigIntegerInternal.unaryMinus(n));
     }
+    var nn = BigIntegerInternal.toNumber(n);
+    if (nn > x.length * Math.ceil(Math.log(BASE) / Math.log(2))) {
+      return x.sign === 1 ? BigIntegerInternal.BigInt(-1) : ZERO;
+    }
     if (BigIntegerInternal.lessThan(x, ZERO)) {
       var q = BigIntegerInternal.divide(x, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n));
-      if (BigIntegerInternal.lessThan(BigIntegerInternal.subtract(x, BigIntegerInternal.multiply(q, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n))), 0)) {
+      if (BigIntegerInternal.lessThan(BigIntegerInternal.subtract(x, BigIntegerInternal.multiply(q, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n))), ZERO)) {
         q = BigIntegerInternal.subtract(q, BigIntegerInternal.BigInt(1));
       }
       return q;
@@ -699,13 +703,15 @@
   };
   BigIntegerInternal.leftShift = function (x, n) {
     var ZERO = BigIntegerInternal.BigInt(0);
-    if (BigIntegerInternal.lessThan(n, 0)) {
+    if (BigIntegerInternal.lessThan(n, ZERO)) {
       return BigIntegerInternal.signedRightShift(x, BigIntegerInternal.unaryMinus(n));
     }
     return BigIntegerInternal.multiply(x, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n));
   };
   BigIntegerInternal.prototype.valueOf = function () {
-    throw new TypeError();
+    //throw new TypeError();
+    console.error('BigIntegerInternal#valueOf is called');
+    return this;
   };
 
   var Internal = BigIntegerInternal;
@@ -717,11 +723,23 @@
     };
   };
 
+  var cache = new Array(16 * 2 + 1);
+  for (var i = 0; i < cache.length; i += 1) {
+    cache[i] = undefined;
+  }
   var toNumber = n(function (a) {
     return Internal.toNumber(a);
   });
   var valueOf = function (x) {
     if (typeof x === "number") {
+      if (x >= -16 && x <= +16) {
+        var value = cache[x + 16];
+        if (value == undefined) {
+          value = Internal.BigInt(x);
+          cache[x + 16] = value;
+        }
+        return value;
+      }
       return Internal.BigInt(x);
     }
     return x;
@@ -742,7 +760,8 @@
     }
     var a = valueOf(x);
     var b = valueOf(y);
-    return toResult(Internal.add(a, b));
+    var sum = Internal.add(a, b);
+    return typeof x === "number" && typeof y === "number" ? sum : toResult(sum);
   });
   var subtract = n(function (x, y) {
     if (typeof x === "number" && x === 0) {
@@ -754,14 +773,15 @@
     }
     var a = valueOf(x);
     var b = valueOf(y);
-    return toResult(Internal.subtract(a, b));
+    var difference = Internal.subtract(a, b);
+    return typeof x === "number" && typeof y === "number" ? difference : toResult(difference);
   });
   var multiply = n(function (x, y) {
     if (x === y) {
       var c = valueOf(x);
       return Internal.multiply(c, c);
     }
-    if (typeof x === "number" && x === 0 || typeof y === "number" && y === 0) {
+    if (typeof x === "number" && x === 0) {
       return 0;
     }
     if (typeof x === "number" && x === 1) {
@@ -769,6 +789,9 @@
     }
     if (typeof x === "number" && x === -1) {
       return Internal.unaryMinus(y);
+    }
+    if (typeof y === "number" && y === 0) {
+      return 0;
     }
     if (typeof y === "number" && y === 1) {
       return x;
@@ -781,8 +804,14 @@
     return Internal.multiply(a, b);
   });
   var divide = n(function (x, y) {
+    if (typeof x === "number") {
+      return 0;
+    }
     if (typeof y === "number" && y === 1) {
       return x;
+    }
+    if (typeof y === "number" && y === -1) {
+      return Internal.unaryMinus(x);
     }
     var a = valueOf(x);
     var b = valueOf(y);
@@ -792,11 +821,23 @@
     if (typeof x === "number") {
       return x;
     }
+    if (typeof y === "number" && y === 1) {
+      return 0;
+    }
+    if (typeof y === "number" && y === -1) {
+      return 0;
+    }
     var a = valueOf(x);
     var b = valueOf(y);
     return toResult(Internal.remainder(a, b));
   });
   var exponentiate = n(function (x, y) {
+    if (typeof x === "number" && x === 0) {
+      return 0;
+    }
+    if (typeof x === "number" && x === 1) {
+      return 1;
+    }
     if (typeof y === "number") {
       if (y === 0) {
         return 1;
@@ -820,7 +861,8 @@
     }
     var a = valueOf(x);
     var b = valueOf(y);
-    return Internal.exponentiate(a, b);
+    var power = Internal.exponentiate(a, b);
+    return typeof x === "number" && x === -1 ? toResult(power) : power;
   });
   var unaryMinus = n(function (x) {
     var a = valueOf(x);
@@ -872,7 +914,7 @@
     if (typeof x === "bigint") {
       return toResult(x);
     }
-    return Internal.BigInt(x);
+    return toResult(Internal.BigInt(x));
   };
   // Conversion to Number:
   BigInteger.toNumber = function (x) {
@@ -966,10 +1008,12 @@
   };
 
   BigInteger.exponentiate = function (x, y) {
-    if (typeof x === "number" && typeof y === "number" && y >= 0 && y < 53) { // 53 === log2(9007199254740991 + 1)
-      var value = 0 + Math.pow(x, y);
-      if (value >= -9007199254740991 && value <= 9007199254740991) {
-        return value;
+    if (typeof x === "number" && typeof y === "number") {
+      if (y >= 0 && (y < 53 || x >= -1 && x <= 1)) { // 53 === log2(9007199254740991 + 1)
+        var value = 0 + Math.pow(x, y);
+        if (value >= -9007199254740991 && value <= 9007199254740991) {
+          return value;
+        }
       }
     }
     return exponentiate(x, y);
@@ -1000,6 +1044,12 @@
     return BigInteger.multiply(x, BigInteger.exponentiate(2, n));
   };
 
-  global.BigInteger = BigInteger;
+  (global || globalThis).BigInteger = BigInteger;
+  BigInteger._getInternal = function () {
+    return Internal;
+  };
+  BigInteger._setInternal = function (newInternal) {
+    Internal = newInternal;
+  };
 
 }(this));

@@ -734,8 +734,36 @@
   for (var i = 0; i < cache.length; i += 1) {
     cache[i] = undefined;
   }
-  var lastNumber = 0;
-  var lastBigInt = undefined;
+  function LastTwoMap() {
+    this.a = undefined;
+    this.aKey = 0;
+    this.b = undefined;
+    this.bKey = 0;
+    this.last = 0;
+  }
+  LastTwoMap.prototype.get = function (key) {
+    if (this.aKey === key) {
+      this.last = 0;
+      return this.a;
+    }
+    if (this.bKey === key) {
+      this.last = 1;
+      return this.b;
+    }
+    return undefined;
+  };
+  LastTwoMap.prototype.set = function (key, value) {
+    if (this.last === 0) {
+      this.bKey = key;
+      this.b = value;
+      this.last = 1;
+    } else {
+      this.aKey = key;
+      this.a = value;
+      this.last = 0;
+    }
+  };
+  let map = new LastTwoMap(); // to optimize when some number is multiplied by few numbers sequencely
   var toNumber = n(function (a) {
     return Internal.toNumber(a);
   });
@@ -749,11 +777,12 @@
         }
         return value;
       }
-      if (lastNumber !== x) {
-        lastNumber = x;
-        lastBigInt = Internal.BigInt(x);
+      var value = map.get(x);
+      if (value == undefined) {
+        value = Internal.BigInt(x);
+        map.set(x, value);
       }
-      return lastBigInt;
+      return value;
     }
     return x;
   };

@@ -461,6 +461,18 @@ var wrapper = function () {
     var s = I.toString(b, 10);
     assertEquals(s, (-3 >> 8).toString(), "-3 >> 8");
   });
+  testSuite.add("huge right shift", function (I) {
+    var a = I.parseInt("1", 10);
+    var n = Math.pow(2, 30) - 1;
+    var b = I.shiftLeft(a, n);
+    var start = Date.now();
+    var c = I.shiftRight(b, n - 1);
+    var end = Date.now();
+    var s = I.toString(c, 10);
+    assertEquals(s, "2", "(1 << " + n + ") >> " + (n - 1));
+    console.log(end - start, i, true, "signed right shift is fast");
+    assertEquals(end - start < 16, true, "signed right shift is fast");
+  });
   testSuite.add("<< -n", function (I) {
     var a = I.parseInt("3", 10);
     var b = I.shiftLeft(a, -1);

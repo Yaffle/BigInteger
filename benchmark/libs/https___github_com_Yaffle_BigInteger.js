@@ -50,6 +50,7 @@
     s *= 2;
   }
   var SPLIT = s + 1;
+  var BASELOG2 = Math.ceil(Math.log(BASE) / Math.log(2));
 
   // Veltkamp-Dekker's algorithm
   // see http://web.mit.edu/tabbott/Public/quaddouble-debian/qd-2.3.4-old/docs/qd.pdf
@@ -201,6 +202,20 @@
     return createBigInteger(size === 0 ? 0 : sign, magnitude, size);
   };
 
+  // Math.pow(2, n) is slow in Chrome 93
+  function exp(x, n) {
+    var a = 1;
+    while (n !== 0) {
+      var q = (n >> 1);
+      if (n !== (q << 1)) {
+        a *= x;
+      }
+      n = q;
+      x *= x;
+    }
+    return a;
+  }
+
   BigIntegerInternal.BigInt = function (x) {
     if (typeof x === "number") {
       return fromNumber(x);
@@ -236,7 +251,7 @@
     if (i >= 0 && y % 2 === 1) {
       y += 1;
     }
-    var z = (x * BASE + y) * Math.pow(BASE, a.length - 2);
+    var z = (x * BASE + y) * exp(BASE, a.length - 2);
     return a.sign === 1 ? 0 - z : z;
   };
 
@@ -244,20 +259,22 @@
     if (a === b) {
       return 0;
     }
-    if (a.length !== b.length) {
-      return a.length < b.length ? -1 : +1;
+    var c1 = a.length - b.length;
+    if (c1 !== 0) {
+      return c1;
     }
     var i = a.length;
     while (--i >= 0) {
-      if (a.magnitude[i] !== b.magnitude[i]) {
-        return a.magnitude[i] < b.magnitude[i] ? -1 : +1;
+      var c = a.magnitude[i] - b.magnitude[i];
+      if (c !== 0) {
+        return c;
       }
     }
     return 0;
   };
 
   var compareTo = function (a, b) {
-    var c = a.sign === b.sign ? compareMagnitude(a, b) : 1;
+    var c = a.sign === b.sign ? (compareMagnitude(a, b) < 0 ? -1 : +1) : 1;
     return a.sign === 1 ? 0 - c : c; // positive zero will be returned for c === 0
   };
 
@@ -329,6 +346,11 @@
   };
 
   BigIntegerInternal.multiply = function (a, b) {
+    if (a.length < b.length) {
+      var tmp = a;
+      a = b;
+      b = tmp;
+    }
     var alength = a.length;
     var blength = b.length;
     var am = a.magnitude;
@@ -686,34 +708,64 @@
     }
     return result;
   };
-  BigIntegerInternal.signedRightShift = function (x, n) {
-    var ZERO = BigIntegerInternal.BigInt(0);
-    if (BigIntegerInternal.lessThan(n, ZERO)) {
-      return BigIntegerInternal.leftShift(x, BigIntegerInternal.unaryMinus(n));
-    }
-    var nn = BigIntegerInternal.toNumber(n);
-    if (nn > x.length * Math.ceil(Math.log(BASE) / Math.log(2))) {
-      return x.sign === 1 ? BigIntegerInternal.BigInt(-1) : ZERO;
-    }
-    var q = BigIntegerInternal.divide(x, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n));
-    if (BigIntegerInternal.lessThan(x, ZERO)) {
-      var r = BigIntegerInternal.subtract(x, BigIntegerInternal.multiply(q, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n)));
-      if (BigIntegerInternal.lessThan(r, ZERO)) {
-        q = BigIntegerInternal.subtract(q, BigIntegerInternal.BigInt(1));
-      }
-      return q;
-    }
-    return BigIntegerInternal.divide(x, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n));
-  };
-  BigIntegerInternal.leftShift = function (x, n) {
-    var ZERO = BigIntegerInternal.BigInt(0);
-    if (BigIntegerInternal.lessThan(n, ZERO)) {
-      return BigIntegerInternal.signedRightShift(x, BigIntegerInternal.unaryMinus(n));
-    }
-    if (!BigIntegerInternal.lessThan(x, ZERO) && !BigIntegerInternal.lessThan(ZERO, x)) {
+  var signedRightShift = function (x, n) {
+    // (!) it should work fast if n ~ size(x) - 53
+    if (x.length === 0) {
       return x;
     }
-    return BigIntegerInternal.multiply(x, BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(2), n));
+    var shift = Math.floor(n / BASELOG2);
+    var length = x.length - shift;
+    if (length <= 0) {
+      if (x.sign === 1) {
+        var minusOne = createArray(1);
+        minusOne[0] = 1;
+        return createBigInteger(1, minusOne, 1);
+      }
+      return createBigInteger(0, createArray(0), 0);
+    }
+    var digits = createArray(length);
+    for (var i = 0; i < length; i += 1) {
+      digits[i] = i + shift < 0 ? 0 : x.magnitude[i + shift];
+    }
+    n -= shift * BASELOG2;
+    var s = exp(2, n);
+    var s1 = Math.floor(BASE / s);
+    var pr = 0;
+    for (var i = length - 1; i >= 0; i -= 1) {
+      var q = Math.floor(digits[i] / s);
+      var r = digits[i] - q * s;
+      digits[i] = q + pr * s1;
+      pr = r;
+    }
+    if (length >= 1 && digits[length - 1] === 0) {
+      length -= 1;
+    }
+    if (x.sign === 1) {
+      var hasRemainder = pr > 0;
+      for (var i = 0; i < shift && !hasRemainder; i += 1) {
+        hasRemainder = x.magnitude[i] !== 0;
+      }
+      if (hasRemainder) {
+        if (length === 0) {
+          length += 1;
+          digits[0] = 1;
+        } else {
+          // subtract one
+          var i = 0;
+          while (i < length && digits[i] === 0) {
+            i += 1;
+          }
+          digits[i] -= 1;
+        }
+      }
+    }
+    return createBigInteger(x.sign, digits, length);
+  };
+  BigIntegerInternal.signedRightShift = function (x, n) {
+    return signedRightShift(x, BigIntegerInternal.toNumber(n));
+  };
+  BigIntegerInternal.leftShift = function (x, n) {
+    return signedRightShift(x, 0 - BigIntegerInternal.toNumber(n));
   };
   BigIntegerInternal.prototype.valueOf = function () {
     //throw new TypeError();

@@ -232,6 +232,30 @@
     throw new RangeError();
   };
 
+  BigIntegerInternal.asUintN = function (bits, bigint) {
+    if (bits < 0) {
+      throw new RangeError();
+    }
+    var n = Math.ceil(bits / BASELOG2);
+    bits -= BASELOG2 * n;
+    if (bigint.sign === 1) {
+      throw new RangeError("not implemented");
+    }
+    if (n > bigint.length) {
+      return bigint;
+    }
+    var array = createArray(n);
+    for (var i = 0; i < n; i += 1) {
+      array[i] = bigint.magnitude[i];
+    }
+    var m = exp(2, BASELOG2 + bits);
+    array[n - 1] = array[n - 1] - Math.floor(array[n - 1] / m) * m;
+    while (n >= 0 && array[n - 1] === 0) {
+      n -= 1;
+    }
+    return createBigInteger(0, array, n);
+  };
+
   BigIntegerInternal.toNumber = function (a) {
     if (a.length === 0) {
       return 0;
@@ -815,7 +839,7 @@
       this.last = 0;
     }
   };
-  let map = new LastTwoMap(); // to optimize when some number is multiplied by few numbers sequencely
+  var map = new LastTwoMap(); // to optimize when some number is multiplied by few numbers sequencely
   var toNumber = n(function (a) {
     return Internal.toNumber(a);
   });
@@ -992,6 +1016,13 @@
       }
     }
     return toResult(Internal.BigInt(x));
+  };
+  BigInteger.asUintN = function (n, x) {
+    if (typeof x === "number" && x >= 0 && n >= 0 && n <= 53) {
+      var m = exp(2, n);
+      return x - Math.floor(x / m) * m;
+    }
+    return toResult(Internal.asUintN(n, Internal.BigInt(x)));
   };
   // Conversion to Number:
   BigInteger.toNumber = function (x) {

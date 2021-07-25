@@ -36,6 +36,11 @@ Negation               | `BigInteger.unaryMinus(a)`           | `0 - a`         
 Comparison             | `BigInteger.equal(a, b)`             | `a === b`                        | `a === b`
 ...                    | `BigInteger.lessThan(a, b)`          | `a < b`                          | `a < b`
 ...                    | `BigInteger.greaterThan(a, b)`       | `a > b`                          | `a > b`
+...                    | `BigInteger.notEqual(a, b)`          | `a !== b`                        | `a !== b`
+...                    | `BigInteger.lessThanOrEqual(a, b)`   | `a <= b`                         | `a <= b`
+...                    | `BigInteger.greaterThanOrEqual(a, b)`| `a >= b`                         | `a >= b`
+Signed Right Shift     | `BigInteger.signedRightShift(a, b)`  | `a >> b`                         | `a >> b`
+Left Shift             | `BigInteger.leftShift(a, b)`         | `a << b`                         | `a << b`
 
 Example
 =======

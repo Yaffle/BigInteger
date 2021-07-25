@@ -136,6 +136,9 @@ var wrapper = function () {
       var z = I.xor(a, b);
       return I.compareTo(x, y) < 0 && I.compareTo(x, z) < 0;
     }, { setup: initialize });
+    benchmarkSuite.add("gcd-jumbo", function () {
+      return I.gcd(aj, bj);
+    }, { setup: initialize });
   }());
   (function () {
     var a = undefined;
@@ -656,6 +659,13 @@ var wrapper = function () {
     assertEquals(s, e, "modPow");
   });
   */
+  testSuite.add("gcd", function (I) {
+    var a = I.parseInt("6", 10);
+    var b = I.parseInt("15", 10);
+    var c = I.gcd(a, b);
+    var s = I.toString(c, 10);
+    assertEquals(s, "3");
+  });
   //!!!
 
   (function () {

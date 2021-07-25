@@ -56,6 +56,7 @@ var JavaBigInteger = {
   mod: "a.mod(b)",
   modPow: "a.modPow(b, c)",
   modInverse: "a.modInverse(b)",
+  gcd: "a.gcd(b)",
   floatingPoint: false
 };
 
@@ -83,6 +84,7 @@ var NodeBigInteger = {
   mod: "a.mod(b)",
   modPow: undefined,
   modInverse: "a.invm(b)",
+  gcd: "a.gcd(b)",
   floatingPoint: false
 };
 
@@ -127,6 +129,7 @@ var libs = [
       var bitSize = self.bitSize;
       var powMod = self.powMod;
       var inverseMod = self.inverseMod;
+      var GCD = self.GCD;
 
       // Big Thanks to @jtobey - https://github.com/jtobey/javascript-bignum/blob/master/lib/leemonBigInt.js
       function BigInt(sign, bigInt) {
@@ -237,6 +240,9 @@ var libs = [
       BigInt.prototype.modPow = function (b, c) {
         return new BigInt(1, powMod(this._b, b._b, c._b));
       };
+      BigInt.prototype.gcd = function (b) {
+        return new BigInt(1, GCD(this._b, b._b));
+      };
       BigInt.ZERO = new BigInt(1, zero);
       self.BigInteger = BigInt;
     },
@@ -263,6 +269,7 @@ var libs = [
     shiftRight: "SchemeNumber.plugins.get(\"bitShift\")(a, SchemeNumber.plugins.get(\"parseExactInteger\")(1, (0 - b).toString(), 10))",
     bitLength: "Number.parseInt(SchemeNumber.plugins.get(\"numberToString\")(SchemeNumber.plugins.get(\"bitLength\")(a), 10, 0), 10)",
     pow: "SchemeNumber.plugins.get(\"expt\")(a, SchemeNumber.plugins.get(\"parseExactInteger\")(1, b.toString(), 10))",
+    gcd: "SchemeNumber.plugins.get(\"gcd\")(a, b)",
     floatingPoint: true,
     fromNumber: undefined,
     toNumber: undefined
@@ -272,6 +279,7 @@ var libs = [
     source: "https://raw.githubusercontent.com/node-modules/node-biginteger/master/lib/BigInteger.js",
     parseInt: "BigInteger.fromString(a, b)",
     fromNumber: "BigInteger.fromLong(a)",
+    gcd: undefined,
     toNumber: "a.longValue()"
   }),
   {
@@ -305,6 +313,7 @@ var libs = [
     mod: "",
     modPow: "",
     modInverse: "",
+    gcd: "",
     floatingPoint: false
   },
   {
@@ -335,6 +344,7 @@ var libs = [
     mod: "crunch.mod(a, b)",
     modPow: "crunch.exp(a, b, c)",
     modInverse: "crunch.mod(a, b)",
+    //gcd: "crunch.gcd(a, b)",
     floatingPoint: false
   },
   Object.assign({}, MikeMclBigNumber, {
@@ -394,6 +404,7 @@ var libs = [
     source: "https://rawgit.com/peterolson/BigInteger.js/master/BigInteger.js",
     parseInt: "bigInt(a, b === 10 ? undefined : b)",
     modInverse: "a.modInv(b)",
+    gcd: "bigInt.gcd(a, b)",
     fromNumber: "bigInt(a)",
     toNumber: "a.toJSNumber()"
   }),
@@ -438,6 +449,7 @@ var libs = [
     mod: "",
     modInverse: "",
     modPow: "",
+    gcd: "",
     setup: function () {
       BigInteger.parseInt = function (string, radix) {
         var prefix = radix === 10 ? "" : (radix === 2 ? "0b" : (radix === 8 ? "0o" : (radix === 16 ? "0x" : "")));

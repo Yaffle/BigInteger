@@ -360,6 +360,7 @@ var generateTable = function () {
     {id: "27*27==54", url: "#2"},
     {id: "bitwise-shift-operators", url: "#3"},
     {id: "bitwise-logical-operators", url: "#4"},
+    {id: "gcd-jumbo", url: "#5"},
     {id: "joseprio", url: "http://www.joseprio.com/blog/2013/04/27/biginteger-libraries-for-js"},
   ];
   for (var i = 0; i < benchmarks.length; i += 1) {

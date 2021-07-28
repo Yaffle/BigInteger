@@ -747,7 +747,7 @@
       }
       return createBigInteger(0, createArray(0), 0);
     }
-    var digits = createArray(length);
+    var digits = createArray(length + (x.sign === 1 ? 1 : 0));
     for (var i = 0; i < length; i += 1) {
       digits[i] = i + shift < 0 ? 0 : x.magnitude[i + shift];
     }
@@ -776,10 +776,16 @@
         } else {
           // subtract one
           var i = 0;
-          while (i < length && digits[i] === 0) {
+          while (i < length && digits[i] === BASE - 1) {
+            digits[i] = 0;
             i += 1;
           }
-          digits[i] -= 1;
+          if (i < length) {
+            digits[i] += 1;
+          } else {
+            length += 1;
+            digits[i] = 1;
+          }
         }
       }
     }

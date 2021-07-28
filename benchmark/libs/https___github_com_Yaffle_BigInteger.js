@@ -285,20 +285,20 @@
     }
     var c1 = a.length - b.length;
     if (c1 !== 0) {
-      return c1;
+      return c1 < 0 ? -1 : +1;
     }
     var i = a.length;
     while (--i >= 0) {
       var c = a.magnitude[i] - b.magnitude[i];
       if (c !== 0) {
-        return c;
+        return c < 0 ? -1 : +1;
       }
     }
     return 0;
   };
 
   var compareTo = function (a, b) {
-    var c = a.sign === b.sign ? (compareMagnitude(a, b) < 0 ? -1 : +1) : 1;
+    var c = a.sign === b.sign ? compareMagnitude(a, b) : 1;
     return a.sign === 1 ? 0 - c : c; // positive zero will be returned for c === 0
   };
 

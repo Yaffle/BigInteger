@@ -1,7 +1,7 @@
 /*
- *  big.js v6.0.3
+ *  big.js v6.1.1
  *  A small, fast, easy-to-use library for arbitrary-precision decimal arithmetic.
- *  Copyright (c) 2020 Michael Mclaughlin
+ *  Copyright (c) 2021 Michael Mclaughlin
  *  https://github.com/MikeMcl/big.js/LICENCE.md
  */
 ;(function (GLOBAL) {
@@ -120,6 +120,10 @@
     Big.NE = NE;
     Big.PE = PE;
     Big.strict = STRICT;
+    Big.roundDown = 0;
+    Big.roundHalfUp = 1;
+    Big.roundHalfEven = 2;
+    Big.roundUp = 3;
 
     return Big;
   }
@@ -192,7 +196,7 @@
   function round(x, sd, rm, more) {
     var xc = x.c;
 
-    if (rm === UNDEFINED) rm = Big.RM;
+    if (rm === UNDEFINED) rm = x.constructor.RM;
     if (rm !== 0 && rm !== 1 && rm !== 2 && rm !== 3) {
       throw Error(INVALID_RM);
     }

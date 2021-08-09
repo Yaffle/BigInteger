@@ -1881,4 +1881,5 @@ JSBI.__imul = Math.imul || function(a, b) {
   return (a * b) | 0;
 };
 
-export default JSBI;
+//export default JSBI;
+globalThis.JSBI = JSBI;

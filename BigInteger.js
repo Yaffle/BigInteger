@@ -125,14 +125,37 @@
   var createBigInteger = function (sign, magnitude, length) {
     return new BigIntegerInternal(sign, magnitude, length);
   };
-
-  var fromNumber = function (n) {
-    if (n >= BASE || 0 - n >= BASE) {
+  
+  var fromHugeNumber = function (n) {
+    var sign = n < 0 ? 1 : 0;
+    var a = n < 0 ? 0 - n : 0 + n;
+    if (a === 1 / 0) {
       throw new RangeError();
     }
-    var a = createArray(1);
-    a[0] = n < 0 ? 0 - n : 0 + n;
-    return createBigInteger(n < 0 ? 1 : 0, a, n === 0 ? 0 : 1);
+    console.assert(BASE === 2**53);
+    var i = 0;
+    while (a >= BASE**2) {
+      a /= BASE;
+      i += 1;
+    }
+    var hi = Math.floor(a / BASE);
+    var lo = a - hi * BASE;
+    var digits = createArray(i + 2);
+    digits[i + 1] = hi;
+    digits[i + 0] = lo;
+    return createBigInteger(sign, digits, i + 2);
+  };
+
+  var fromNumber = function (n) {
+    if (Math.floor(n) !== n) {
+      throw new RangeError();
+    }
+    if (n < BASE && 0 - n < BASE) {
+      var a = createArray(1);
+      a[0] = n < 0 ? 0 - n : 0 + n;
+      return createBigInteger(n < 0 ? 1 : 0, a, n === 0 ? 0 : 1);
+    }
+    return fromHugeNumber(n);
   };
 
   var fromString = function (s) {
@@ -229,6 +252,9 @@
     if (x instanceof BigIntegerInternal) {
       return x;
     }
+    if (typeof x === "boolean") {
+      return fromNumber(Number(x));
+    }
     throw new RangeError();
   };
 
@@ -272,7 +298,7 @@
     while (i >= 0 && a.magnitude[i] === 0) {
       i -= 1;
     }
-    if (i >= 0 && y % 2 === 1) {
+    if (i >= 0 && (x !== 1 && y % 2 === 0 || x === 1 && y % 2 === 1)) {
       y += 1;
     }
     var z = (x * BASE + y) * exp(BASE, a.length - 2);

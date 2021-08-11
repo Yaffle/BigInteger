@@ -23,7 +23,7 @@ class JSBI extends Array {
   static BigInt(arg) {
     if (typeof arg === 'number') {
       if (arg === 0) return JSBI.__zero();
-      if ((arg | 0) === arg) {
+      if (JSBI.__isOneDigitInt(arg)) {
         if (arg < 0) {
           return JSBI.__oneDigit(-arg, true);
         }
@@ -103,10 +103,14 @@ class JSBI extends Array {
       mantissaLow = currentDigit << mantissaHighBitsUnset + 2;
       mantissaLowBitsUnset = mantissaHighBitsUnset + 2;
     }
-    if (mantissaLowBitsUnset > 0 && digitIndex > 0) {
+    while (mantissaLowBitsUnset > 0 && digitIndex > 0) {
       digitIndex--;
       currentDigit = x.__digit(digitIndex);
-      mantissaLow |= (currentDigit >>> (30 - mantissaLowBitsUnset));
+      if (mantissaLowBitsUnset >= 30) {
+        mantissaLow |= (currentDigit << (mantissaLowBitsUnset - 30));
+      } else {
+        mantissaLow |= (currentDigit >>> (30 - mantissaLowBitsUnset));
+      }
       mantissaLowBitsUnset -= 30;
     }
     const rounding = JSBI.__decideRounding(x, mantissaLowBitsUnset,
@@ -611,11 +615,13 @@ class JSBI extends Array {
       remainingMantissaBits = 32;
       digit = mantissaHigh;
       mantissaHigh = mantissaLow;
+      mantissaLow = 0;
     } else {
       const shift = msdTopBit - kMantissaHighTopBit;
       remainingMantissaBits = 32 - shift;
       digit = (mantissaHigh << shift) | (mantissaLow >>> (32 - shift));
       mantissaHigh = mantissaLow << shift;
+      mantissaLow = 0;
     }
     result.__setDigit(digits - 1, digit);
     // Then fill in the rest of the digits.
@@ -951,7 +957,7 @@ class JSBI extends Array {
   }
 
   static __compareToNumber(x, y) {
-    if (y | 0 === 0) {
+    if (JSBI.__isOneDigitInt(y)) {
       const xSign = x.sign;
       const ySign = (y < 0);
       if (xSign !== ySign) return JSBI.__unequalSign(xSign);
@@ -1056,7 +1062,7 @@ class JSBI extends Array {
   }
 
   static __equalToNumber(x, y) {
-    if (y | 0 === y) {
+    if (JSBI.__isOneDigitInt(y)) {
       if (y === 0) return x.length === 0;
       // Any multi-digit BigInt is bigger than an int32.
       return (x.length === 1) && (x.sign === (y < 0)) &&
@@ -1842,6 +1848,10 @@ class JSBI extends Array {
       base *= base;
     }
     return result;
+  }
+
+  static __isOneDigitInt(x) {
+    return (x & 0x3FFFFFFF) === x;
   }
 }
 

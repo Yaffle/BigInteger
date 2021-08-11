@@ -464,7 +464,25 @@ var wrapper = function () {
     var s = I.toString(b, 10);
     assertEquals(s, (-3 >> 8).toString(), "-3 >> 8");
   });
-  testSuite.add("huge right shift", function (I) {
+  testSuite.add(">> of a negative value", function (I) {
+    for (var i = 0; i <= 128; i += 1) {
+      for (var j = 0; j <= 64; j += 1) {
+        var is = i.toString();
+        var a = I.parseInt(is, 10);
+        var one = I.parseInt("1", 10);
+        a = I.shiftLeft(one, a);
+        a = I.subtract(a, one);
+        a = I.negate(a);
+        var js = j.toString();
+        var b = I.parseInt(js, 10);
+        var c = I.shiftRight(a, b);
+        var s = I.toString(c, 10);
+        var expected = ((-((1n << BigInt(i)) - 1n)) >> BigInt(j)).toString();
+        assertEquals(s, expected)
+      }
+    }
+  });
+  /*testSuite.add("huge right shift", function (I) {
     var a = I.parseInt("1", 10);
     var n = Math.pow(2, 30) - 1;
     var b = I.shiftLeft(a, n);
@@ -475,7 +493,7 @@ var wrapper = function () {
     assertEquals(s, "2", "(1 << " + n + ") >> " + (n - 1));
     console.log(end - start, i, true, "signed right shift is fast");
     assertEquals(end - start < 16, true, "signed right shift is fast");
-  });
+  });*/
   testSuite.add("<< -n", function (I) {
     var a = I.parseInt("3", 10);
     var b = I.shiftLeft(a, -1);
@@ -569,6 +587,18 @@ var wrapper = function () {
     var s = I.toString(i, 10);
     assertEquals(s, "9007199254740991");
   });
+  
+  testSuite.add("fromNumber-bugs", function () {
+    var i = I.fromNumber(2147483647);
+    var one = I.fromNumber(1);
+    i = I.add(i, one);
+    i = I.subtract(i, one);
+    var s = I.toString(i, 10);
+    assertEquals(s, (2147483647).toString());
+    var a = I.fromNumber(4.4384296245614243e+42);
+    var s = I.toString(a, 10);
+    assertEquals(s, "4438429624561424320047307980392507864252416");
+  });
 
   testSuite.add("fromNumber-big", function (I) {
     var i = I.fromNumber(Number.MAX_VALUE);
@@ -597,6 +627,14 @@ var wrapper = function () {
     var i = I.parseInt("81129638414606690702988259885060", 10);
     var s = I.toNumber(i);
     assertEquals(s, 9007199254740994 * 9007199254740992);
+    
+    var i = I.parseInt("295838072036830742352879410400474", 10);
+    var s = I.toNumber(i);
+    assertEquals(s, 2.9583807203683073e+32);
+    
+    var i = I.parseInt("3361387880631608742970259577528807057005903", 10);
+    var s = I.toNumber(i);
+    assertEquals(s, Number("3361387880631608742970259577528807057005903"));
   });
 
   testSuite.add("mod", function (I) {

@@ -343,7 +343,7 @@ var libs = [
     toNumber: "",
     mod: "crunch.mod(a, b)",
     modPow: "crunch.exp(a, b, c)",
-    modInverse: "crunch.mod(a, b)",
+    modInverse: "crunch.inv(a, b)",
     //gcd: "crunch.gcd(a, b)",
     floatingPoint: false
   },
@@ -419,6 +419,8 @@ var libs = [
   Object.assign({}, JavaBigInteger, {
     url: "http://www-cs-students.stanford.edu/~tjw/jsbn/",
     source: "https://raw.githubusercontent.com/jasondavies/jsbn/master/jsbn.js https://raw.githubusercontent.com/jasondavies/jsbn/master/jsbn2.js",
+    fromNumber: "(globalThis.tmp = new BigInteger(), globalThis.tmp.fromInt(a), globalThis.tmp)",
+    toNumber: "a.intValue()"
   }),
   Object.assign({}, JavaBigInteger, {
     url: "https://github.com/chromium/octane/blob/master/crypto.js",

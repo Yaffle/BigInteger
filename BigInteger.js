@@ -132,9 +132,9 @@
     if (a === 1 / 0) {
       throw new RangeError();
     }
-    console.assert(BASE === 2**53);
+    console.assert(BASE === Math.pow(2, 53));
     var i = 0;
-    while (a >= BASE**2) {
+    while (a >= Math.pow(BASE, 2)) {
       a /= BASE;
       i += 1;
     }

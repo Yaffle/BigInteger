@@ -25,7 +25,7 @@ Operation              | `BigInteger`                         | `Number`        
 Conversion from String | `BigInteger.BigInt(string)`          | `Number(string)`                 | `BigInt(string)`
 Conversion from Number | `BigInteger.BigInt(number)`          | N/A                              | `BigInt(number)`
 Conversion to String   | `a.toString(radix)`                  | `a.toString(radix)`              | `a.toString(radix)`
-Converstion to Number  | `a.toNumber()`                       | N/A                              | `Number(bigint)`
+Conversion to Number   | `a.toNumber()`                       | N/A                              | `Number(bigint)`
 Addition               | `BigInteger.add(a, b)`               | `a + b`                          | `a + b`
 Subtraction            | `BigInteger.subtract(a, b)`          | `a - b`                          | `a - b`
 Multiplication         | `BigInteger.multiply(a, b)`          | `0 + a * b`                      | `a * b`

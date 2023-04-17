@@ -148,7 +148,7 @@
 
   var fromNumber = function (n) {
     if (Math.floor(n) !== n) {
-      throw new RangeError();
+      throw new RangeError("Cannot convert " + n + " to BigInteger");
     }
     if (n < BASE && 0 - n < BASE) {
       var a = createArray(1);
@@ -1162,6 +1162,12 @@
     return toResult(Internal.signedRightShift(valueOf(x), valueOf(n)));
   };
   BigInteger.leftShift = function (x, n) {
+    if (typeof n === "number" && typeof x === "number" && n >= 0) {
+      var value = n === 0 ? x : x * Math.pow(2, n);
+      if (value >= -9007199254740991 && value <= 9007199254740991) {
+        return value;
+      }
+    }
     return toResult(Internal.leftShift(valueOf(x), valueOf(n)));
   };
 

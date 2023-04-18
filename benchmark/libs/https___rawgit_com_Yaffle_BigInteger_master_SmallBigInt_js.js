@@ -210,12 +210,15 @@
   };
   var toResult = function (x) {
     var value = Internal.toNumber(x);
-    if (value >= -9007199254740991 && value <= +9007199254740991) {
+    if (value >= -9007199254740991 && value <= 9007199254740991) {
       return value;
     }
     return x;
   };
   var add = n(function (x, y) {
+    if (typeof x === "string" || typeof y === "string") {
+      return x + y;
+    }
     if (typeof x === "number" && x === 0) {
       return y;
     }
@@ -357,7 +360,7 @@
   SmallBigInt.BigInt = function (x) {
     if (typeof x === "number" || typeof x === "string" || typeof x === "bigint") {
       var value = 0 + (typeof x === "number" ? x : Number(x));
-      if (value >= -9007199254740991 && value <= +9007199254740991) {
+      if (value >= -9007199254740991 && value <= 9007199254740991) {
         return value;
       }
     }
@@ -380,12 +383,9 @@
 
   // Arithmetic:
   SmallBigInt.add = function (x, y) {
-    if (typeof x === "string" || typeof y === "string") {
-      return x + y;
-    }
     if (typeof x === "number" && typeof y === "number") {
       var value = x + y;
-      if (value >= -9007199254740991 && value <= +9007199254740991) {
+      if (value >= -9007199254740991 && value <= 9007199254740991) {
         return value;
       }
     }
@@ -394,7 +394,7 @@
   SmallBigInt.subtract = function (x, y) {
     if (typeof x === "number" && typeof y === "number") {
       var value = x - y;
-      if (value >= -9007199254740991 && value <= +9007199254740991) {
+      if (value >= -9007199254740991 && value <= 9007199254740991) {
         return value;
       }
     }
@@ -403,7 +403,7 @@
   SmallBigInt.multiply = function (x, y) {
     if (typeof x === "number" && typeof y === "number") {
       var value = 0 + x * y;
-      if (value >= -9007199254740991 && value <= +9007199254740991) {
+      if (value >= -9007199254740991 && value <= 9007199254740991) {
         return value;
       }
     }

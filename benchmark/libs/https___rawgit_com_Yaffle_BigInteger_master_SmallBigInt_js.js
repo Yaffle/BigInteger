@@ -366,6 +366,9 @@
     }
     return toResult(Internal.BigInt(x));
   };
+  SmallBigInt.asIntN = function (n, x) {
+    return toResult(Internal.asIntN(n, Internal.BigInt(x)));
+  };
   SmallBigInt.asUintN = function (n, x) {
     if (typeof x === "number" && x >= 0 && n >= 0 && n <= 53) {
       var m = Math.pow(2, n);
@@ -484,6 +487,13 @@
     }
     return toResult(Internal.leftShift(valueOf(x), valueOf(n)));
   };
+  if (Symbol.hasInstance != undefined) {
+    Object.defineProperty(SmallBigInt, Symbol.hasInstance, {
+      value: function (a) {
+        return typeof a === 'number' || a instanceof Internal;
+      }
+    });
+  }
 
   (global || globalThis).SmallBigInt = SmallBigInt;
 

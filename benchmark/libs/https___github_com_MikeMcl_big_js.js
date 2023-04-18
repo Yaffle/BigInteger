@@ -1,7 +1,7 @@
 /*
- *  big.js v6.1.1
+ *  big.js v6.2.1
  *  A small, fast, easy-to-use library for arbitrary-precision decimal arithmetic.
- *  Copyright (c) 2021 Michael Mclaughlin
+ *  Copyright (c) 2022 Michael Mclaughlin
  *  https://github.com/MikeMcl/big.js/LICENCE.md
  */
 ;(function (GLOBAL) {
@@ -98,8 +98,8 @@
         x.c = n.c.slice();
       } else {
         if (typeof n !== 'string') {
-          if (Big.strict === true) {
-            throw TypeError(INVALID + 'number');
+          if (Big.strict === true && typeof n !== 'bigint') {
+            throw TypeError(INVALID + 'value');
           }
 
           // Minus zero?
@@ -230,17 +230,18 @@
         rm === 3 && (more || !!xc[0]);
 
       // Remove any digits after the required precision.
-      xc.length = sd--;
+      xc.length = sd;
 
       // Round up?
       if (more) {
 
         // Rounding up may mean the previous digit has to be rounded up.
-        for (; ++xc[sd] > 9;) {
+        for (; ++xc[--sd] > 9;) {
           xc[sd] = 0;
-          if (!sd--) {
+          if (sd === 0) {
             ++x.e;
             xc.unshift(1);
+            break;
           }
         }
       }
@@ -628,6 +629,16 @@
     Big.RM = b;
 
     return this.minus(x.times(y));
+  };
+  
+  
+  /*
+   * Return a new Big whose value is the value of this Big negated.
+   */
+  P.neg = function () {
+    var x = new this.constructor(this);
+    x.s = -x.s;
+    return x;
   };
 
 

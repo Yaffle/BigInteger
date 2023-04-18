@@ -460,6 +460,40 @@ var libs = [
     },
     floatingPoint: false
   },
+{
+    url: "https://rawgit.com/Yaffle/BigInteger/master/SmallBigInt.js",
+    source: "https://rawgit.com/Yaffle/BigInteger/master/SmallBigInt.js",
+    add: "SmallBigInt.add(a, b)",
+    subtract: "SmallBigInt.subtract(a, b)",
+    multiply: "SmallBigInt.multiply(a, b)",
+    divide: "SmallBigInt.divide(a, b)",
+    remainder: "SmallBigInt.remainder(a, b)",
+    negate: "SmallBigInt.unaryMinus(a)",
+    compareTo: "(SmallBigInt.lessThan(a, b) ? -1 : (SmallBigInt.lessThan(b, a) ? +1 : 0))",
+    parseInt: "SmallBigInt.parseInt(a, b)",
+    toString: "a.toString(b)",
+    and: "",
+    or: "",
+    xor: "",
+    not: "",
+    shiftLeft: "SmallBigInt.leftShift(a, b)",
+    shiftRight: "SmallBigInt.signedRightShift(a, b)",
+    bitLength: "",
+    pow: "SmallBigInt.exponentiate(a, SmallBigInt.BigInt(b))",
+    fromNumber: "SmallBigInt.BigInt(a)",
+    toNumber: "SmallBigInt.toNumber(a)",
+    mod: "",
+    modInverse: "",
+    modPow: "",
+    gcd: "",
+    setup: function () {
+      SmallBigInt.parseInt = function (string, radix) {
+        var prefix = radix === 10 ? "" : (radix === 2 ? "0b" : (radix === 8 ? "0o" : (radix === 16 ? "0x" : "")));
+        return SmallBigInt.BigInt(prefix === "" ? string : prefix + string);
+      };
+    },
+    floatingPoint: false
+  },
   {
     url: "data:text/plain,bigint", // https://tc39.github.io/proposal-bigint/
     source: "data:application/javascript,%3B",

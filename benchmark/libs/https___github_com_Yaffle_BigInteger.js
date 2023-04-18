@@ -116,14 +116,14 @@
     return {q: q, r: r};
   };
 
-  function BigIntegerInternal(sign, magnitude, length) {
+  function BigInteger(sign, magnitude, length) {
     this.sign = sign;
     this.magnitude = magnitude;
     this.length = length;
   }
 
   var createBigInteger = function (sign, magnitude, length) {
-    return new BigIntegerInternal(sign, magnitude, length);
+    return new BigInteger(sign, magnitude, length);
   };
   
   var fromHugeNumber = function (n) {
@@ -148,7 +148,7 @@
 
   var fromNumber = function (n) {
     if (Math.floor(n) !== n) {
-      throw new RangeError();
+      throw new RangeError("Cannot convert " + n + " to BigInteger");
     }
     if (n < BASE && 0 - n < BASE) {
       var a = createArray(1);
@@ -239,7 +239,7 @@
     return a;
   }
 
-  BigIntegerInternal.BigInt = function (x) {
+  BigInteger.BigInt = function (x) {
     if (typeof x === "number") {
       return fromNumber(x);
     }
@@ -249,7 +249,7 @@
     if (typeof x === "bigint") {
       return fromString(x.toString());
     }
-    if (x instanceof BigIntegerInternal) {
+    if (x instanceof BigInteger) {
       return x;
     }
     if (typeof x === "boolean") {
@@ -258,7 +258,7 @@
     throw new RangeError();
   };
 
-  BigIntegerInternal.asUintN = function (bits, bigint) {
+  BigInteger.asUintN = function (bits, bigint) {
     if (bits < 0) {
       throw new RangeError();
     }
@@ -282,7 +282,11 @@
     return createBigInteger(0, array, n);
   };
 
-  BigIntegerInternal.toNumber = function (a) {
+  BigInteger.asIntN = function (bits, bigint) {
+    //TODO: !?
+  };
+
+  BigInteger.toNumber = function (a) {
     if (a.length === 0) {
       return 0;
     }
@@ -387,15 +391,15 @@
     return createBigInteger(resultSign, result, resultLength);
   };
 
-  BigIntegerInternal.add = function (a, b) {
+  BigInteger.add = function (a, b) {
     return addAndSubtract(a, b, 0);
   };
 
-  BigIntegerInternal.subtract = function (a, b) {
+  BigInteger.subtract = function (a, b) {
     return addAndSubtract(a, b, 1);
   };
 
-  BigIntegerInternal.multiply = function (a, b) {
+  BigInteger.multiply = function (a, b) {
     if (a.length < b.length) {
       var tmp = a;
       a = b;
@@ -607,51 +611,51 @@
     return createBigInteger(a.sign, result, remainderLength);
   };
 
-  BigIntegerInternal.divide = function (a, b) {
+  BigInteger.divide = function (a, b) {
     return divideAndRemainder(a, b, 1);
   };
 
-  BigIntegerInternal.remainder = function (a, b) {
+  BigInteger.remainder = function (a, b) {
     return divideAndRemainder(a, b, 0);
   };
 
-  BigIntegerInternal.unaryMinus = function (a) {
+  BigInteger.unaryMinus = function (a) {
     return createBigInteger(a.length === 0 ? a.sign : 1 - a.sign, a.magnitude, a.length);
   };
 
-  BigIntegerInternal.equal = function (a, b) {
+  BigInteger.equal = function (a, b) {
     return compareTo(a, b) === 0;
   };
-  BigIntegerInternal.lessThan = function (a, b) {
+  BigInteger.lessThan = function (a, b) {
     return compareTo(a, b) < 0;
   };
-  BigIntegerInternal.greaterThan = function (a, b) {
+  BigInteger.greaterThan = function (a, b) {
     return compareTo(a, b) > 0;
   };
-  BigIntegerInternal.notEqual = function (a, b) {
+  BigInteger.notEqual = function (a, b) {
     return compareTo(a, b) !== 0;
   };
-  BigIntegerInternal.lessThanOrEqual = function (a, b) {
+  BigInteger.lessThanOrEqual = function (a, b) {
     return compareTo(a, b) <= 0;
   };
-  BigIntegerInternal.greaterThanOrEqual = function (a, b) {
+  BigInteger.greaterThanOrEqual = function (a, b) {
     return compareTo(a, b) >= 0;
   };
 
-  BigIntegerInternal.exponentiate = function (a, b) {
-    var n = BigIntegerInternal.toNumber(b);
+  BigInteger.exponentiate = function (a, b) {
+    var n = BigInteger.toNumber(b);
     if (n < 0) {
       throw new RangeError();
     }
     if (n > 9007199254740991) {
-      var y = BigIntegerInternal.toNumber(a);
+      var y = BigInteger.toNumber(a);
       if (y === 0 || y === -1 || y === +1) {
-        return y === -1 && BigIntegerInternal.toNumber(BigIntegerInternal.remainder(b, BigIntegerInternal.BigInt(2))) === 0 ? BigIntegerInternal.unaryMinus(a) : a;
+        return y === -1 && BigInteger.toNumber(BigInteger.remainder(b, BigInteger.BigInt(2))) === 0 ? BigInteger.unaryMinus(a) : a;
       }
       throw new RangeError();
     }
     if (n === 0) {
-      return BigIntegerInternal.BigInt(1);
+      return BigInteger.BigInt(1);
     }
     if (a.length === 1 && (a.magnitude[0] === 2 || a.magnitude[0] === 16)) {
       var bits = Math.floor(Math.log(BASE) / Math.log(2) + 0.5);
@@ -666,7 +670,7 @@
     var x = a;
     while (n % 2 === 0) {
       n = Math.floor(n / 2);
-      x = BigIntegerInternal.multiply(x, x);
+      x = BigInteger.multiply(x, x);
     }
     var accumulator = x;
     n -= 1;
@@ -674,17 +678,17 @@
       while (n >= 2) {
         var t = Math.floor(n / 2);
         if (t * 2 !== n) {
-          accumulator = BigIntegerInternal.multiply(accumulator, x);
+          accumulator = BigInteger.multiply(accumulator, x);
         }
         n = t;
-        x = BigIntegerInternal.multiply(x, x);
+        x = BigInteger.multiply(x, x);
       }
-      accumulator = BigIntegerInternal.multiply(accumulator, x);
+      accumulator = BigInteger.multiply(accumulator, x);
     }
     return accumulator;
   };
 
-  BigIntegerInternal.prototype.toString = function (radix) {
+  BigInteger.prototype.toString = function (radix) {
     if (radix == undefined) {
       radix = 10;
     }
@@ -695,12 +699,12 @@
     // console.time(); var n = BigInteger.exponentiate(2**4, 2**16); console.timeEnd(); console.time(); n.toString(16).length; console.timeEnd();
     if (this.length > 8 && true) { // https://github.com/GoogleChromeLabs/jsbi/blob/c9b179a4d5d34d35dd24cf84f7c1def54dc4a590/jsbi.mjs#L880
       if (this.sign === 1) {
-        return '-' + BigIntegerInternal.unaryMinus(this).toString(radix);
+        return '-' + BigInteger.unaryMinus(this).toString(radix);
       }
       var s = Math.floor(this.length * Math.log(BASE) / Math.log(radix) / 2 + 0.5 - 1);
-      var split = BigIntegerInternal.exponentiate(BigIntegerInternal.BigInt(radix), BigIntegerInternal.BigInt(s));
-      var q = BigIntegerInternal.divide(this, split);
-      var r = BigIntegerInternal.subtract(this, BigIntegerInternal.multiply(q, split));
+      var split = BigInteger.exponentiate(BigInteger.BigInt(radix), BigInteger.BigInt(s));
+      var q = BigInteger.divide(this, split);
+      var r = BigInteger.subtract(this, BigInteger.multiply(q, split));
       var a = r.toString(radix);
       return q.toString(radix) + '0'.repeat(s - a.length) + a;
     }
@@ -817,360 +821,18 @@
     }
     return createBigInteger(x.sign, digits, length);
   };
-  BigIntegerInternal.signedRightShift = function (x, n) {
-    return signedRightShift(x, BigIntegerInternal.toNumber(n));
-  };
-  BigIntegerInternal.leftShift = function (x, n) {
-    return signedRightShift(x, 0 - BigIntegerInternal.toNumber(n));
-  };
-  BigIntegerInternal.prototype.valueOf = function () {
-    //throw new TypeError();
-    console.error('BigIntegerInternal#valueOf is called');
-    return this;
-  };
-
-  var Internal = BigIntegerInternal;
-
-  // noinline
-  var n = function (f) {
-    return function (x, y) {
-      return f(x, y);
-    };
-  };
-
-  var cache = new Array(16 * 2 + 1);
-  for (var i = 0; i < cache.length; i += 1) {
-    cache[i] = undefined;
-  }
-  function LastTwoMap() {
-    this.a = undefined;
-    this.aKey = 0;
-    this.b = undefined;
-    this.bKey = 0;
-    this.last = 0;
-  }
-  LastTwoMap.prototype.get = function (key) {
-    if (this.aKey === key) {
-      this.last = 0;
-      return this.a;
-    }
-    if (this.bKey === key) {
-      this.last = 1;
-      return this.b;
-    }
-    return undefined;
-  };
-  LastTwoMap.prototype.set = function (key, value) {
-    if (this.last === 0) {
-      this.bKey = key;
-      this.b = value;
-      this.last = 1;
-    } else {
-      this.aKey = key;
-      this.a = value;
-      this.last = 0;
-    }
-  };
-  var map = new LastTwoMap(); // to optimize when some number is multiplied by few numbers sequencely
-  var toNumber = n(function (a) {
-    return Internal.toNumber(a);
-  });
-  var valueOf = function (x) {
-    if (typeof x === "number") {
-      if (x >= -16 && x <= +16) {
-        var value = cache[x + 16];
-        if (value == undefined) {
-          value = Internal.BigInt(x);
-          cache[x + 16] = value;
-        }
-        return value;
-      }
-      var value = map.get(x);
-      if (value == undefined) {
-        value = Internal.BigInt(x);
-        map.set(x, value);
-      }
-      return value;
-    }
-    return x;
-  };
-  var toResult = function (x) {
-    var value = Internal.toNumber(x);
-    if (value >= -9007199254740991 && value <= +9007199254740991) {
-      return value;
-    }
-    return x;
-  };
-  var add = n(function (x, y) {
-    if (typeof x === "number" && x === 0) {
-      return y;
-    }
-    if (typeof y === "number" && y === 0) {
-      return x;
-    }
-    var a = valueOf(x);
-    var b = valueOf(y);
-    var sum = Internal.add(a, b);
-    return typeof x === "number" && typeof y === "number" ? sum : toResult(sum);
-  });
-  var subtract = n(function (x, y) {
-    if (typeof x === "number" && x === 0) {
-      return unaryMinus(y);
-    }
-    // quite good optimization for comparision of big integers
-    if (typeof y === "number" && y === 0) {
-      return x;
-    }
-    var a = valueOf(x);
-    var b = valueOf(y);
-    var difference = Internal.subtract(a, b);
-    return typeof x === "number" && typeof y === "number" ? difference : toResult(difference);
-  });
-  var multiply = n(function (x, y) {
-    if (typeof x === "number" && x === 0) {
-      return 0;
-    }
-    if (typeof x === "number" && x === 1) {
-      return y;
-    }
-    if (typeof x === "number" && x === -1) {
-      return Internal.unaryMinus(y);
-    }
-    if (typeof y === "number" && y === 0) {
-      return 0;
-    }
-    if (typeof y === "number" && y === 1) {
-      return x;
-    }
-    if (typeof y === "number" && y === -1) {
-      return Internal.unaryMinus(x);
-    }
-    var a = valueOf(x);
-    var b = valueOf(y);
-    return Internal.multiply(a, b);
-  });
-  var divide = n(function (x, y) {
-    if (typeof x === "number") {
-      return 0;
-    }
-    if (typeof y === "number" && y === 1) {
-      return x;
-    }
-    if (typeof y === "number" && y === -1) {
-      return Internal.unaryMinus(x);
-    }
-    var a = valueOf(x);
-    var b = valueOf(y);
-    return toResult(Internal.divide(a, b));
-  });
-  var remainder = n(function (x, y) {
-    if (typeof x === "number") {
-      return x;
-    }
-    if (typeof y === "number" && y === 1) {
-      return 0;
-    }
-    if (typeof y === "number" && y === -1) {
-      return 0;
-    }
-    var a = valueOf(x);
-    var b = valueOf(y);
-    return toResult(Internal.remainder(a, b));
-  });
-  var exponentiate = n(function (x, y) {
-    if (typeof y === "number") {
-      if (y === 0) {
-        return 1;
-      }
-      if (y === 1) {
-        return x;
-      }
-      if (y === 2) {
-        return multiply(x, x);
-      }
-      if (typeof x === "number" && Math.abs(x) > 2 && y >= 0) {
-        if (y > 42 && x % 2 === 0) {//TODO: ?
-          return multiply(exponentiate(2, y), exponentiate(x / 2, y));
-        }
-        var k = Math.floor(Math.log(9007199254740991) / Math.log(Math.abs(x) + 0.5));
-        if (k >= 2) {
-          return multiply(Math.pow(x, y % k), exponentiate(Math.pow(x, k), Math.floor(y / k)));
-        }
-      }
-    }
-    var a = valueOf(x);
-    var b = valueOf(y);
-    var power = Internal.exponentiate(a, b);
-    return typeof x === "number" && Math.abs(x) <= 1 ? toResult(power) : power;
-  });
-  var unaryMinus = n(function (x) {
-    var a = valueOf(x);
-    return Internal.unaryMinus(a);
-  });
-  var equal = n(function (x, y) {
-    if (typeof x === "number") {
-      return false;
-    }
-    if (typeof y === "number") {
-      return false;
-    }
-    return Internal.equal(x, y);
-  });
-  var lessThan = n(function (x, y) {
-    if (typeof x === "number") {
-      return x < Internal.toNumber(y);
-    }
-    if (typeof y === "number") {
-      return Internal.toNumber(x) < y;
-    }
-    return Internal.lessThan(x, y);
-  });
-  var greaterThan = n(function (x, y) {
-    if (typeof x === "number") {
-      return x > Internal.toNumber(y);
-    }
-    if (typeof y === "number") {
-      return Internal.toNumber(x) > y;
-    }
-    return Internal.greaterThan(x, y);
-  });
-
-  function BigInteger() {
-  }
-
-  // Conversion from String:
-  // Conversion from Number:
-  BigInteger.BigInt = function (x) {
-    if (typeof x === "number" || typeof x === "string" || typeof x === "bigint") {
-      var value = 0 + (typeof x === "number" ? x : Number(x));
-      if (value >= -9007199254740991 && value <= +9007199254740991) {
-        return value;
-      }
-    }
-    return toResult(Internal.BigInt(x));
-  };
-  BigInteger.asUintN = function (n, x) {
-    if (typeof x === "number" && x >= 0 && n >= 0 && n <= 53) {
-      var m = exp(2, n);
-      return x - Math.floor(x / m) * m;
-    }
-    return toResult(Internal.asUintN(n, Internal.BigInt(x)));
-  };
-  // Conversion to Number:
-  BigInteger.toNumber = function (x) {
-    if (typeof x === "number") {
-      return x;
-    }
-    return toNumber(x);
-  };
-
-  // Arithmetic:
-  BigInteger.add = function (x, y) {
-    if (typeof x === "string" || typeof y === "string") {
-      return x + y;
-    }
-    if (typeof x === "number" && typeof y === "number") {
-      var value = x + y;
-      if (value >= -9007199254740991 && value <= +9007199254740991) {
-        return value;
-      }
-    }
-    return add(x, y);
-  };
-  BigInteger.subtract = function (x, y) {
-    if (typeof x === "number" && typeof y === "number") {
-      var value = x - y;
-      if (value >= -9007199254740991 && value <= +9007199254740991) {
-        return value;
-      }
-    }
-    return subtract(x, y);
-  };
-  BigInteger.multiply = function (x, y) {
-    if (typeof x === "number" && typeof y === "number") {
-      var value = 0 + x * y;
-      if (value >= -9007199254740991 && value <= +9007199254740991) {
-        return value;
-      }
-    }
-    return multiply(x, y);
-  };
-  BigInteger.divide = function (x, y) {
-    if (typeof x === "number" && typeof y === "number") {
-      if (y !== 0) {
-        return x === 0 ? 0 : (x > 0 && y > 0) || (x < 0 && y < 0) ? 0 + Math.floor(x / y) : 0 - Math.floor((0 - x) / y);
-      }
-    }
-    return divide(x, y);
-  };
-  BigInteger.remainder = function (x, y) {
-    if (typeof x === "number" && typeof y === "number") {
-      if (y !== 0) {
-        return 0 + x % y;
-      }
-    }
-    return remainder(x, y);
-  };
-  BigInteger.unaryMinus = function (x) {
-    if (typeof x === "number") {
-      return 0 - x;
-    }
-    return unaryMinus(x);
-  };
-
-  // Comparison:
-  BigInteger.equal = function (x, y) {
-    if (typeof x === "number" && typeof y === "number") {
-      return x === y;
-    }
-    return equal(x, y);
-  };
-  BigInteger.lessThan = function (x, y) {
-    if (typeof x === "number" && typeof y === "number") {
-      return x < y;
-    }
-    return lessThan(x, y);
-  };
-  BigInteger.greaterThan = function (x, y) {
-    if (typeof x === "number" && typeof y === "number") {
-      return x > y;
-    }
-    return greaterThan(x, y);
-  };
-  BigInteger.notEqual = function (x, y) {
-    return !BigInteger.equal(x, y);
-  };
-  BigInteger.lessThanOrEqual = function (x, y) {
-    return !BigInteger.greaterThan(x, y);
-  };
-  BigInteger.greaterThanOrEqual = function (x, y) {
-    return !BigInteger.lessThan(x, y);
-  };
-
-  BigInteger.exponentiate = function (x, y) {
-    if (typeof x === "number" && typeof y === "number") {
-      if (y >= 0 && (y < 53 || x >= -1 && x <= 1)) { // 53 === log2(9007199254740991 + 1)
-        var value = 0 + Math.pow(x, y);
-        if (value >= -9007199254740991 && value <= 9007199254740991) {
-          return value;
-        }
-      }
-    }
-    return exponentiate(x, y);
-  };
   BigInteger.signedRightShift = function (x, n) {
-    return toResult(Internal.signedRightShift(valueOf(x), valueOf(n)));
+    return signedRightShift(x, BigInteger.toNumber(n));
   };
   BigInteger.leftShift = function (x, n) {
-    return toResult(Internal.leftShift(valueOf(x), valueOf(n)));
+    return signedRightShift(x, 0 - BigInteger.toNumber(n));
   };
-
+  BigInteger.prototype.valueOf = function () {
+    //throw new TypeError();
+    console.error('BigInteger#valueOf is called');
+    return this;
+  };
+  
   (global || globalThis).BigInteger = BigInteger;
-  BigInteger._getInternal = function () {
-    return Internal;
-  };
-  BigInteger._setInternal = function (newInternal) {
-    Internal = newInternal;
-  };
 
 }(this));

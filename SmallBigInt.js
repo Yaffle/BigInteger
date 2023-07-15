@@ -208,13 +208,26 @@
     }
     return x;
   };
+  var B1 = undefined;
+  var B2 = undefined;
+  var initB1B2 = function () {
+    B1 = Internal.BigInt(-9007199254740991);
+    B2 = Internal.BigInt(9007199254740991);
+  };
   var toResult = function (x) {
-    var value = Internal.toNumber(x);
-    if (value >= -9007199254740991 && value <= 9007199254740991) {
-      return value;
+    if (!Internal.lessThan(x, B1) && !Internal.greaterThan(x, B2)) {
+      return Internal.toNumber(x);
     }
     return x;
   };
+  // the version above much faster somehow (when false) with native bigint in Chrome
+  //var toResult = function (x) {
+  //  var value = Internal.toNumber(x);
+  //  if (value >= -9007199254740991 && value <= 9007199254740991) {
+  //    return value;
+  //  }
+  //  return x;
+  //};
   var add = n(function (x, y) {
     if (typeof x === "string" || typeof y === "string") {
       return x + y;
@@ -479,11 +492,14 @@
     return toResult(Internal.signedRightShift(valueOf(x), valueOf(n)));
   };
   SmallBigInt.leftShift = function (x, n) {
-    if (typeof n === "number" && typeof x === "number" && n >= 0) {
-      var value = n === 0 ? x : x * Math.pow(2, n);
-      if (value >= -9007199254740991 && value <= 9007199254740991) {
-        return value;
+    if (typeof n === "number" && n >= 0) {
+      if (typeof x === "number") {
+        var value = n === 0 ? x : x * Math.pow(2, n);
+        if (value >= -9007199254740991 && value <= 9007199254740991) {
+          return value;
+        }
       }
+      return Internal.leftShift(valueOf(x), valueOf(n));
     }
     return toResult(Internal.leftShift(valueOf(x), valueOf(n)));
   };
@@ -499,5 +515,6 @@
 
   (global || globalThis).JSBI = supportsBigInt ? BigIntWrapper : ((global || globalThis).JSBI || (global || globalThis).BigInteger);
   Internal = (global || globalThis).JSBI;
+  initB1B2();
 
 }(this));

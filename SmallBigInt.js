@@ -1,5 +1,5 @@
 
-(function (global) {
+(function () {
   "use strict";
 
   function BigIntWrapper() {
@@ -511,10 +511,10 @@
     });
   }
 
-  (global || globalThis).SmallBigInt = SmallBigInt;
+  globalThis.SmallBigInt = SmallBigInt;
 
-  (global || globalThis).JSBI = supportsBigInt ? BigIntWrapper : ((global || globalThis).JSBI || (global || globalThis).BigInteger);
-  Internal = (global || globalThis).JSBI;
+  globalThis.JSBI = supportsBigInt ? BigIntWrapper : (globalThis.JSBI || globalThis.BigInteger);
+  Internal = globalThis.JSBI;
   initB1B2();
 
-}(this));
+}());

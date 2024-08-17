@@ -260,13 +260,14 @@
 
   BigInteger.asUintN = function (bits, bigint) {
     if (bits < 0) {
-      throw new RangeError();
+      throw new RangeError("bits argument should be non-negative");
+    }
+    if (bigint.sign === 1) {
+      var X = BigInteger.asUintN(bits, BigInteger.unaryMinus(bigint));
+      return BigInteger.equal(X, BigInteger.BigInt(0)) ? X : BigInteger.subtract(BigInteger.leftShift(BigInteger.BigInt(1), BigInteger.BigInt(bits)), X);
     }
     var n = Math.ceil(bits / BASELOG2);
     bits -= BASELOG2 * n;
-    if (bigint.sign === 1) {
-      throw new RangeError("not implemented");
-    }
     if (n > bigint.length) {
       return bigint;
     }
@@ -283,7 +284,12 @@
   };
 
   BigInteger.asIntN = function (bits, bigint) {
-    //TODO: !?
+    if (bits === 0) {
+      return BigInteger.BigInt(0);
+    }
+    var A = BigInteger.asUintN(bits, bigint);
+    var X = BigInteger.leftShift(BigInteger.BigInt(1), BigInteger.BigInt(bits - 1));
+    return BigInteger.greaterThanOrEqual(A, X) ? BigInteger.subtract(A, BigInteger.add(X, X)) : A;
   };
 
   BigInteger.toNumber = function (a) {

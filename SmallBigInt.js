@@ -280,7 +280,7 @@
     return Internal.multiply(a, b);
   });
   var divide = n(function (x, y) {
-    if (typeof x === "number") {
+    if (typeof x === "number" && typeof y !== "number") {
       return 0;
     }
     if (typeof y === "number" && y === 1) {
@@ -294,7 +294,7 @@
     return toResult(Internal.divide(a, b));
   });
   var remainder = n(function (x, y) {
-    if (typeof x === "number") {
+    if (typeof x === "number" && typeof y !== "number") {
       return x;
     }
     if (typeof y === "number" && y === 1) {
